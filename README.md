@@ -2,7 +2,7 @@
 
 手机优先的私人聊天前端。第一版只做界面和本机交互，不启动后端、不调用模型、不执行插件。
 
-[浅色主页预览](docs/preview-home.webp) · [夜间主页预览](docs/preview-night.webp)
+[开屏预览](docs/preview-splash.webp) · [浅色主页预览](docs/preview-home.webp) · [夜间主页预览](docs/preview-night.webp)
 
 ## 运行
 
@@ -16,6 +16,7 @@ python3 -m http.server 5173 --bind 127.0.0.1
 
 ## 当前版本（v0.2）
 
+- 开屏：小写 yuria、用户提供的 Distant Stroke 字体和独立绘制的水雾纹理；约一秒后水雾淡出露出主页，跟随夜间模式和壁纸，支持减少动态效果。
 - 默认打开主页；底部只有主页、对话、记忆、设置。
 - 半透明玻璃组件与浮动导航，背景模糊/透明度可调。
 - 顶部纪念日：开始日期、双方名字、头像、描述可修改。

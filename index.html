@@ -7,10 +7,46 @@
   <meta name="description" content="尘 · 一个安静的、属于你的聊天空间。">
   <title>尘 · Chenxin</title>
   <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="preload" href="./assets/distant-stroke.otf" as="font" type="font/otf" crossorigin>
+  <link rel="preload" href="./assets/splash-fog.webp" as="image">
+  <style>
+    html,body{margin:0;background:#eceef3}html[data-theme=dark],html[data-theme=dark] body{background:#20232d}
+    #splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;background:var(--bg,#eceef3)}
+    html[data-theme=dark] #splash{background:var(--bg,#20232d)}
+  </style>
+  <script>
+    // Restore the existing appearance before first paint; failures use neutral defaults.
+    try {
+      const saved=JSON.parse(localStorage.getItem('chenxin.frontend.v1'));
+      const root=document.documentElement;
+      root.dataset.theme=saved?.theme==='dark'?'dark':'light';
+      if(/^#[a-f\d]{6}$/i.test(saved?.appearance?.accent||'')){
+        root.style.setProperty('--accent',saved.appearance.accent);
+        root.style.setProperty('--tint',saved.appearance.accent.slice(1).match(/../g).map(c=>parseInt(c,16)).join(' '));
+      }
+      const wallpaper=saved?.appearance?.wallpaper;
+      if(typeof wallpaper==='string' && wallpaper.length<1200000 && /^data:image\/(jpeg|png|webp);base64,[a-z\d+/=]+$/i.test(wallpaper))root.style.setProperty('--wall-image','url("'+wallpaper+'")');
+    } catch {}
+  </script>
   <link rel="stylesheet" href="./src/style.css">
+  <link rel="stylesheet" href="./src/splash.css">
 </head>
 <body>
-  <div id="app"></div>
+  <div id="splash" class="splash" role="status" aria-label="正在打开 yuria">
+    <div class="splash-background" aria-hidden="true"></div>
+    <div class="splash-fog" aria-hidden="true"><div class="splash-texture"></div></div>
+    <span class="splash-word" aria-hidden="true">yuria</span>
+  </div>
+  <div id="app" inert></div>
+  <script>
+    const opening=document.getElementById('splash');opening.dataset.started=performance.now();
+    setTimeout(()=>{
+      if(!opening.isConnected||opening.classList.contains('is-leaving'))return;
+      opening.classList.add('is-ready');
+      if(document.getElementById('app').children.length){document.getElementById('app').inert=false;opening.remove();}
+      else {const error=document.createElement('div');error.className='splash-error';error.innerHTML='页面未能加载。<br><a href="">重新打开</a>';opening.append(error);}
+    },4000);
+  </script>
   <div id="notice" role="status" aria-live="polite"></div>
   <script type="module" src="./src/app.js"></script>
 </body>

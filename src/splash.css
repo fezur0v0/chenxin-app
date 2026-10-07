@@ -1,0 +1,14 @@
+@font-face{font-family:"Distant Stroke";src:url("../assets/distant-stroke.otf") format("opentype");font-weight:400;font-style:normal;font-display:swap}
+/* Use the same wallpaper and palette as the destination screen. */
+.splash{position:fixed;inset:0;z-index:200;display:grid;place-items:center;overflow:hidden;isolation:isolate;background:var(--bg,#eceef3);color:var(--ink,#353b48);transition:opacity 350ms ease;touch-action:none}
+.splash-background{position:absolute;inset:-4%;z-index:-3;background-image:var(--wall-image,none),radial-gradient(ellipse at 25% 15%,rgb(var(--tint,122 135 154) / .18),transparent 70%);background-position:center;background-size:cover;filter:blur(24px);opacity:.45}
+.splash-fog{position:absolute;inset:0;z-index:-2;background:radial-gradient(ellipse at 50% 45%,rgb(var(--glass-tint,255 255 255) / .18),rgb(var(--glass-tint,255 255 255) / .52));transition:opacity 350ms ease,filter 350ms ease}
+.splash-texture{position:absolute;inset:-2%;background-image:url('../assets/splash-fog.webp');background-size:cover;background-position:center;opacity:.3;filter:contrast(.65) brightness(1.6);mix-blend-mode:luminosity;transform:scale(1.03);transition:transform 350ms ease,opacity 350ms ease}
+.splash-fog:after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,rgb(var(--glass-tint,255 255 255) / .5),transparent 60%),linear-gradient(180deg,rgb(var(--glass-tint,255 255 255) / .22),transparent 45%,rgb(var(--glass-tint,255 255 255) / .25))}
+.splash-word{font-family:"Distant Stroke",cursive;font-size:clamp(90px,27vw,140px);font-weight:400;line-height:1.5;letter-spacing:.015em;margin:0;padding:0 26px 16px;transform:translateY(2px);color:var(--ink,#353b48);opacity:0;filter:blur(3px);text-shadow:0 1px 1px rgb(var(--glass-tint,255 255 255) / .8);transition:opacity 260ms ease,filter 400ms ease,transform 450ms ease}
+.splash.is-ready .splash-word{opacity:.92;filter:blur(0);transform:translateY(0)}
+.splash.is-leaving{opacity:0;pointer-events:none}.splash.is-leaving .splash-word{opacity:0;filter:blur(4px);transform:translateY(-3px)}.splash.is-leaving .splash-texture{transform:scale(1.06);opacity:0}.splash.is-leaving .splash-fog{opacity:0}
+:root[data-theme=dark] .splash-texture{filter:contrast(.65) brightness(.95);opacity:.34}
+:root[data-theme=dark] .splash-fog:after{background:radial-gradient(ellipse at 50% 46%,rgb(var(--glass-tint,31 35 46) / .4),transparent 65%)}
+.splash-error{position:absolute;bottom:17%;padding:15px;text-align:center;font:12px/1.8 -apple-system,BlinkMacSystemFont,sans-serif;color:var(--muted,#69717e)}.splash-error a{color:inherit;display:inline-block;padding:10px;text-decoration:underline}
+@media(prefers-reduced-motion:reduce){.splash,.splash-word,.splash-fog,.splash-texture{transition:none!important}.splash-word{transform:none!important;filter:none!important}}

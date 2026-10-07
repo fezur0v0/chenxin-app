@@ -1,3 +1,4 @@
+import { finishSplash } from './splash.js';
 import { icon } from './icons.js';
 import { localDate, loadState, saveState, normalizeState, newSession, addDraftMessage, exportData, saveMemory } from './store.js';
 import { home, chat, sessions, settings, memory, memoryEditor, escape, button } from './views.js';
@@ -88,3 +89,5 @@ async function compressImage(file,max){
 let shownDate=localDate();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&page==='home'&&shownDate!==localDate()){shownDate=localDate();render();}});
 render();
+
+finishSplash().catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});

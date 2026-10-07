@@ -41,3 +41,17 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+---
+
+## Opening assets
+
+`assets/distant-stroke.otf` (Distant Stroke Regular) was supplied by the
+repository owner for the opening screen and retains its original rights.
+The application does not relicense this font under Lucide's license above.
+
+`assets/splash-fog.svg` is independently authored procedural mist and droplets.
+`splash-fog.webp` is a rasterization of that SVG, used to avoid recalculating
+procedural filters on every startup.
+The user-provided reference photograph is not included in this repository.
