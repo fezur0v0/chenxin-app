@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>尘</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@500&display=swap');
+
+  :root{
+    --bg:        #1B1820;
+    --surface:   #241F29;
+    --bubble-ai: #2E2836;
+    --bubble-me: #E8A0A8;
+    --text-hi:   #F3ECEE;
+    --text-me:   #241F29;
+    --muted:     #8B8290;
+    --accent:    #F2A9C1;
+    --accent-dim:#5A3A44;
+    --online:    #8FD9A8;
+  }
+
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; background:var(--bg); }
+  body{
+    font-family:'Space Grotesk', -apple-system, sans-serif;
+    color:var(--text-hi);
+    display:flex; justify-content:center; align-items:center;
+    min-height:100vh;
+  }
+
+  .phone{
+    width:100%;
+    max-width:420px;
+    height:100vh;
+    max-height:900px;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    overflow:hidden;
+    border-radius:0;
+  }
+  @media (min-width:480px){
+    .phone{ height:860px; border-radius:36px; box-shadow:0 30px 80px -20px rgba(0,0,0,.6); border:1px solid #322c38; }
+  }
+
+  /* ── Header ─────────────────────────────────────── */
+  .header{
+    display:flex; align-items:center; gap:12px;
+    padding:20px 18px 16px;
+    background:var(--bg);
+    border-bottom:1px solid #2A2531;
+    flex-shrink:0;
+  }
+  .avatar{
+    width:44px; height:44px; border-radius:14px;
+    background:linear-gradient(155deg,#3A3140,#231F29);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+    flex-shrink:0;
+  }
+  .avatar svg{ width:26px; height:26px; }
+  .eye{ fill:var(--accent); transition: all .25s ease; }
+  .mouth{ stroke:var(--accent); stroke-width:2; fill:none; stroke-linecap:round; transition: all .25s ease;}
+
+  .who{ display:flex; flex-direction:column; gap:2px; }
+  .name{ font-weight:700; font-size:16px; letter-spacing:.2px; }
+  .status{ display:flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.08em;}
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--online); box-shadow:0 0 6px var(--online);}
+
+  /* ── Chat area ──────────────────────────────────── */
+  .chat{
+    flex:1;
+    overflow-y:auto;
+    padding:20px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .chat::-webkit-scrollbar{ width:0; }
+
+  .row{ display:flex; max-width:100%; }
+  .row.ai{ justify-content:flex-start; }
+  .row.me{ justify-content:flex-end; }
+
+  .bubble{
+    max-width:76%;
+    padding:11px 15px;
+    border-radius:18px;
+    font-size:14.5px;
+    line-height:1.5;
+    word-wrap:break-word;
+  }
+  .bubble.ai{
+    background:var(--bubble-ai);
+    color:var(--text-hi);
+    border-bottom-left-radius:5px;
+  }
+  .bubble.me{
+    background:var(--bubble-me);
+    color:var(--text-me);
+    border-bottom-right-radius:5px;
+    font-weight:500;
+  }
+
+  .expr-tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:9.5px;
+    color:var(--accent);
+    opacity:.55;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+    margin:2px 2px 0;
+  }
+
+  .typing{ display:flex; gap:4px; padding:4px 2px; }
+  .typing span{
+    width:6px; height:6px; border-radius:50%; background:var(--muted);
+    animation: bounce 1.2s infinite ease-in-out;
+  }
+  .typing span:nth-child(2){ animation-delay:.15s; }
+  .typing span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bounce{ 0%,60%,100%{ transform:translateY(0); opacity:.4;} 30%{ transform:translateY(-4px); opacity:1;} }
+
+  /* ── Input bar ──────────────────────────────────── */
+  .inputbar{
+    display:flex; align-items:center; gap:10px;
+    padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    background:var(--bg);
+    border-top:1px solid #2A2531;
+    flex-shrink:0;
+  }
+  .inputbar input{
+    flex:1;
+    background:var(--surface);
+    border:1px solid #35303C;
+    color:var(--text-hi);
+    border-radius:22px;
+    padding:12px 16px;
+    font-size:14.5px;
+    font-family:inherit;
+    outline:none;
+  }
+  .inputbar input::placeholder{ color:var(--muted); }
+  .inputbar input:focus{ border-color:var(--accent-dim); }
+
+  .send{
+    width:42px; height:42px; border-radius:50%;
+    background:var(--accent);
+    border:none;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    transition: transform .1s ease;
+  }
+  .send:active{ transform:scale(.92); }
+  .send svg{ width:18px; height:18px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="header">
+    <div class="avatar" id="avatar">
+      <svg viewBox="0 0 40 40" id="face">
+        <circle class="eye" id="eyeL" cx="12" cy="18" r="3.2"/>
+        <circle class="eye" id="eyeR" cx="28" cy="18" r="3.2"/>
+        <path class="mouth" id="mouth" d="M13 27 Q20 32 27 27"/>
+      </svg>
+    </div>
+    <div class="who">
+      <div class="name">尘</div>
+      <div class="status"><span class="dot"></span>在线</div>
+    </div>
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="row ai">
+      <div>
+        <div class="bubble ai">嗨，我在这儿呢，想聊点什么？</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="inputbar">
+    <input id="input" type="text" placeholder="跟尘说点什么…" autocomplete="off">
+    <button class="send" id="send" aria-label="发送">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#241F29" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12h14M13 6l6 6-6 6"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<script>
+const chat = document.getElementById('chat');
+const input = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const eyeL = document.getElementById('eyeL');
+const eyeR = document.getElementById('eyeR');
+const mouth = document.getElementById('mouth');
+
+// 表情 -> 头像小脸的简单形状映射
+const FACES = {
+  smile:     { mouth: "M13 26 Q20 33 27 26", eye: "circle" },
+  hart:      { mouth: "M13 27 Q20 32 27 27", eye: "circle" },
+  yes:       { mouth: "M13 26 Q20 33 27 26", eye: "circle" },
+  zzz:       { mouth: "M14 28 L26 28",       eye: "line"   },
+  close:     { mouth: "M14 28 L26 28",       eye: "line"   },
+  angry:     { mouth: "M13 30 Q20 24 27 30", eye: "circle" },
+  wenhao:    { mouth: "M17 29 Q20 25 23 29", eye: "circle" },
+  gantanhao: { mouth: "M19 24 L19 30",        eye: "circle" },
+  X:         { mouth: "M14 29 L26 29",       eye: "x"      },
+  glass:     { mouth: "M14 28 L26 28",       eye: "circle" },
+  default:   { mouth: "M13 27 Q20 32 27 27", eye: "circle" },
+};
+
+function setFace(expr){
+  const f = FACES[expr] || FACES.default;
+  mouth.setAttribute('d', f.mouth);
+  if (f.eye === 'line'){
+    eyeL.outerHTML = `<line class="mouth" id="eyeL" x1="9" y1="18" x2="15" y2="18"/>`;
+    eyeR.outerHTML = `<line class="mouth" id="eyeR" x1="25" y1="18" x2="31" y2="18"/>`;
+  } else {
+    // 复原成圆点（防止上一次是line/x）
+    const svg = document.getElementById('face');
+    if (!document.getElementById('eyeL').classList.contains('eye')){
+      document.getElementById('eyeL').remove();
+      document.getElementById('eyeR').remove();
+      const l = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      l.setAttribute("class","eye"); l.setAttribute("id","eyeL");
+      l.setAttribute("cx","12"); l.setAttribute("cy","18"); l.setAttribute("r","3.2");
+      const r = document.createElementNS("http://www.w3.org/2000/svg","circle");
+      r.setAttribute("class","eye"); r.setAttribute("id","eyeR");
+      r.setAttribute("cx","28"); r.setAttribute("cy","18"); r.setAttribute("r","3.2");
+      svg.insertBefore(l, mouth);
+      svg.insertBefore(r, mouth);
+    }
+  }
+}
+
+function addBubble(text, who, expr){
+  const row = document.createElement('div');
+  row.className = 'row ' + (who === 'me' ? 'me' : 'ai');
+  const wrap = document.createElement('div');
+  if (who === 'ai' && expr){
+    const tag = document.createElement('div');
+    tag.className = 'expr-tag';
+    tag.textContent = expr;
+    wrap.appendChild(tag);
+  }
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble ' + (who === 'me' ? 'me' : 'ai');
+  bubble.textContent = text;
+  wrap.appendChild(bubble);
+  row.appendChild(wrap);
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+  return row;
+}
+
+function addTyping(){
+  const row = document.createElement('div');
+  row.className = 'row ai';
+  row.id = 'typing-row';
+  row.innerHTML = `<div class="bubble ai"><div class="typing"><span></span><span></span><span></span></div></div>`;
+  chat.appendChild(row);
+  chat.scrollTop = chat.scrollHeight;
+}
+
+function removeTyping(){
+  const el = document.getElementById('typing-row');
+  if (el) el.remove();
+}
+
+async function send(){
+  const text = input.value.trim();
+  if (!text) return;
+  addBubble(text, 'me');
+  input.value = '';
+  addTyping();
+
+  try{
+    const resp = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({message: text})
+    });
+    const data = await resp.json();
+    removeTyping();
+    if (data.error){
+      addBubble('（出错了：' + data.error + '）', 'ai');
+      return;
+    }
+    addBubble(data.text, 'ai', data.expr);
+    setFace(data.expr);
+  } catch(e){
+    removeTyping();
+    addBubble('（连不上本地服务，检查一下app.py是不是还在跑）', 'ai');
+  }
+}
+
+sendBtn.addEventListener('click', send);
+input.addEventListener('keydown', e => { if (e.key === 'Enter') send(); });
+</script>
+
+</body>
+</html>
