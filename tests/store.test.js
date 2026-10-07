@@ -16,5 +16,5 @@ test('bad state falls back and stale selection recovers', () => {
 });
 test('empty messages ignored and exports contain no API credential field', () => {
  const s = createState(); assert.equal(addDraftMessage(s,'  '),null);
- const data = JSON.parse(exportData(s)); assert.equal(data.version,1); assert.ok(data.exportedAt); assert.equal('apiKey' in data.provider,false);
+ const data = JSON.parse(exportData(s)); assert.equal(data.version,2); assert.ok(data.exportedAt); assert.equal('apiKey' in data.provider,false);
 });
