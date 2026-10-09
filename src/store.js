@@ -25,9 +25,9 @@ export function normalizeState(s) {
  const sessions = s.sessions.map(x => {
    if (typeof x?.id !== 'string' || ids.has(x.id) || typeof x.title !== 'string' || !Array.isArray(x.messages)) throw new Error('会话数据损坏');
    ids.add(x.id);
-   return { id:x.id, title:text(x.title,'新的对话',80), created:Number.isFinite(x.created)?x.created:Date.now(), pinned:x.pinned===true,model:text(x.model,'',200), messages:x.messages.map(m=>{
+   return { id:x.id, title:text(x.title,'新的对话',80), created:Number.isFinite(x.created)?x.created:Date.now(), pinned:x.pinned===true,branchedFrom:text(x.branchedFrom,'',100),model:text(x.model,'',200), messages:x.messages.map(m=>{
      if (typeof m?.text !== 'string') throw new Error('消息数据损坏');
-     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments) };
+     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',reasoningSummary:text(m.reasoningSummary,'',30000),model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments) };
    }) };
  });
  const defaults = extras(), a = s.appearance || {}, h = s.home || {};
@@ -71,4 +71,17 @@ function normalizeExpressions(value,defaults) {
 export function orderedSessions(state,query='',oldest=false){
  const needle=query.trim().toLocaleLowerCase();
  return state.sessions.filter(s=>!needle||s.title.toLocaleLowerCase().includes(needle)||s.messages.some(m=>m.text.toLocaleLowerCase().includes(needle))).slice().sort((a,b)=>Number(b.pinned)-Number(a.pinned)||(oldest?1:-1)*((a.messages.at(-1)?.time||a.created)-(b.messages.at(-1)?.time||b.created)));
+}
+
+export function changeMessage(state,id,operation,value='') {
+ const session=state.sessions.find(s=>s.id===state.active),index=session?.messages.findIndex(m=>m.id===id);
+ if(index===undefined||index<0)throw new Error('消息不存在');
+ const message=session.messages[index];
+ if(['edit','rollback'].includes(operation)&&message.role!=='user')throw new Error('仅支持用户消息');
+ if(operation==='edit'){const next=value.trim();if(!next&&!message.attachments?.length)throw new Error('消息不能为空');message.text=next.slice(0,12000);}
+ else if(operation==='rollback')session.messages=session.messages.slice(0,index+1);
+ else if(operation==='delete')session.messages.splice(index,1);
+ else if(operation==='branch'){const branch={id:crypto.randomUUID(),title:(session.title+' · 分支').slice(0,80),created:Date.now(),pinned:false,model:session.model||'',branchedFrom:session.id,messages:structuredClone(session.messages.slice(0,index+1))};state.sessions.unshift(branch);state.active=branch.id;return branch;}
+ else throw new Error('未知操作');
+ return message;
 }

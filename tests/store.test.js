@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createState, loadState, saveState, newSession, addDraftMessage, exportData, orderedSessions, STORAGE_KEY } from '../src/store.js';
+import { createState, loadState, saveState, newSession, addDraftMessage, exportData, orderedSessions, changeMessage, normalizeState, STORAGE_KEY } from '../src/store.js';
 function storage() { const values = new Map(); return {getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}; }
 test('conversations remain independent and survive storage round trip', () => {
  const s = createState(), first = s.active, mem = storage();
@@ -39,4 +39,15 @@ test('pinned conversations sort before history, search message text and persist 
  assert.equal(orderedSessions(s)[0].title,'常见的聊天');assert.equal(orderedSessions(s,'看海')[0].id,newer.id);
  saveState(mem,s);assert.equal(loadState(mem).sessions.find(x=>x.title==='常见的聊天').pinned,true);
  s.sessions.find(x=>x.title==='常见的聊天').pinned=false;assert.equal(orderedSessions(s)[0].id,newer.id);assert.equal(orderedSessions(s,'',true)[0].created,100);
+});
+
+test('message edits, rollback and branches preserve attachments and isolate histories',()=>{
+ const s=createState(),original=s.sessions[0];const a=addDraftMessage(s,'起点',[{name:'photo',data:'data:image/png;base64,AAAA'}]);
+ const reply={id:'reply',role:'assistant',text:'回答',time:2,reasoningSummary:'服务提供的摘要',attachments:[]};original.messages.push(reply);const later=addDraftMessage(s,'之后');
+ assert.throws(()=>changeMessage(s,reply.id,'edit','改动'));assert.throws(()=>changeMessage(s,reply.id,'rollback'));
+ changeMessage(s,a.id,'edit','修改');assert.equal(a.attachments.length,1);
+ const branch=changeMessage(s,reply.id,'branch');assert.equal(original.messages.length,3);assert.equal(branch.messages.length,2);assert.equal(branch.branchedFrom,original.id);assert.equal(s.active,branch.id);
+ branch.messages[0].text='独立';assert.equal(original.messages[0].text,'修改');
+ const restored=normalizeState(JSON.parse(exportData(s)));assert.equal(restored.sessions[0].messages[1].reasoningSummary,'服务提供的摘要');assert.equal(restored.sessions[0].branchedFrom,original.id);
+ s.active=original.id;changeMessage(s,a.id,'rollback');assert.deepEqual(original.messages.map(m=>m.id),[a.id]);assert.equal(branch.messages.length,2);changeMessage(s,a.id,'delete');assert.equal(original.messages.length,0);assert.throws(()=>changeMessage(s,later.id,'delete'));
 });
