@@ -13,7 +13,7 @@ export function daysTogether(since, now = new Date()) {
 }
 function extras() {
  return { appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
- home: { since:localDate(), title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[] };
+ home: { since:localDate(), title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[]} };
 }
 export function createState() {
  const id = crypto.randomUUID();
@@ -25,9 +25,9 @@ export function normalizeState(s) {
  const sessions = s.sessions.map(x => {
    if (typeof x?.id !== 'string' || ids.has(x.id) || typeof x.title !== 'string' || !Array.isArray(x.messages)) throw new Error('会话数据损坏');
    ids.add(x.id);
-   return { id:x.id, title:text(x.title,'新的对话',80), created:Number.isFinite(x.created)?x.created:Date.now(), messages:x.messages.map(m=>{
+   return { id:x.id, title:text(x.title,'新的对话',80), created:Number.isFinite(x.created)?x.created:Date.now(), model:text(x.model,'',200), messages:x.messages.map(m=>{
      if (typeof m?.text !== 'string') throw new Error('消息数据损坏');
-     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local' };
+     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments) };
    }) };
  });
  const defaults = extras(), a = s.appearance || {}, h = s.home || {};
@@ -35,7 +35,7 @@ export function normalizeState(s) {
  const seen = new Set();
  const normalizedWidgets = widgets.filter(w=>!seen.has(w.type) && seen.add(w.type)).map(w=>({type:w.type,enabled:w.enabled !== false}));
  WIDGETS.forEach(type=>{if(!seen.has(type)) normalizedWidgets.push({type,enabled:true});});
- return {version:2, active:ids.has(s.active)?s.active:sessions[0].id, theme:s.theme==='dark'?'dark':'light', sessions,
+ return {version:2, expressions:normalizeExpressions(s.expressions,defaults.expressions), active:ids.has(s.active)?s.active:sessions[0].id, theme:s.theme==='dark'?'dark':'light', sessions,
  persona:{name:text(s.persona.name,'尘',40)||'尘',prompt:text(s.persona.prompt)},
  provider:{protocol:['openai','anthropic','gemini'].includes(s.provider.protocol)?s.provider.protocol:'openai',baseUrl:text(s.provider.baseUrl,'',2000),model:text(s.provider.model,'',200)},
  plugins:s.plugins.map(p=>{if(typeof p?.id!=='string'||typeof p.name!=='string'||typeof p.url!=='string')throw new Error('插件数据损坏');return {id:p.id,name:text(p.name,'',80),url:text(p.url,'',2000),type:p.type==='plugin'?'plugin':'mcp'};}),
@@ -49,7 +49,7 @@ export function normalizeState(s) {
 export function loadState(storage) { try { return normalizeState(JSON.parse(storage.getItem(STORAGE_KEY))); } catch { return createState(); } }
 export function saveState(storage,state) { storage.setItem(STORAGE_KEY,JSON.stringify(state)); }
 export function newSession(state) { const s={id:crypto.randomUUID(),title:'新的对话',created:Date.now(),messages:[]};state.sessions.unshift(s);state.active=s.id;return s; }
-export function addDraftMessage(state,value) { const s=state.sessions.find(x=>x.id===state.active), content=value.trim();if(!content)return null;const m={id:crypto.randomUUID(),role:'user',text:content,time:Date.now(),status:'local'};if(!s.messages.length)s.title=content.slice(0,18);s.messages.push(m);return m; }
+export function addDraftMessage(state,value,attachments=[]) { const s=state.sessions.find(x=>x.id===state.active), content=value.trim();const files=normalizeAttachments(attachments);if(!content&&!files.length)return null;const m={id:crypto.randomUUID(),role:'user',text:content,time:Date.now(),status:'local',attachments:files,model:s.model||state.provider.model||''};if(!s.messages.length)s.title=content.slice(0,18)||files[0].name;s.messages.push(m);return m; }
 export function isExpired(memory,now=Date.now()) { return memory.kind==='short' && Number.isFinite(memory.expires) && memory.expires <= now; }
 export function saveMemory(state,data) {
  const content=data.content.trim(); if(!content)throw new Error('请填写记忆内容');
@@ -58,3 +58,12 @@ export function saveMemory(state,data) {
  if(existing)state.memories[state.memories.indexOf(existing)]=item;else state.memories.unshift(item);return item;
 }
 export function exportData(state) { return JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2); }
+
+export function normalizeAttachments(items) {
+ return (Array.isArray(items)?items:[]).slice(0,6).filter(x=>typeof x?.name==='string').map(x=>({id:text(x.id,crypto.randomUUID(),100),name:text(x.name,'文件',180),size:Number.isFinite(x.size)?Math.max(0,x.size):0,type:text(x.type,'',100),data:image(x.data)}));
+}
+function normalizeExpressions(value,defaults) {
+ if(!value)return defaults;
+ const clean=(items,sticker)=>{const ids=new Set();return (Array.isArray(items)?items:[]).slice(0,200).filter(x=>typeof x?.id==='string'&&!ids.has(x.id)&&ids.add(x.id)).map(x=>({id:x.id,value:sticker?image(x.value):text(x.value,'',200),name:text(x.name,'表情包',80),favorite:x.favorite===true,used:Number.isFinite(x.used)?Math.max(0,x.used):0})).filter(x=>x.value.trim());};
+ return {kaomoji:clean(value.kaomoji,false),stickers:clean(value.stickers,true)};
+}

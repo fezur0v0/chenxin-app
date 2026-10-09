@@ -18,3 +18,17 @@ test('empty messages ignored and exports contain no API credential field', () =>
  const s = createState(); assert.equal(addDraftMessage(s,'  '),null);
  const data = JSON.parse(exportData(s)); assert.equal(data.version,2); assert.ok(data.exportedAt); assert.equal('apiKey' in data.provider,false);
 });
+test('attachment-only messages, model choice and expression collections survive backup round trip',()=>{
+ const s=createState(),mem=storage();s.sessions[0].model='chosen-model';
+ s.expressions.kaomoji=[{id:'custom',value:'˃ ˄ ˂̥̥',favorite:true,used:123}];
+ const image='data:image/png;base64,aGVsbG8=';s.expressions.stickers=[{id:'sticker',value:image,name:'喜欢的图',favorite:true,used:0}];
+ const message=addDraftMessage(s,'',[{id:'image',name:'图片',data:image,type:'image/png',size:5},{id:'file',name:'笔记.txt',type:'text/plain',size:10}]);
+ assert.equal(message.model,'chosen-model');assert.equal(message.text,'');assert.equal(message.attachments.length,2);
+ saveState(mem,JSON.parse(exportData(s)));const loaded=loadState(mem);
+ assert.equal(loaded.sessions[0].messages[0].attachments[0].data,image);assert.equal(loaded.sessions[0].model,'chosen-model');assert.equal(loaded.expressions.kaomoji[0].value,'˃ ˄ ˂̥̥');assert.equal(loaded.expressions.stickers[0].value,image);
+});
+test('unsafe imported attachment images and stickers cannot become executable sources',()=>{
+ const s=createState(),mem=storage();s.expressions.stickers=[{id:'bad',value:'javascript:alert(1)',favorite:true}];
+ addDraftMessage(s,'test',[{name:'unsafe',data:'data:image/svg+xml;base64,PHN2Zz4='}]);saveState(mem,s);const loaded=loadState(mem);
+ assert.equal(loaded.expressions.stickers.length,0);assert.equal(loaded.sessions[0].messages[0].attachments[0].data,'');
+});
