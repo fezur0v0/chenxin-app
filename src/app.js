@@ -1,3 +1,4 @@
+import { createHomeEditor } from './home-editor.js';
 import { finishSplash } from './splash.js';
 import { icon } from './icons.js';
 import { localDate, loadState, saveState, normalizeState, newSession, addDraftMessage, exportData, saveMemory, changeMessage } from './store.js';
@@ -12,6 +13,7 @@ const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-d
 let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
+const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,render,notify,compressImage});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -20,13 +22,13 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const activePage=page==='sessions'?'chat':page;
- app.innerHTML=`<div class="shell ${['chat','sessions'].includes(page)?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':''}">${page==='home'?home(state):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${['chat','sessions'].includes(page)?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}<span>${l}</span></button>`).join('')}</nav></div>`}</div>`;
+ app.innerHTML=`<div class="shell ${['chat','sessions'].includes(page)?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':''}">${page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${['chat','sessions'].includes(page)?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}<span>${l}</span></button>`).join('')}</nav></div>`}</div>`;
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
  const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();
 }
-function goto(next){if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);}
+function goto(next){homeEditor.exit();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
 function focusSettings(id){goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
@@ -75,7 +77,6 @@ function handleAction(e){
  else if(action==='accent'){state.appearance.accent=target.dataset.color;persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='clear-image'){const key=target.dataset.key;if(!['wallpaper','userAvatar','aiAvatar'].includes(key))return;state.appearance[key]='';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='mood'){state.home.mood=target.dataset.mood;persist();render();}
- else if(action==='move-widget'){const i=state.home.widgets.findIndex(w=>w.type===target.dataset.type),j=i+Number(target.dataset.direction);if(j<0||j>=state.home.widgets.length)return;[state.home.widgets[i],state.home.widgets[j]]=[state.home.widgets[j],state.home.widgets[i]];persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];persist();goto('chat');app.querySelector('[name=message]').focus();}
  else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;if(state.active===target.dataset.id){composeDraft='';chatUI.attachments=[];}state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
  else if(action==='delete-plugin'){if(!confirm('删除这项插件配置？'))return;state.plugins=state.plugins.filter(p=>p.id!==target.dataset.id);persist();render();}
@@ -93,8 +94,6 @@ app.addEventListener('submit',e=>{
  e.preventDefault();const form=e.target,data=Object.fromEntries(new FormData(form));
  if(form.getAttribute('id')==='compose'){if(!data.message.trim()&&!chatUI.attachments.length)return;const snapshot=structuredClone(state);addDraftMessage(state,data.message,chatUI.attachments);const ok=persist();if(!ok){state=snapshot;return;}composeDraft='';selection={start:0,end:0};chatUI.attachments=[];chatUI.tray='';render();app.querySelector('[name=message]').focus();if(ok)notify('已保存本机；模型未连接，这条消息没有发送。');}
  else if(form.getAttribute('id')==='persona-form'){if(!data.name.trim())return notify('请填写 AI 名字。');state.persona={name:data.name.trim().slice(0,40),prompt:data.prompt};saveNotice('角色已保存。');}
- else if(form.getAttribute('id')==='home-form'){if(!data.since)return notify('请选择开始日期。');state.home={...state.home,title:data.title.trim().slice(0,40)||'在一起的日子',since:data.since,userName:data.userName.trim().slice(0,40)||'我',subtitle:data.subtitle.slice(0,200)};saveNotice('纪念日已保存。');}
- else if(form.getAttribute('id')==='note-form'){state.home.note=data.note.slice(0,500);saveNotice('便签已保存。');}
  else if(form.getAttribute('id')==='provider-form'){if(!validEndpoint(data.baseUrl.trim()))return notify('请使用不含密钥、查询参数或账号信息的 HTTPS 地址。');state.provider={protocol:data.protocol,baseUrl:data.baseUrl.trim(),model:data.model.trim()};saveNotice('模型配置已保存，尚未连接服务。');}
  else if(form.getAttribute('id')==='plugin-form'){if(!data.name.trim()||!data.url.trim())return notify('请填写名称和服务地址。');if(!validEndpoint(data.url.trim()))return notify('请使用不含密钥、查询参数或账号信息的 HTTPS 地址。');const p={id:data.id||crypto.randomUUID(),name:data.name.trim().slice(0,80),type:data.type,url:data.url.trim()},i=state.plugins.findIndex(x=>x.id===p.id);if(i<0)state.plugins.push(p);else state.plugins[i]=p;saveNotice('配置已保存，插件运行尚未接入。');render();}
 });
@@ -125,7 +124,6 @@ app.addEventListener('change',async e=>{
   return;
  }
  if(['accent','blur','opacity'].includes(t.name)&&t.closest('#appearance-settings'))persist();
- if(t.dataset.widget){const w=state.home.widgets.find(w=>w.type===t.dataset.widget);w.enabled=t.checked;persist();}
  if(t.dataset.image && t.files[0]){
    const key=t.dataset.image,previous=state.appearance[key];
    try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
