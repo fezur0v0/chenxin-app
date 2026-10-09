@@ -23,7 +23,7 @@ function render(){
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
- const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;resizeComposer();}updateViewport();
+ const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();
 }
 function goto(next){if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);}
 function focusSettings(id){goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
@@ -42,10 +42,11 @@ function handleAction(e){
  if(action==='rename-session'){const s=state.sessions.find(x=>x.id===target.dataset.id);if(!s)return;const title=prompt('给这段对话起个名字',s.title);if(title?.trim()){s.title=title.trim().slice(0,80);persist();render();}return;}
 
  if(action?.startsWith('toggle-')){rememberSelection();const tray=action.slice(7);chatUI.tray=chatUI.tray===tray?'':tray;render();return;}
- if(action==='close-tray'){chatUI.tray='';render();return;}
+ if(action==='close-tray'){closeTray();return;}
  if(action==='expression-tab'){chatUI.tab=target.dataset.tab;render();return;}
  if(action==='expression-filter'){chatUI.filter=target.dataset.filter;render();return;}
- if(action==='pick-image'||action==='pick-file'||action==='add-sticker'){app.querySelector(action==='pick-image'?'#chat-images':action==='pick-file'?'#chat-files':'#sticker-image').click();return;}
+ if(action==='open-mcp'){focusSettings('plugins-settings');return;}
+ if(action==='pick-camera'||action==='pick-image'||action==='pick-file'||action==='add-sticker'){app.querySelector(action==='pick-camera'?'#chat-camera':action==='pick-image'?'#chat-images':action==='pick-file'?'#chat-files':'#sticker-image').click();return;}
  if(action==='remove-attachment'){chatUI.attachments=chatUI.attachments.filter(a=>a.id!==target.dataset.id);render();return;}
  if(action==='add-kaomoji'||action==='edit-kaomoji'){const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form"><div class="dialog-heading"><h2>${item?'编辑':'收藏'}颜文字</h2><button type="button" data-close-expression aria-label="关闭">${icon('close')}</button></div><input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label><button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
  if(['use-expression','favorite-expression','delete-expression'].includes(action)){
@@ -57,6 +58,7 @@ function handleAction(e){
   else{if(chatUI.attachments.length>=6)return notify('一次最多添加 6 项附件。');chatUI.attachments.push({id:crypto.randomUUID(),name:item.name,size:0,type:'image/jpeg',data:item.value});}
   item.used=Date.now();
  }
+ if(action==='use-expression')chatUI.tray='';
  persist();const scroll=app.querySelector('.expression-grid')?.scrollTop||0;render();const grid=app.querySelector('.expression-grid');if(grid)grid.scrollTop=scroll;
  if(action==='use-expression'&&chatUI.tab==='kaomoji'){const input=app.querySelector('[name=message]');input.focus({preventScroll:true});input.setSelectionRange(selection.start,selection.end);}
  return;
@@ -103,7 +105,7 @@ app.addEventListener('input',e=>{
 });
 app.addEventListener('change',async e=>{
  const t=e.target;
- if(['chat-images','chat-files','sticker-image'].includes(t.id)&&t.files?.length){
+ if(['chat-camera','chat-images','chat-files','sticker-image'].includes(t.id)&&t.files?.length){
   t.disabled=true;
   try{
    for(const file of t.files){
@@ -113,7 +115,7 @@ app.addEventListener('change',async e=>{
     }else{
      if(chatUI.attachments.length>=6)throw new Error('一次最多添加 6 项附件。');
      if(file.size>10*1024*1024)throw new Error('单个附件不能超过 10MB。');
-     const data=t.id==='chat-images'?await compressImage(file,1024):'';
+     const data=['chat-camera','chat-images'].includes(t.id)?await compressImage(file,1024):'';
      chatUI.attachments.push({id:crypto.randomUUID(),name:file.name,size:file.size,type:file.type,data});
     }
    }
@@ -147,16 +149,24 @@ render();
 finishSplash().catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});
 
 function rememberSelection(){const input=app.querySelector('[name=message]');if(input)selection={start:input.selectionStart,end:input.selectionEnd};}
-function resizeComposer(){const input=app.querySelector('[name=message]');if(!input)return;input.style.height='auto';const max=parseFloat(getComputedStyle(input).lineHeight)*6;input.style.height=`${Math.min(input.scrollHeight,max)}px`;input.style.overflowY=input.scrollHeight>max?'auto':'hidden';}
+function resizeComposer(){const input=app.querySelector('[name=message]');if(!input)return;input.style.height='auto';const max=parseFloat(getComputedStyle(input).lineHeight)*6;input.style.height=`${Math.min(input.scrollHeight,max)}px`;input.style.overflowY=input.scrollHeight>max?'auto':'hidden';const footer=app.querySelector('.composer-wrap');if(footer)app.querySelector('.chat-view').style.setProperty('--composer-height',`${footer.getBoundingClientRect().height}px`);}
 function updateViewport(){const shell=app.querySelector('.immersive');if(!shell)return;const vv=window.visualViewport;shell.style.height=`${vv?vv.height:window.innerHeight}px`;shell.style.top=`${vv?vv.offsetTop:0}px`;}
 window.visualViewport?.addEventListener('resize',updateViewport);window.visualViewport?.addEventListener('scroll',updateViewport);window.addEventListener('resize',()=>{updateViewport();resizeComposer();});
 app.addEventListener('focusout',e=>{if(e.target.name==='message')rememberSelection();});
 app.addEventListener('keyup',e=>{if(e.target.name==='message')rememberSelection();});
 app.addEventListener('click',e=>{if(e.target.name==='message')rememberSelection();});
-app.addEventListener('keydown',e=>{if(e.key==='Escape'&&chatUI.tray){chatUI.tray='';render();}});
+app.addEventListener('keydown',e=>{if(e.key==='Escape'&&chatUI.tray){e.preventDefault();closeTray();}});
 expressionDialog.addEventListener('click',e=>{if(e.target.closest('[data-close-expression]'))expressionDialog.close();});
 expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.target,value=form.elements.value.value.trim(),id=form.elements.id.value;if(!value)return;
  const snapshot=structuredClone(state.expressions),item=state.expressions.kaomoji.find(x=>x.id===id);
  if(item)item.value=value;else{if(state.expressions.kaomoji.length>=200)return notify('颜文字最多保存 200 项。');state.expressions.kaomoji.unshift({id:crypto.randomUUID(),value,favorite:true,used:0});}
  if(!persist()){state.expressions=snapshot;return;}expressionDialog.close();render();notify('颜文字已保存。');
 });
+
+function syncTray(){const panel=app.querySelector('.chat-tray');if(!panel)return;for(const el of app.querySelectorAll('.chat-header,.messages,.composer-wrap'))el.inert=true;panel.focus({preventScroll:true});}
+function closeTray(){const previous=chatUI.tray;chatUI.tray='';render();app.querySelector(`[data-action="toggle-${previous}"]`)?.focus({preventScroll:true});}
+app.addEventListener('keydown',e=>{const panel=app.querySelector('.chat-tray');if(!panel||e.key!=='Tab')return;const nodes=[...panel.querySelectorAll('button:not(:disabled),input,textarea')];const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}});
+let dragStart=null;
+app.addEventListener('pointerdown',e=>{const handle=e.target.closest('.tray-handle');if(!handle)return;dragStart={y:e.clientY,id:e.pointerId};handle.setPointerCapture(e.pointerId);});
+app.addEventListener('pointerup',e=>{if(!dragStart||e.pointerId!==dragStart.id)return;const delta=e.clientY-dragStart.y;dragStart=null;if(delta>55)closeTray();});
+app.addEventListener('pointercancel',()=>{dragStart=null;});
