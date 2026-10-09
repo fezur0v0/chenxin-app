@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createState, loadState, saveState, newSession, addDraftMessage, exportData, STORAGE_KEY } from '../src/store.js';
+import { createState, loadState, saveState, newSession, addDraftMessage, exportData, orderedSessions, STORAGE_KEY } from '../src/store.js';
 function storage() { const values = new Map(); return {getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)}; }
 test('conversations remain independent and survive storage round trip', () => {
  const s = createState(), first = s.active, mem = storage();
@@ -31,4 +31,12 @@ test('unsafe imported attachment images and stickers cannot become executable so
  const s=createState(),mem=storage();s.expressions.stickers=[{id:'bad',value:'javascript:alert(1)',favorite:true}];
  addDraftMessage(s,'test',[{name:'unsafe',data:'data:image/svg+xml;base64,PHN2Zz4='}]);saveState(mem,s);const loaded=loadState(mem);
  assert.equal(loaded.expressions.stickers.length,0);assert.equal(loaded.sessions[0].messages[0].attachments[0].data,'');
+});
+
+test('pinned conversations sort before history, search message text and persist through reload',()=>{
+ const s=createState(),mem=storage();s.sessions[0].created=100;s.sessions[0].pinned=true;s.sessions[0].title='常见的聊天';
+ const newer=newSession(s);newer.created=200;addDraftMessage(s,'想去看海');newer.messages[0].time=200;
+ assert.equal(orderedSessions(s)[0].title,'常见的聊天');assert.equal(orderedSessions(s,'看海')[0].id,newer.id);
+ saveState(mem,s);assert.equal(loadState(mem).sessions.find(x=>x.title==='常见的聊天').pinned,true);
+ s.sessions.find(x=>x.title==='常见的聊天').pinned=false;assert.equal(orderedSessions(s)[0].id,newer.id);assert.equal(orderedSessions(s,'',true)[0].created,100);
 });

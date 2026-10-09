@@ -1,11 +1,13 @@
 import { finishSplash } from './splash.js';
 import { icon } from './icons.js';
 import { localDate, loadState, saveState, normalizeState, newSession, addDraftMessage, exportData, saveMemory } from './store.js';
-import { home, chat, sessions, settings, memory, memoryEditor, escape, button } from './views.js';
+import { home, chat, sessions, settings, memory, memoryEditor, sidebar, escape, button } from './views.js';
 let storage;try{storage=localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
 let state=loadState(storage), page='home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
 const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['settings','settings','设置']];
 const opened=new Set();
+let sessionSearch='',oldestFirst=false;
+const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
 let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
@@ -17,21 +19,28 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const activePage=page==='sessions'?'chat':page;
- app.innerHTML=`<div class="shell ${page==='chat'?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):`<div class="page-content ${page==='home'?'home-page':''}">${page==='home'?home(state):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${page==='chat'?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}<span>${l}</span></button>`).join('')}</nav></div>`}</div>`;
+ app.innerHTML=`<div class="shell ${['chat','sessions'].includes(page)?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':''}">${page==='home'?home(state):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${['chat','sessions'].includes(page)?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}<span>${l}</span></button>`).join('')}</nav></div>`}</div>`;
+ if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
  const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;resizeComposer();}updateViewport();
 }
-function goto(next){chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);}
+function goto(next){if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);}
 function focusSettings(id){goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
 function exportBackup(){const url=URL.createObjectURL(new Blob([exportData(state)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`chenxin-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
 function validEndpoint(value){if(!value)return true;try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash;}catch{return false;}}
-app.addEventListener('click',e=>{
+function handleAction(e){
  const target=e.target.closest('button');if(!target)return;
- if(target.dataset.open){state.active=target.dataset.open;composeDraft='';chatUI.attachments=[];persist();goto('chat');return;}
+ if(target.dataset.open){if(state.active!==target.dataset.open){composeDraft='';chatUI.attachments=[];}state.active=target.dataset.open;persist();goto('chat');return;}
  const action=target.dataset.action;
+ if(action==='open-sidebar'){rememberSelection();chatUI.tray='';render();sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.showModal();sidebarDialog.querySelector('[data-action=close-sidebar]').focus();return;}
+ if(action==='close-sidebar'){sidebarDialog.close();return;}
+ if(action==='sort-sessions'){oldestFirst=!oldestFirst;render();return;}
+ if(action==='pin-session'){const s=state.sessions.find(x=>x.id===target.dataset.id);if(!s)return;s.pinned=!s.pinned;persist();render();return;}
+ if(action==='rename-session'){const s=state.sessions.find(x=>x.id===target.dataset.id);if(!s)return;const title=prompt('给这段对话起个名字',s.title);if(title?.trim()){s.title=title.trim().slice(0,80);persist();render();}return;}
+
  if(action?.startsWith('toggle-')){rememberSelection();const tray=action.slice(7);chatUI.tray=chatUI.tray===tray?'':tray;render();return;}
  if(action==='close-tray'){chatUI.tray='';render();return;}
  if(action==='expression-tab'){chatUI.tab=target.dataset.tab;render();return;}
@@ -64,7 +73,7 @@ app.addEventListener('click',e=>{
  else if(action==='mood'){state.home.mood=target.dataset.mood;persist();render();}
  else if(action==='move-widget'){const i=state.home.widgets.findIndex(w=>w.type===target.dataset.type),j=i+Number(target.dataset.direction);if(j<0||j>=state.home.widgets.length)return;[state.home.widgets[i],state.home.widgets[j]]=[state.home.widgets[j],state.home.widgets[i]];persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];persist();goto('chat');app.querySelector('[name=message]').focus();}
- else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
+ else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;if(state.active===target.dataset.id){composeDraft='';chatUI.attachments=[];}state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
  else if(action==='delete-plugin'){if(!confirm('删除这项插件配置？'))return;state.plugins=state.plugins.filter(p=>p.id!==target.dataset.id);persist();render();}
  else if(action==='edit-plugin'){const p=state.plugins.find(x=>x.id===target.dataset.id),form=app.querySelector('#plugin-form');for(const key of ['id','name','url','type'])form.elements[key].value=p[key];document.querySelector('#plugin-form-title').textContent='编辑配置';form.scrollIntoView({behavior:'smooth'});form.elements.name.focus();}
  else if(action==='new-memory')showMemoryEditor();
@@ -73,7 +82,9 @@ app.addEventListener('click',e=>{
  else if(action==='delete-memory'){if(!confirm('删除这条记忆？删除后无法恢复。'))return;state.memories=state.memories.filter(m=>m.id!==target.dataset.id);persist();render();}
  else if(action==='remember'){const s=state.sessions.find(x=>x.id===state.active),m=s.messages.find(x=>x.id===target.dataset.id);showMemoryEditor({content:m.text||m.attachments?.map(a=>a.name).join('、')||'',title:'',kind:'short'},s.title);}
  else if(action==='export')exportBackup();
-});
+}
+app.addEventListener('click',handleAction);
+sidebarDialog.addEventListener('click',e=>{if(e.target===sidebarDialog){const r=sidebarDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)sidebarDialog.close();}else handleAction(e);});
 app.addEventListener('submit',e=>{
  e.preventDefault();const form=e.target,data=Object.fromEntries(new FormData(form));
  if(form.getAttribute('id')==='compose'){if(!data.message.trim()&&!chatUI.attachments.length)return;const snapshot=structuredClone(state);addDraftMessage(state,data.message,chatUI.attachments);const ok=persist();if(!ok){state=snapshot;return;}composeDraft='';selection={start:0,end:0};chatUI.attachments=[];chatUI.tray='';render();app.querySelector('[name=message]').focus();if(ok)notify('已保存本机；模型未连接，这条消息没有发送。');}
@@ -86,6 +97,7 @@ app.addEventListener('submit',e=>{
 app.addEventListener('input',e=>{
  const t=e.target;
  if(t.name==='message'){composeDraft=t.value;selection={start:t.selectionStart,end:t.selectionEnd};resizeComposer();}
+ if(t.id==='session-search'){const pos=t.selectionStart;sessionSearch=t.value;render();const n=app.querySelector('#session-search');n.focus();try{n.setSelectionRange(pos,pos);}catch{}}
  if(t.id==='memory-search'){const pos=t.selectionStart;memorySearch=t.value;render();const n=app.querySelector('#memory-search');n.focus();try{n.setSelectionRange(pos,pos);}catch{}}
  if(['accent','blur','opacity'].includes(t.name)&&t.closest('#appearance-settings')){state.appearance[t.name]=t.name==='accent'?t.value:Number(t.value);applyAppearance();const output=document.querySelector(`#${t.name}-output`);if(output)output.textContent=t.name==='opacity'?`${100-state.appearance.opacity}%`:`${state.appearance.blur}px`;}
 });
