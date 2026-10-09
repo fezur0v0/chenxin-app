@@ -7,6 +7,7 @@ let state=loadState(storage), page='home', memoryFilter='all', memorySearch='', 
 const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['settings','settings','设置']];
 const opened=new Set();
 let sessionSearch='',oldestFirst=false;
+let visibleTray='',closingTray=false,dragStart=null;
 const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
 let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
@@ -163,10 +164,12 @@ expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.t
  if(!persist()){state.expressions=snapshot;return;}expressionDialog.close();render();notify('颜文字已保存。');
 });
 
-function syncTray(){const panel=app.querySelector('.chat-tray');if(!panel)return;for(const el of app.querySelectorAll('.chat-header,.messages,.composer-wrap'))el.inert=true;panel.focus({preventScroll:true});}
-function closeTray(){const previous=chatUI.tray;chatUI.tray='';render();app.querySelector(`[data-action="toggle-${previous}"]`)?.focus({preventScroll:true});}
+const trayMotion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
+function syncTray(){const panel=app.querySelector('.chat-tray');if(!panel){visibleTray='';closingTray=false;return;}for(const el of app.querySelectorAll('.chat-header,.messages,.composer-wrap'))el.inert=true;panel.focus({preventScroll:true});if(visibleTray!==chatUI.tray&&trayMotion())panel.animate([{transform:'translateY(100%)'},{transform:'translateY(0)'}],{duration:280,easing:'cubic-bezier(.2,.8,.2,1)'});visibleTray=chatUI.tray;}
+async function closeTray(){if(closingTray)return;const previous=chatUI.tray,panel=app.querySelector('.chat-tray');closingTray=true;if(panel&&trayMotion()){const from=panel.style.transform||'translateY(0)';await panel.animate([{transform:from},{transform:'translateY(100%)'}],{duration:200,easing:'ease-in',fill:'forwards'}).finished.catch(()=>{});}if(panel&&app.querySelector('.chat-tray')!==panel){closingTray=false;return;}chatUI.tray='';render();app.querySelector(`[data-action="toggle-${previous}"]`)?.focus({preventScroll:true});}
 app.addEventListener('keydown',e=>{const panel=app.querySelector('.chat-tray');if(!panel||e.key!=='Tab')return;const nodes=[...panel.querySelectorAll('button:not(:disabled),input,textarea')];const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}});
-let dragStart=null;
-app.addEventListener('pointerdown',e=>{const handle=e.target.closest('.tray-handle');if(!handle)return;dragStart={y:e.clientY,id:e.pointerId};handle.setPointerCapture(e.pointerId);});
-app.addEventListener('pointerup',e=>{if(!dragStart||e.pointerId!==dragStart.id)return;const delta=e.clientY-dragStart.y;dragStart=null;if(delta>55)closeTray();});
-app.addEventListener('pointercancel',()=>{dragStart=null;});
+function resetTrayDrag(panel){if(!panel)return;const from=panel.style.transform;panel.style.transform='';if(from&&trayMotion())panel.animate([{transform:from},{transform:'translateY(0)'}],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});}
+app.addEventListener('pointerdown',e=>{const handle=e.target.closest('.tray-handle');if(!handle||closingTray)return;const panel=handle.closest('.chat-tray');panel.getAnimations().forEach(a=>a.cancel());dragStart={y:e.clientY,id:e.pointerId,panel};handle.setPointerCapture(e.pointerId);});
+app.addEventListener('pointermove',e=>{if(!dragStart||e.pointerId!==dragStart.id)return;const delta=e.clientY-dragStart.y;dragStart.panel.style.transform=`translateY(${delta<0?Math.max(-32,delta*.2):delta}px)`;});
+app.addEventListener('pointerup',e=>{if(!dragStart||e.pointerId!==dragStart.id)return;const {y,panel}=dragStart;dragStart=null;if(e.clientY-y>70)closeTray();else resetTrayDrag(panel);});
+app.addEventListener('pointercancel',()=>{resetTrayDrag(dragStart?.panel);dragStart=null;});
