@@ -77,3 +77,18 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 .thought-bubble>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;max-width:100%}
 @supports (transition-behavior:allow-discrete){dialog{opacity:0;transition:opacity 160ms ease-out,display 160ms allow-discrete,overlay 160ms allow-discrete}dialog[open]{opacity:1}dialog::backdrop{opacity:0;transition:opacity 160ms,display 160ms allow-discrete,overlay 160ms allow-discrete}dialog[open]::backdrop{opacity:1}}
 @media(prefers-reduced-motion:reduce){dialog,dialog::backdrop{transition:none!important}}
+
+/* Widget content actions stay separate from home layout editing. */
+.home-context-menu{position:fixed;inset:auto;margin:0;width:220px;max-width:calc(100vw - 24px);padding:5px 0;border:1px solid var(--line);border-radius:22px;color:var(--ink);background:rgb(var(--glass-tint) / .94);box-shadow:0 12px 40px rgb(var(--tint) / .2);overflow:hidden}
+.home-context-menu::backdrop{background:rgb(20 27 40 / .12)}
+.home-context-menu button{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:12px 18px;text-align:left;font-size:15px}
+.home-context-menu button svg{width:21px;height:21px;flex-shrink:0}
+.home-context-menu button+button{border-top:1px solid var(--line)}
+.home-context-menu button:hover,.home-context-menu button:focus-visible{background:rgb(var(--tint) / .1)}
+.home-context-menu button:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.home-editing .widget-selected{outline:2px solid var(--accent)}
+.home-editing .widget-remove{width:44px;height:44px;top:-12px;left:-12px}
+.home-editing .widget-remove svg{width:18px;height:18px}
+.home-editing .widget-move{gap:8px;padding:3px;bottom:5px;right:5px}
+.home-editing .widget-move button{width:44px;height:44px}
+@media(prefers-reduced-motion:no-preference){.home-context-menu[open]{animation:widget-menu-arrive 160ms ease-out}@keyframes widget-menu-arrive{from{opacity:0;transform:translateY(4px) scale(.98)}to{opacity:1;transform:none}}}

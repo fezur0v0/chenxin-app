@@ -38,7 +38,7 @@ test('invalid import is rejected instead of replacing data silently',()=>{
 });
 
 test('home editor fields survive backup and old homes receive safe defaults',()=>{
- const s=createState();Object.assign(s.home,{userBubble:'喵…',aiBubble:'我在。',widgetTitles:{note:'便笺'},showWeekday:false,memoryId:'saved'});
- const loaded=normalizeState(JSON.parse(JSON.stringify(s)));assert.equal(loaded.home.userBubble,'喵…');assert.equal(loaded.home.aiBubble,'我在。');assert.equal(loaded.home.widgetTitles.note,'便笺');assert.equal(loaded.home.showWeekday,false);assert.equal(loaded.home.memoryId,'saved');
- delete s.home.userBubble;delete s.home.widgetTitles;assert.equal(normalizeState(s).home.userBubble,'喵……');s.home.aiBubble='x'.repeat(100);assert.equal(normalizeState(s).home.aiBubble.length,40);
+ const s=createState();Object.assign(s.home,{anniversaryVisible:false,userBubble:'喵…',aiBubble:'我在。',widgetTitles:{note:'便笺'},showWeekday:false,memoryId:'saved'});
+ const loaded=normalizeState(JSON.parse(JSON.stringify(s)));assert.equal(loaded.home.anniversaryVisible,false);assert.equal(loaded.home.userBubble,'喵…');assert.equal(loaded.home.aiBubble,'我在。');assert.equal(loaded.home.widgetTitles.note,'便笺');assert.equal(loaded.home.showWeekday,false);assert.equal(loaded.home.memoryId,'saved');
+ delete s.home.anniversaryVisible;assert.equal(normalizeState(s).home.anniversaryVisible,true);delete s.home.userBubble;delete s.home.widgetTitles;assert.equal(normalizeState(s).home.userBubble,'喵……');s.home.aiBubble='x'.repeat(100);assert.equal(normalizeState(s).home.aiBubble.length,40);
 });
