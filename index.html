@@ -28,6 +28,9 @@
       if(typeof wallpaper==='string' && wallpaper.length<1200000 && /^data:image\/(jpeg|png|webp);base64,[a-z\d+/=]+$/i.test(wallpaper))root.style.setProperty('--wall-image','url("'+wallpaper+'")');
     } catch {}
   </script>
+  <link rel="preload" href="./assets/fonts/cormorant-garamond-latin-500-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/fonts.css">
+  <link rel="stylesheet" href="./src/fonts-cn.css">
   <link rel="stylesheet" href="./src/style.css">
   <link rel="stylesheet" href="./src/splash.css">
 </head>

@@ -55,3 +55,41 @@ The application does not relicense this font under Lucide's license above.
 `splash-fog.webp` is a rasterization of that SVG, used to avoid recalculating
 procedural filters on every startup.
 The user-provided reference photograph is not included in this repository.
+
+---
+
+## Cormorant Garamond
+
+`assets/fonts/cormorant-garamond-latin-*.woff2` are unmodified Latin subsets
+from `@fontsource/cormorant-garamond` version 5.3.0.
+
+Copyright 2015 The Cormorant Project Authors
+(https://github.com/CatharsisFonts/Cormorant).
+
+Licensed under the SIL Open Font License 1.1. The complete copyright and
+license are included in `assets/fonts/Cormorant-Garamond-OFL.txt`.
+
+Upstream: https://github.com/CatharsisFonts/Cormorant
+Distribution: https://www.npmjs.com/package/@fontsource/cormorant-garamond
+
+Tidal Echo's `web/index.html` at commit
+`860e5de364de292093dba5571ee6427cdbda060e` identifies Cormorant Garamond
+as its English font and weight 500 for the anniversary digits. We use that
+font independently; no Tidal Echo source code or personal assets were copied.
+
+---
+
+## Noto Serif SC (思源宋体)
+
+`assets/fonts/noto-serif-sc/*.woff2` are unmodified Unicode subsets from
+`@fontsource-variable/noto-serif-sc` version 5.3.1.
+
+Copyright: Google Inc. Licensed under the SIL Open Font License 1.1.
+The complete distribution notice and license are included in
+`assets/fonts/noto-serif-sc/OFL.txt`.
+
+These variable fonts cover weights 200–900. The original Unicode ranges
+are preserved so browsers fetch only subsets used on a page.
+
+Upstream: https://github.com/notofonts/noto-cjk
+Distribution: https://www.npmjs.com/package/@fontsource-variable/noto-serif-sc
