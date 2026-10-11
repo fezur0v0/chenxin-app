@@ -14,7 +14,7 @@ const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-d
 let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
-const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,render,notify,compressImage,openApp:goto});
+const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,renderHome,notify,compressImage,openApp:goto});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -28,6 +28,25 @@ function render(){
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
  const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();
+}
+// Keep the wallpaper, dock and scroll container mounted during desktop updates.
+function renderHome(){
+ const desktop=app.querySelector('.home-desktop');if(!desktop)return;
+ const focusedDot=document.activeElement?.closest('.home-page-dots button')?.dataset.page;
+ const template=document.createElement('template');template.innerHTML=home(state,homeEditor.ui);
+ const next=template.content.firstElementChild,currentPage=desktop.querySelector('.home-desktop-page'),nextPage=next.querySelector('.home-desktop-page');
+ currentPage.replaceChildren(...nextPage.childNodes);
+ currentPage.dataset.homePage=nextPage.dataset.homePage;
+ currentPage.setAttribute('aria-label',nextPage.getAttribute('aria-label'));
+ const dots=desktop.querySelector('.home-page-dots');dots.replaceChildren(...next.querySelector('.home-page-dots').childNodes);
+ if(desktop.classList.contains('home-editing')!==homeEditor.ui.editing){
+  desktop.classList.toggle('home-editing',homeEditor.ui.editing);
+  desktop.querySelector('.home-edit-toolbar')?.remove();desktop.querySelector('.home-edit-help')?.remove();
+  if(homeEditor.ui.editing)currentPage.before(next.querySelector('.home-edit-toolbar'),next.querySelector('.home-edit-help'));
+ }else{
+  const addPage=desktop.querySelector('[data-home-action=add-page]');if(addPage)addPage.disabled=state.home.pages.length>=12;
+ }
+ if(focusedDot!==undefined)dots.querySelector(`[data-page="${focusedDot}"]`)?.focus({preventScroll:true});
 }
 function goto(next){homeEditor.exit();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next))app.querySelector('.desktop-app-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
 function focusSettings(id){if(id==='appearance-settings'){goto('app-appearance');return;}goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}

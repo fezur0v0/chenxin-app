@@ -5,7 +5,7 @@ import { avatar, escape, field, widgetLabels } from './views.js';
 import { icon } from './icons.js';
 import { daysTogether, isExpired, localDate } from './store.js';
 
-export function createHomeEditor({app,getState,setState,persist,render,notify,compressImage,openApp}) {
+export function createHomeEditor({app,getState,setState,persist,renderHome,notify,compressImage,openApp}) {
  const ui={editing:false,page:0,dragPages:null};
  const dialog=document.createElement('dialog');dialog.className='glass home-editor-dialog';dialog.setAttribute('aria-label','编辑主页小组件');document.body.append(dialog);
  let draft=null,type='',press=null,ignoreClickUntil=0,held=false,lastDate=localDate(),uploads=0;
@@ -28,7 +28,7 @@ export function createHomeEditor({app,getState,setState,persist,render,notify,co
  menu.addEventListener('keydown',e=>{const items=[...menu.querySelectorAll('button')],i=items.indexOf(document.activeElement);if(['ArrowDown','ArrowUp','Home','End'].includes(e.key)){e.preventDefault();items[e.key==='Home'?0:e.key==='End'?items.length-1:(i+(e.key==='ArrowDown'?1:-1)+items.length)%items.length].focus();}});
  window.addEventListener('resize',closeMenu);window.visualViewport?.addEventListener('resize',closeMenu);
  const motion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
- function refresh(){ui.page=Math.max(0,Math.min(ui.page,getState().home.pages.length-1));const y=app.querySelector('.home-page')?.scrollTop||0;render();const page=app.querySelector('.home-page');if(page)page.scrollTop=y;}
+ function refresh(){ui.page=Math.max(0,Math.min(ui.page,getState().home.pages.length-1));const y=app.querySelector('.home-page')?.scrollTop||0;renderHome();const page=app.querySelector('.home-page');if(page)page.scrollTop=y;}
  function report(message){const el=dialog.querySelector('.home-editor-error');if(el){el.hidden=false;el.textContent=message;}else notify(message);}
  function commit(change){const before=structuredClone(getState());change(getState());if(!persist()){setState(before);if(dialog.open)report('保存失败，本机存储空间可能不足。当前修改尚未保存。');return false;}return true;}
  function begin(){closeMenu();if(ui.editing)return;ui.editing=true;refresh();if(motion())app.querySelectorAll('.home-widget').forEach(el=>el.animate([{transform:'rotate(-.5deg)'},{transform:'rotate(.5deg)'},{transform:'rotate(0)'}],{duration:260,iterations:2}));}
@@ -73,7 +73,7 @@ export function createHomeEditor({app,getState,setState,persist,render,notify,co
  let gesture=null,drag=null,edgeTimer=null,edgePage=null,consumeTouchEnd=false;
  app.addEventListener('touchmove',e=>{const t=e.touches[0];if(!gesture||!t)return;const dx=Math.abs(t.clientX-gesture.x),dy=Math.abs(t.clientY-gesture.y);if((ui.editing&&gesture.type||dx>8&&dx>dy*1.2)&&e.cancelable)e.preventDefault();},{passive:false});
  app.addEventListener('touchend',e=>{if(consumeTouchEnd){if(e.cancelable)e.preventDefault();consumeTouchEnd=false;}},{passive:false});
- function switchPage(next){const pages=ui.dragPages||getState().home.pages;if(next<0||next>=pages.length||next===ui.page)return;const direction=next>ui.page?1:-1;closeMenu();ui.page=next;refresh();app.querySelector('.home-page').scrollTop=0;const page=app.querySelector('.home-desktop-page');if(motion())page?.animate([{opacity:.5,transform:`translateX(${direction*28}px)`},{opacity:1,transform:'none'}],{duration:180,easing:'ease-out'});}
+ function switchPage(next){const pages=ui.dragPages||getState().home.pages;if(next<0||next>=pages.length||next===ui.page)return;const direction=next>ui.page?1:-1;closeMenu();app.querySelector('.home-desktop-page')?.getAnimations().forEach(animation=>animation.cancel());ui.page=next;refresh();app.querySelector('.home-page').scrollTop=0;const page=app.querySelector('.home-desktop-page');if(motion())page?.animate([{transform:`translateX(${direction*18}px)`},{transform:'translateX(0)'}],{duration:140,easing:'ease-out'});}
  function clearEdge(){clearTimeout(edgeTimer);edgeTimer=null;edgePage=null;}
  function finishDrag(save){if(!drag)return;clearEdge();drag.ghost.remove();const pages=ui.dragPages,kind=drag.type;drag=null;ui.dragPages=null;if(save)commit(s=>{s.home.pages=pages;s.home.widgets.sort((a,b)=>pages.flat().indexOf(a.type)-pages.flat().indexOf(b.type));});ui.page=Math.max(0,getState().home.pages.findIndex(list=>list.includes(kind)));refresh();ignoreClickUntil=Date.now()+200;}
  function startDrag(e){
