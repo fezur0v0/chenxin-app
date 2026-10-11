@@ -123,7 +123,7 @@ export function createHomeEditor({app,getState,setState,persist,render,notify,co
   })){dialog.close();refresh();notify('小组件已保存。');}
  });
  dialog.addEventListener('close',()=>{draft=null;app.querySelector(`[data-home-widget="${type}"]`)?.focus({preventScroll:true});});
- function clock(){if(lastDate!==localDate()){lastDate=localDate();if(app.querySelector('.home-page'))refresh();}const clock=app.querySelector('[data-home-clock]');if(!clock)return;const now=new Date(),h=getState().home,days=daysTogether(h.since);clock.textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});clock.dateTime=now.toISOString();const count=app.querySelector('[data-home-days]');if(count)count.textContent=days>0?days:1-(days||0);const unit=app.querySelector('[data-home-days-unit]');if(unit)unit.textContent=days>0?'天':'天后开始';}
+ function clock(){if(lastDate!==localDate()){lastDate=localDate();if(app.querySelector('.home-page'))refresh();}const clock=app.querySelector('[data-home-clock]');const now=new Date(),h=getState().home,days=daysTogether(h.since);if(clock){clock.textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});clock.dateTime=now.toISOString();}const count=app.querySelector('[data-home-days]');if(count)count.textContent=days>0?days:1-(days||0);const unit=app.querySelector('[data-home-days-unit]');if(unit)unit.textContent=days>0?'天':'天后开始';}
  setInterval(clock,1000);document.addEventListener('visibilitychange',clock);
  return {ui,exit(){closeMenu();finishDrag(false);ui.editing=false;ui.page=Math.max(0,Math.min(ui.page,getState().home.pages.length-1));cancel();gesture=null;},clock};
 }
