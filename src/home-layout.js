@@ -18,3 +18,18 @@ export function widgetMenuPosition(r,size,v){
  if(y<minY||y>maxY)y=below<=maxY?below:above;
  return {x:clamp((r.left+r.right-size.width)/2,minX,maxX),y:clamp(y,minY,maxY)};
 }
+
+// First-fit packing keeps every widget inside the four-column, six-row desktop.
+export function homeGridSlots(types){
+ const cells=Array.from({length:6},()=>Array(4).fill(false));
+ return types.map(type=>{
+  const width=type==='anniversary'?4:2,height=2;
+  for(let row=0;row<=6-height;row++)for(let col=0;col<=4-width;col++){
+   if(cells.slice(row,row+height).every(line=>line.slice(col,col+width).every(cell=>!cell))){
+    for(let y=row;y<row+height;y++)for(let x=col;x<col+width;x++)cells[y][x]=true;
+    return {type,row:row+1,col:col+1,width,height};
+   }
+  }
+  throw new RangeError('主页网格已满');
+ });
+}

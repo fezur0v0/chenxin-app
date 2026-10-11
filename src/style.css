@@ -117,26 +117,53 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 @media(prefers-reduced-motion:no-preference){.home-context-menu[open]{animation:widget-menu-fade 140ms ease-out}@keyframes widget-menu-fade{from{opacity:0}to{opacity:1}}}
 .home-page-controls button,.home-edit-toolbar button{touch-action:manipulation}
 
-/* Compact transparent anniversary, following the supplied horizontal example. */
-.home-widget .anniversary-horizontal{padding:24px 12px 18px;background:transparent;border:0;box-shadow:none;backdrop-filter:none}
-.anniversary-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:16px;min-height:150px;padding:8px 4px}
+/* Transparent anniversary: one speech bubble above each independent avatar. */
+.home-widget .anniversary-horizontal{height:100%;padding:8px 4px;background:transparent;border:0;box-shadow:none;backdrop-filter:none;display:flex;align-items:center}
+.anniversary-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px}
 .anniversary-horizontal .anniversary-days{padding:0}
-.anniversary-horizontal .anniversary-title{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.06em;line-height:1.5;overflow-wrap:anywhere}
-.anniversary-horizontal .anniversary-title svg{width:14px;height:14px;color:var(--ink)}
-.anniversary-horizontal .day-count{gap:6px;margin:10px 0 4px;flex-wrap:wrap}
-.anniversary-horizontal .day-count strong{font-family:var(--font-en);font-variant-numeric:normal;font-size:68px;line-height:1;font-weight:500;letter-spacing:.01em}
-.anniversary-horizontal .day-count>span{font-size:14px}
-.anniversary-horizontal .day-count.long-count strong{font-size:44px}
-.anniversary-horizontal .since{font-size:12px;letter-spacing:0;font-variant-numeric:tabular-nums}
-.anniversary-companions{min-width:0;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
-.anniversary-bubbles{width:100%;display:flex;justify-content:flex-end;align-items:flex-end;gap:6px;max-width:100%}
-.anniversary-pill{min-width:0;max-width:calc(50% - 3px);padding:4px 9px;border-radius:12px;background:color-mix(in srgb,var(--accent) 30%,var(--solid));font-size:11px;line-height:1.5;overflow-wrap:anywhere;white-space:pre-wrap;color:var(--ink)}
-.anniversary-avatars{display:flex;justify-content:flex-end;align-items:center;padding-right:2px}
+.anniversary-horizontal .day-count{position:relative;display:block;padding-left:28px;margin:0 0 8px}
+.anniversary-horizontal .day-count strong{font-family:var(--font-en);font-variant-numeric:normal;font-size:clamp(78px,24vw,96px);line-height:1;font-weight:500;letter-spacing:0}
+.anniversary-horizontal .day-count>span{position:absolute;left:0;bottom:9px;margin:0;font-size:17px;line-height:1;color:var(--muted)}
+.anniversary-horizontal .day-count.long-count strong{font-size:clamp(58px,18vw,72px)}
+.anniversary-horizontal .day-count.extra-long-count strong{font-size:clamp(42px,13vw,52px)}
+.anniversary-horizontal .since{font-size:11px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.anniversary-companions{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.anniversary-person{min-width:0;display:flex;flex-direction:column;align-items:center;gap:14px}
+.anniversary-pill{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:36px;max-height:56px;padding:7px 5px;border-radius:18px;background:color-mix(in srgb,var(--accent) 22%,var(--solid));font-size:11px;line-height:1.4;overflow-wrap:anywhere;white-space:pre-wrap;color:var(--ink);text-align:center}
+.anniversary-bubble-text{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.anniversary-pill:after{content:'';position:absolute;bottom:-6px;left:calc(50% - 7px);width:14px;height:10px;clip-path:polygon(0 0,100% 0,50% 100%);background:inherit}
 .anniversary-avatar{display:block;position:relative}
-.anniversary-avatar.ai{margin-left:-12px;z-index:1}
-.anniversary-avatar .avatar{width:46px;height:46px;border:2px solid var(--solid);box-shadow:none;background:color-mix(in srgb,var(--accent) 40%,var(--solid));color:var(--ink)}
+.anniversary-avatar .avatar{width:clamp(54px,16vw,64px);height:clamp(54px,16vw,64px);border:2px solid var(--solid);box-shadow:none;background:color-mix(in srgb,var(--accent) 40%,var(--solid));color:var(--ink)}
 .anniversary-avatar.ai .avatar{background:var(--accent);color:var(--accent-ink,var(--ink))}
-.anniversary-avatar .avatar>span{font-size:17px;opacity:1}
-.home-widget .anniversary-horizontal>.anniversary-caption{font-size:10px;margin:8px 4px 0;line-height:1.7}
+.anniversary-avatar .avatar>span{font-size:22px;opacity:1}
 .color-presets{flex-wrap:wrap}
-@media(max-width:380px){.home-widget .anniversary-horizontal{padding:20px 4px 16px}.anniversary-row{gap:12px;padding:8px 0}.anniversary-horizontal .day-count strong{font-size:62px}.anniversary-pill{padding:4px 7px}}
+
+/* A six-row desktop, with 4×2 and 2×2 widgets sharing the same cells. */
+.home-desktop{height:100%;min-height:0}
+.home-desktop-page{min-height:330px;position:relative}
+.home-desktop .widget-grid{height:100%;margin:0;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr));gap:12px;align-items:stretch}
+.home-desktop .widget{min-height:0;padding:16px;overflow:hidden}
+.home-desktop .widget p{margin-top:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.home-desktop .widget-foot{padding-top:8px;flex-shrink:0}
+.home-desktop .date-widget strong{margin-top:12px}
+.home-page-controls{flex-shrink:0;margin-top:10px}
+.home-edit-entry{flex-shrink:0;margin:0 auto;min-height:44px}
+.home-edit-help{flex-shrink:0;margin-bottom:16px}
+.home-edit-toolbar{flex-shrink:0}
+.home-page-empty{position:absolute;inset:0}
+@media(max-width:380px){.home-desktop .widget{padding:12px}.home-desktop .widget-label{gap:5px;font-size:10px}.home-desktop .widget p{font-size:11px}.home-desktop .moods{margin-top:10px}.home-desktop .mood-widget p{font-size:9px}}
+
+/* A bright rim and transparent lens, with evenly spaced icon-only targets. */
+.nav-dock{padding-left:16px;padding-right:16px;background:transparent}
+.bottom-nav{max-width:390px;padding:7px 12px;gap:10px;background:linear-gradient(155deg,rgb(var(--glass-tint) / .26),rgb(var(--glass-tint) / .08) 55%,rgb(var(--glass-tint) / .18));border:1px solid rgb(var(--glass-tint) / .4);box-shadow:inset 0 1px 1px rgb(var(--glass-tint) / .65),inset 0 -1px 1px rgb(var(--glass-tint) / .2),0 8px 28px rgb(25 35 50 / .08);backdrop-filter:blur(20px) saturate(160%);-webkit-backdrop-filter:blur(20px) saturate(160%)}
+.bottom-nav button{min-height:50px;color:var(--ink)}
+.bottom-nav button.active{background:rgb(var(--tint) / .18)}
+@media(max-height:720px){
+ .home-editing .home-widget .anniversary-horizontal{padding:4px}
+ .home-editing .anniversary-person{gap:10px}
+ .home-editing .anniversary-avatar .avatar{width:50px;height:50px}
+ .home-editing .anniversary-pill{min-height:32px;padding:5px;font-size:10px;line-height:1.2}
+ .home-editing .anniversary-horizontal .day-count strong{font-size:64px}
+ .home-editing .anniversary-horizontal .day-count.long-count strong{font-size:48px}
+ .home-editing .anniversary-horizontal .day-count.extra-long-count strong{font-size:36px}
+}
