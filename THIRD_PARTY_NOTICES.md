@@ -93,3 +93,43 @@ are preserved so browsers fetch only subsets used on a page.
 
 Upstream: https://github.com/notofonts/noto-cjk
 Distribution: https://www.npmjs.com/package/@fontsource-variable/noto-serif-sc
+
+
+---
+
+## Desktop app icons — React Icons / Lucide
+
+`src/apps/icons.js` contains SVG node data extracted from the Lucide (`lu`)
+set distributed in `react-icons` version 5.7.0. Selected exports:
+`LuBookHeart`, `LuMusic2`, `LuImages`, `LuSlidersHorizontal`, `LuBookOpen`,
+`LuContactRound`, and `LuPalette`. The paths are unchanged; the application
+sets a shared 1.65px stroke width. SVGs are rendered by the existing native
+JavaScript frontend; React Icons' React runtime is not bundled.
+
+Directory: https://react-icons.github.io/react-icons/icons/lu/
+Distribution: https://www.npmjs.com/package/react-icons/v/5.7.0
+Lucide upstream: https://lucide.dev/
+
+The Lucide ISC license and Feather MIT notice above apply to the selected
+icon artwork (`LuMusic2` / music is derived from Feather).
+React Icons' distribution notice is retained here as well:
+
+Copyright 2018 kamijin_fanta <kamijin@live.jp>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

@@ -1,4 +1,5 @@
 import { createHomeEditor } from './home-editor.js';
+import { appView, findApp } from './apps/index.js';
 import { finishSplash } from './splash.js';
 import { icon } from './icons.js';
 import { localDate, loadState, saveState, normalizeState, newSession, addDraftMessage, exportData, saveMemory, changeMessage } from './store.js';
@@ -13,7 +14,7 @@ const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-d
 let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
-const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,render,notify,compressImage});
+const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,render,notify,compressImage,openApp:goto});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -21,15 +22,15 @@ function applyAppearance(){const root=document.documentElement,a=state.appearanc
 function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
- const activePage=page==='sessions'?'chat':page;
- app.innerHTML=`<div class="shell ${['chat','sessions'].includes(page)?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':''}">${page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${['chat','sessions'].includes(page)?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
+ const activePage=page==='sessions'?'chat':page,desktopApp=findApp(page),immersive=['chat','sessions'].includes(page)||desktopApp;
+ app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
  const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();
 }
-function goto(next){homeEditor.exit();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
-function focusSettings(id){goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
+function goto(next){homeEditor.exit();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next))app.querySelector('.desktop-app-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
+function focusSettings(id){if(id==='appearance-settings'){goto('app-appearance');return;}goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
 function exportBackup(){const url=URL.createObjectURL(new Blob([exportData(state)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=`chenxin-${new Date().toISOString().slice(0,10)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -38,6 +39,7 @@ function handleAction(e){
  const target=e.target.closest('button');if(!target)return;
  if(target.dataset.open){if(state.active!==target.dataset.open){composeDraft='';chatUI.attachments=[];}state.active=target.dataset.open;persist();goto('chat');return;}
  const action=target.dataset.action;
+ if(action==='open-app'){if(findApp(target.dataset.app))goto(target.dataset.app);return;}
  if(action==='show-reasoning'){const scroll=app.querySelector('#messages').scrollTop;rememberSelection();chatUI.messageId=target.dataset.id;chatUI.tray='reasoning';render();app.querySelector('#messages').scrollTop=scroll;return;}
  if(action==='open-sidebar'){rememberSelection();chatUI.tray='';render();sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.showModal();sidebarDialog.querySelector('[data-action=close-sidebar]').focus();return;}
  if(action==='close-sidebar'){sidebarDialog.close();return;}

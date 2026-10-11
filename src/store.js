@@ -1,4 +1,5 @@
 import { normalizeHomePages } from './home-layout.js';
+import { APP_TYPES } from './apps/catalog.js';
 export const STORAGE_KEY = 'chenxin.frontend.v1';
 export const WIDGETS = ['date', 'note', 'mood', 'memory'];
 const text = (v, fallback = '', max = 12000) => typeof v === 'string' ? v.slice(0, max) : fallback;
@@ -14,7 +15,7 @@ export function daysTogether(since, now = new Date()) {
 }
 function extras() {
  return { appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
- home: { pages:[['anniversary',...WIDGETS]], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[]} };
+ home: { pages:[['anniversary',...WIDGETS],[...APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[]} };
 }
 export function createState() {
  const id = crypto.randomUUID();
@@ -41,7 +42,7 @@ export function normalizeState(s) {
  provider:{protocol:['openai','anthropic','gemini'].includes(s.provider.protocol)?s.provider.protocol:'openai',baseUrl:text(s.provider.baseUrl,'',2000),model:text(s.provider.model,'',200)},
  plugins:s.plugins.map(p=>{if(typeof p?.id!=='string'||typeof p.name!=='string'||typeof p.url!=='string')throw new Error('插件数据损坏');return {id:p.id,name:text(p.name,'',80),url:text(p.url,'',2000),type:p.type==='plugin'?'plugin':'mcp'};}),
  appearance:{accent:/^#[a-f\d]{6}$/i.test(a.accent)?a.accent:defaults.appearance.accent,wallpaper:image(a.wallpaper),userAvatar:image(a.userAvatar),aiAvatar:image(a.aiAvatar),blur:Number.isFinite(a.blur)?Math.min(40,Math.max(0,a.blur)):22,opacity:Number.isFinite(a.opacity)?Math.min(95,Math.max(30,a.opacity)):60},
- home:{pages:normalizeHomePages(h.pages,normalizedWidgets),anniversaryVisible:h.anniversaryVisible!==false,userBubble:text(h.userBubble,'喵……',40),aiBubble:text(h.aiBubble,'我在。',40),widgetTitles:Object.fromEntries(WIDGETS.map(type=>[type,text(h.widgetTitles?.[type],'',20)])),showWeekday:h.showWeekday!==false,memoryId:text(h.memoryId,'',100),dateRevision:1,since:h.dateRevision!==1&&h.since==='2026-10-07'?'2026-07-12':daysTogether(h.since)!==null?h.since:defaults.home.since,title:text(h.title,defaults.home.title,40),userName:text(h.userName,'我',40),subtitle:text(h.subtitle,defaults.home.subtitle,200),note:text(h.note,'',500),mood:text(h.mood,'',30),widgets:normalizedWidgets},
+ home:{pages:normalizeHomePages(h.pages,normalizedWidgets,{anniversaryVisible:h.anniversaryVisible,hiddenApps:Array.isArray(h.hiddenApps)?h.hiddenApps:[]}),hiddenApps:Array.isArray(h.hiddenApps)?[...new Set(h.hiddenApps.filter(id=>APP_TYPES.includes(id)))]:[],anniversaryVisible:h.anniversaryVisible!==false,userBubble:text(h.userBubble,'喵……',40),aiBubble:text(h.aiBubble,'我在。',40),widgetTitles:Object.fromEntries(WIDGETS.map(type=>[type,text(h.widgetTitles?.[type],'',20)])),showWeekday:h.showWeekday!==false,memoryId:text(h.memoryId,'',100),dateRevision:1,since:h.dateRevision!==1&&h.since==='2026-10-07'?'2026-07-12':daysTogether(h.since)!==null?h.since:defaults.home.since,title:text(h.title,defaults.home.title,40),userName:text(h.userName,'我',40),subtitle:text(h.subtitle,defaults.home.subtitle,200),note:text(h.note,'',500),mood:text(h.mood,'',30),widgets:normalizedWidgets},
  memories:Array.isArray(s.memories)?s.memories.map(m=>{
    if (typeof m?.id !== 'string'|| typeof m.content !== 'string') throw new Error('记忆数据损坏');
    return {id:m.id,title:text(m.title,'',80),content:text(m.content),kind:m.kind==='permanent'?'permanent':'short',created:Number.isFinite(m.created)?m.created:Date.now(),expires:m.kind==='permanent'?null:Number.isFinite(m.expires)?m.expires:Date.now()+7*86400000,source:text(m.source,'',200)};
