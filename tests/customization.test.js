@@ -42,3 +42,14 @@ test('home editor fields survive backup and old homes receive safe defaults',()=
  const loaded=normalizeState(JSON.parse(JSON.stringify(s)));assert.equal(loaded.home.anniversaryVisible,false);assert.equal(loaded.home.userBubble,'喵…');assert.equal(loaded.home.aiBubble,'我在。');assert.equal(loaded.home.widgetTitles.note,'便笺');assert.equal(loaded.home.showWeekday,false);assert.equal(loaded.home.memoryId,'saved');
  delete s.home.anniversaryVisible;assert.equal(normalizeState(s).home.anniversaryVisible,true);delete s.home.userBubble;delete s.home.widgetTitles;assert.equal(normalizeState(s).home.userBubble,'喵……');s.home.aiBubble='x'.repeat(100);assert.equal(normalizeState(s).home.aiBubble.length,40);
 });
+
+test('glass opacity supports both slider endpoints and preserves legacy settings through backup',()=>{
+ const state=createState();state.home.note='已有便签';state.sessions[0].messages.push({id:'saved',role:'user',text:'已有对话',time:1});
+ for(const opacity of [30,60,95,100]) {
+  state.appearance.opacity=opacity;
+  const restored=normalizeState(JSON.parse(JSON.stringify(state)));
+  assert.equal(restored.appearance.opacity,opacity);
+  assert.equal(restored.home.note,'已有便签');assert.equal(restored.sessions[0].messages[0].text,'已有对话');
+ }
+ for(const [input,expected]of [[0,30],[101,100],[null,60]])assert.equal(normalizeState({...state,appearance:{...state.appearance,opacity:input}}).appearance.opacity,expected);
+});
