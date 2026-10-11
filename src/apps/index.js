@@ -9,8 +9,8 @@ import { archives } from './archives/view.js';
 import { appearance } from './appearance/view.js';
 export { APPS, findApp };
 const views={diary,music,gallery,presets,worldbook,archives,appearance};
-export function appView(id,state) {
+export function appView(id,state,ui) {
  const app=findApp(id);
  if(!app)return '';
- return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}"><header class="desktop-app-header">${button('home','back','返回主页')}<h1 tabindex="-1">${app.name}</h1><span aria-hidden="true"></span></header><p class="desktop-app-intro">${escape(app.subtitle)}</p><div class="desktop-app-body">${views[app.icon](state)}</div></section>`;
+ return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}"><header class="desktop-app-header">${button('home','back','返回主页')}<h1 tabindex="-1">${app.name}</h1><span aria-hidden="true"></span></header>${app.icon==='diary'?'':`<p class="desktop-app-intro">${escape(app.subtitle)}</p>`}<div class="desktop-app-body">${views[app.icon](state,ui)}</div></section>`;
 }

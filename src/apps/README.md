@@ -4,7 +4,7 @@
 
 | App | 文件夹 | 页面与样式 |
 | --- | --- | --- |
-| 日记 | `diary/` | `view.js`、`style.css` |
+| 日记 | `diary/` | `view.js`、`style.css`、`model.js`、`controller.js` |
 | 音乐 | `music/` | `view.js`、`style.css` |
 | 图库 | `gallery/` | `view.js`、`style.css` |
 | 预设 | `presets/` | `view.js`、`style.css` |
@@ -18,7 +18,7 @@
 
 各界面沿用已有主题、壁纸和本机数据，不为每个 App 建立重复的数据副本。
 外观已经完整迁移原设置；图库展示已保存图片，预设/档案沿用现有配置。
-其余为独立首页，具体功能将逐个实现。启用新的操作按钮时，需要同时接入实际行为。
+日记已支持月历与心情时间线、本机新建/编辑/删除；model.js 管理日期与记录数据，controller.js 处理交互。日记保存在根状态 diaryEntries 中，随现有备份恢复；旧数据默认空数组。其他尚未接入的功能将逐个实现。启用新的操作按钮时，需要同时接入实际行为。
 
 新增持久数据时，在 `../store.js` 补充默认值、旧备份兼容与验证；用户文字通过 `../ui.js` 的 `escape` 转义。
 入口从主页移除只修改 `home.hiddenApps`，保留内容及设置。不要改已发布的 `app-*` ID 或存储键。
