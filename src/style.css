@@ -235,3 +235,54 @@ h1,.welcome-en,.usage-values strong,.anniversary-horizontal .day-count>span{font
 .field input[type=range]::-moz-range-track{height:5px;border-radius:8px;background:rgb(var(--tint) / .18)}
 .field input[type=range]::-moz-range-progress{height:5px;border-radius:8px;background:var(--accent)}
 .field input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;border:1px solid rgb(255 255 255 / .65);background:var(--solid);box-shadow:0 2px 7px rgb(0 0 0 / .12)}
+/* Paper, expression and stacked-memory cards share the desktop's square cells. */
+.home-desktop .paper-widget,.home-desktop .face-widget,.home-desktop .stacked-widget{padding:14px;position:relative;background:rgb(var(--glass-tint) / .2);border:1px solid rgb(255 255 255 / .3);box-shadow:inset 0 1px 0 rgb(255 255 255 / .22),0 8px 24px rgb(0 0 0 / .035)}
+.paper-widget:after{content:'';position:absolute;right:0;top:0;width:27px;height:27px;background:color-mix(in srgb,var(--accent) 50%,var(--solid));clip-path:polygon(0 0,100% 100%,100% 0);pointer-events:none}
+.paper-widget .widget-label{padding-right:16px}
+.home-desktop .paper-widget .note-text{font-size:13px;line-height:1.7;margin-top:10px;-webkit-line-clamp:3}
+.note-footer{justify-content:space-between}
+.note-footer time{font-size:10px;font-variant-numeric:tabular-nums}
+.home-desktop .face-widget{align-items:center;gap:2px;padding:12px 14px}
+.face-widget .widget-label{align-self:flex-start}
+.mood-face{display:grid;place-items:center;width:48px;height:48px;border-radius:50%;flex-shrink:0;background:color-mix(in srgb,var(--mood-color) 58%,var(--solid));color:var(--ink)}
+.mood-face svg{width:100%;height:100%}
+.mood-caption{font-size:11px;line-height:1.4;white-space:nowrap;color:var(--ink)}
+.mood-dots{display:flex;justify-content:center;align-items:center;width:100%;gap:0;margin-top:auto}
+.mood-dots button{display:grid;place-items:center;flex:1;min-width:0;height:44px;padding:0;border-radius:12px}
+.mood-dots button>span{width:13px;height:13px;background:var(--mood-color);border-radius:50%;border:1px solid rgb(255 255 255 / .4)}
+.mood-dots button.selected>span{outline:1.5px solid var(--ink);outline-offset:3px}
+.memory-heading{justify-content:space-between}
+.memory-heading svg{color:var(--ink)}
+.memory-stack{position:relative;display:block;flex:1;min-height:0;margin-top:8px;isolation:isolate}
+.memory-stack:before,.memory-stack:after{content:'';position:absolute;height:24px;border-radius:12px;background:rgb(var(--tint) / .15);bottom:0;left:12px;right:12px;z-index:-2}
+.memory-stack:after{bottom:6px;left:6px;right:6px;background:rgb(var(--tint) / .24);z-index:-1}
+.memory-sheet{position:absolute;inset:0 0 12px;display:flex;flex-direction:column;min-height:0;padding:8px 10px;border-radius:14px;background:rgb(var(--glass-tint) / .28);border:1px solid rgb(255 255 255 / .3)}
+.memory-mark{width:16px;height:3px;border-radius:3px;background:var(--accent);flex-shrink:0}
+.memory-title{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:12px;line-height:1.5;margin-top:5px;color:var(--ink)}
+.memory-date{margin-top:auto;padding-top:4px;font-size:9px;line-height:1.3;color:var(--muted);font-variant-numeric:tabular-nums}
+.home-desktop .memory-footer{justify-content:flex-end;padding-top:6px;font-size:10px}
+:root[data-theme=dark] .paper-widget,:root[data-theme=dark] .face-widget,:root[data-theme=dark] .stacked-widget{background:rgb(27 29 35 / .3);border-color:rgb(255 255 255 / .09);box-shadow:inset 0 1px 0 rgb(255 255 255 / .035),0 8px 24px rgb(0 0 0 / .08)}
+:root[data-theme=dark] .mood-face{background:color-mix(in srgb,var(--mood-color) 24%,var(--solid))}
+:root[data-theme=dark] .memory-sheet{background:rgb(37 40 47 / .48);border-color:rgb(255 255 255 / .08)}
+@media(max-width:380px){
+ .home-desktop .paper-widget,.home-desktop .stacked-widget{padding:10px}
+ .home-desktop .face-widget{padding:10px;gap:1px}
+ .mood-face{width:36px;height:36px}
+ .mood-caption{font-size:10px}
+ .mood-dots button>span{width:11px;height:11px}
+ .home-desktop .paper-widget .note-text{font-size:11px;margin-top:7px;line-height:1.65}
+ .memory-sheet{padding:6px 7px}
+ .memory-title{font-size:11px;line-height:1.35;margin-top:4px}
+ .memory-date{font-size:8px;padding-top:2px}
+ .home-desktop .memory-footer{font-size:9px;padding-top:4px}
+}
+
+/* Water-glass chat surfaces: transparent fill, soft refraction and a thin bright rim. */
+.composer{background:linear-gradient(145deg,rgb(var(--glass-tint) / .24),rgb(var(--glass-tint) / .08) 65%,rgb(var(--glass-tint) / .16));border-color:rgb(255 255 255 / .4);backdrop-filter:blur(var(--glass-blur)) saturate(160%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(160%);box-shadow:inset 0 1px 1px rgb(255 255 255 / .5),inset 0 -1px 1px rgb(255 255 255 / .12),0 8px 30px rgb(0 0 0 / .045)}
+.composer:focus-within{border-color:rgb(var(--tint) / .65);box-shadow:inset 0 1px 1px rgb(255 255 255 / .45),0 0 0 1px rgb(var(--tint) / .1),0 8px 30px rgb(0 0 0 / .045)}
+#sidebar-dialog{background:linear-gradient(155deg,rgb(var(--glass-tint) / .26),rgb(var(--glass-tint) / .12) 60%,rgb(var(--glass-tint) / .2));border-color:rgb(255 255 255 / .3);backdrop-filter:blur(28px) saturate(155%);-webkit-backdrop-filter:blur(28px) saturate(155%);box-shadow:inset -1px 0 1px rgb(255 255 255 / .32),12px 0 45px rgb(0 0 0 / .08)}
+#sidebar-dialog::backdrop{background:rgb(16 22 34 / .12);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+:root[data-theme=dark] .composer{background:linear-gradient(145deg,rgb(45 48 55 / .32),rgb(24 26 32 / .12) 65%,rgb(38 41 49 / .22));border-color:rgb(255 255 255 / .13);box-shadow:inset 0 1px 1px rgb(255 255 255 / .08),0 8px 30px rgb(0 0 0 / .14)}
+:root[data-theme=dark] #sidebar-dialog{background:linear-gradient(155deg,rgb(34 37 44 / .38),rgb(22 24 30 / .18) 60%,rgb(29 32 39 / .3));border-color:rgb(255 255 255 / .1);box-shadow:inset -1px 0 1px rgb(255 255 255 / .07),12px 0 45px rgb(0 0 0 / .2)}
+:root[data-theme=dark] #sidebar-dialog::backdrop{background:rgb(0 0 0 / .3)}
+.mood-caption{max-width:100%;overflow:hidden;text-overflow:ellipsis}
