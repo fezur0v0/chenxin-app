@@ -118,13 +118,13 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 .home-widget .anniversary-horizontal{height:100%;padding:8px 4px;background:transparent;border:0;box-shadow:none;backdrop-filter:none;display:flex;align-items:center}
 .anniversary-row{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:12px}
 .anniversary-horizontal .anniversary-days{padding:0}
-.anniversary-horizontal .day-count{position:relative;display:flex;align-items:flex-end;gap:5px;padding:0;margin:0 0 18px;flex-wrap:nowrap}
+.anniversary-horizontal .day-count{position:relative;display:flex;align-items:flex-end;gap:5px;padding:0;margin:0;flex-wrap:nowrap}
 .anniversary-horizontal .day-count strong{font-family:var(--font-en);font-variant-numeric:normal;font-size:clamp(86px,26vw,104px);line-height:1;font-weight:500;letter-spacing:0}
 .anniversary-horizontal .day-count>span{position:static;flex-shrink:0;margin:0 0 10px;font-size:20px;line-height:1;color:var(--theme-text)}
 .anniversary-horizontal .day-count.medium-count strong{font-size:clamp(70px,22vw,88px)}
 .anniversary-horizontal .day-count.long-count strong{font-size:clamp(52px,16vw,64px)}
 .anniversary-horizontal .day-count.extra-long-count strong{font-size:clamp(42px,13vw,52px)}
-.anniversary-horizontal .since{font-size:11px;letter-spacing:0;font-variant-numeric:tabular-nums}
+.anniversary-horizontal .since{font-size:14px;line-height:1.4;margin-bottom:12px;letter-spacing:0;font-variant-numeric:tabular-nums}
 .anniversary-companions{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .anniversary-person{min-width:0;display:flex;flex-direction:column;align-items:center;gap:14px}
 .anniversary-pill{position:relative;display:flex;align-items:center;justify-content:center;width:100%;min-height:36px;max-height:56px;padding:7px 5px;border-radius:18px;background:var(--bubble-bg);border:1px solid var(--bubble-rim);box-shadow:inset 0 1px 0 rgb(255 255 255 / .25),0 4px 14px rgb(0 0 0 / .025);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);font-size:11px;line-height:1.4;overflow-wrap:anywhere;white-space:pre-wrap;color:var(--ink);text-align:center}
@@ -137,9 +137,9 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 .color-presets{flex-wrap:wrap}
 
 /* A six-row desktop, with 4×2 and 2×2 widgets sharing the same cells. */
-.home-desktop{height:100%;min-height:0}
-.home-desktop-page{min-height:330px;position:relative}
-.home-desktop .widget-grid{height:100%;margin:0;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,minmax(0,1fr));gap:12px;align-items:stretch}
+.home-desktop{height:100%;min-height:0;container-type:inline-size}
+.home-desktop-page{min-height:calc(150cqw + 6px);position:relative}
+.home-desktop .widget-grid{height:auto;margin:0;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,calc((100cqw - 36px) / 4));gap:12px;align-items:stretch}
 .home-desktop .widget{min-height:0;padding:16px;overflow:hidden}
 .home-desktop .widget p{margin-top:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .home-desktop .widget-foot{padding-top:8px;flex-shrink:0}
@@ -172,16 +172,16 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 /* Reference calendar: live time, day tag, divider and a three-week window. */
 .widget-surface>.date-widget{background:rgb(var(--glass-tint) / .07);border:1px solid rgb(255 255 255 / .25);box-shadow:0 12px 30px rgb(0 0 0 / .045),inset 0 1px 0 rgb(255 255 255 / .3);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);justify-content:space-between;gap:10px}
 .calendar-head{display:flex;justify-content:space-between;align-items:baseline;gap:5px;min-width:0}
-.calendar-head time{font-family:var(--font-en);font-size:clamp(28px,9vw,38px);font-weight:500;line-height:1;letter-spacing:-.03em;white-space:nowrap;color:var(--theme-text)}
-.calendar-tag{font-size:9px;white-space:nowrap;letter-spacing:.04em;color:var(--muted)}
+.calendar-head time{font-family:var(--font-en);font-size:clamp(30px,9.5vw,40px);font-weight:500;line-height:1;letter-spacing:-.03em;white-space:nowrap;color:var(--theme-text)}
+.calendar-tag{font-size:10px;white-space:nowrap;letter-spacing:.04em;color:var(--muted)}
 .calendar-divider{width:100%;height:1px;flex-shrink:0;background:var(--hairline)}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px 2px;text-align:center;font-size:11px;line-height:1.5;color:var(--muted)}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px 2px;text-align:center;font-size:12px;line-height:1.5;color:var(--muted)}
 .calendar-grid span{min-width:0;border-radius:4px}
-.calendar-weekday{font-size:10px;padding-bottom:3px}
+.calendar-weekday{font-size:11px;padding-bottom:3px}
 .calendar-day.active{background:rgb(var(--tint) / .24);color:var(--theme-text);font-weight:700}
 .calendar-day.adjacent-month{opacity:.6}
-@media(max-width:380px){.calendar-head time{font-size:29px}.calendar-tag{font-size:8px}.calendar-grid{font-size:10px;gap:3px 1px}}
-@media(max-height:720px){.date-widget{gap:5px!important}.calendar-grid{gap:1px}.calendar-weekday{padding-bottom:0}.calendar-head time{font-size:28px}.home-editing .anniversary-horizontal .day-count{margin-bottom:12px}.home-editing .anniversary-horizontal .day-count>span{font-size:17px}}
+@media(max-width:380px){.calendar-head time{font-size:31px}.calendar-tag{font-size:9px}.calendar-grid{font-size:11px;gap:2px 1px}}
+@media(max-height:720px){.date-widget{gap:4px!important}.calendar-grid{gap:1px}.calendar-weekday{padding-bottom:0}.calendar-head time{font-size:30px}.home-editing .anniversary-horizontal .since{margin-bottom:8px}.home-editing .anniversary-horizontal .day-count>span{font-size:17px}}
 
 /* System-wide dark appearance: subdued wallpaper, charcoal surfaces and soft whites. */
 :root[data-theme=dark]{--theme-text:color-mix(in srgb,var(--accent) 85%,#d3d6dd);--bubble-bg:rgb(42 44 51 / .4);--bubble-rim:rgb(255 255 255 / .1)}
@@ -201,10 +201,11 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 :root[data-theme=dark] .primary{background:#bcc2cc;color:#15171c}
 @media(max-height:720px){
  .home-editing .date-widget{gap:3px!important}
- .home-editing .calendar-head time{font-size:24px}
- .home-editing .calendar-grid{font-size:9px;line-height:1.25}
- .home-editing .calendar-weekday{font-size:9px}
 }
 
 /* Keep only the page dots above the dock, without the former footer gap. */
 .home-page{padding-bottom:8px}
+/* Calendar content keeps its padding after the card becomes square. */
+.home-desktop .date-widget{padding:14px;gap:4px}
+.calendar-head,.calendar-grid{flex-shrink:0}
+@media(max-width:380px){.home-desktop .date-widget{padding:11px}.calendar-grid{line-height:1.35}}
