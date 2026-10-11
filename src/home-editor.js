@@ -38,7 +38,7 @@ export function createHomeEditor({app,getState,setState,persist,render,notify,co
   else if(kind==='anniversary'){
    content=field('开始日期','since',h.since,'','date')+`<div class="home-avatar-editor">${[['user','userAvatar','你的头像'],['ai','aiAvatar','AI 头像']].map(([who,key,label])=>`<div><div data-avatar-preview="${key}">${avatar(draft,who)}</div><label class="upload-label">${label}<input type="file" data-home-avatar="${key}" accept="image/jpeg,image/png,image/webp"></label><button type="button" data-reset-avatar="${key}" class="text-button">恢复默认</button></div>`).join('')}</div>`+field('你的名字','userName',h.userName)+field('AI 名字','aiName',draft.persona.name)+field('你的气泡','userBubble',h.userBubble||'喵……')+field('AI 的气泡','aiBubble',h.aiBubble||'我在。')+`<p class="hint">开始当天为第 1 天。头像与名字也会同步用于对话。</p>`;
   }else{
-   content=field('组件标题','widgetTitle',h.widgetTitles?.[kind]||widgetLabels[kind]);
+   content=kind==='note'?'':field('组件标题','widgetTitle',h.widgetTitles?.[kind]||widgetLabels[kind]);
    if(kind==='note')content+=`<label class="field"><span>便签内容</span><textarea name="note" maxlength="500" rows="5">${escape(h.note)}</textarea></label>`;
    if(kind==='date')content+=`<label class="home-check"><input name="showWeekday" type="checkbox" ${h.showWeekday!==false?'checked':''}>显示星期</label>`;
    if(kind==='mood')content+=`<label class="field"><span>此刻的心情</span><select name="mood">${['','开心','平静','疲惫','想念'].map(m=>`<option value="${m}" ${h.mood===m?'selected':''}>${m||'还没想好'}</option>`).join('')}</select></label>`;
@@ -119,7 +119,7 @@ export function createHomeEditor({app,getState,setState,persist,render,notify,co
  });
  dialog.addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));if(type==='anniversary'&&daysTogether(data.since)===null){notify('请选择有效的日期。');return;}
   if(commit(s=>{if(type==='anniversary'){Object.assign(s.home,{since:data.since,userName:data.userName.trim().slice(0,40)||'我',userBubble:data.userBubble.trim().slice(0,40),aiBubble:data.aiBubble.trim().slice(0,40)});s.persona.name=data.aiName.trim().slice(0,40)||s.persona.name;s.appearance.userAvatar=draft.appearance.userAvatar;s.appearance.aiAvatar=draft.appearance.aiAvatar;}
-   else{s.home.widgetTitles={...s.home.widgetTitles,[type]:data.widgetTitle.trim().slice(0,20)};if(type==='note')s.home.note=data.note.slice(0,500);if(type==='date')s.home.showWeekday=data.showWeekday==='on';if(type==='mood')s.home.mood=data.mood;if(type==='memory')s.home.memoryId=data.memoryId;}
+   else{if(typeof data.widgetTitle==='string')s.home.widgetTitles={...s.home.widgetTitles,[type]:data.widgetTitle.trim().slice(0,20)};if(type==='note')s.home.note=data.note.slice(0,500);if(type==='date')s.home.showWeekday=data.showWeekday==='on';if(type==='mood')s.home.mood=data.mood;if(type==='memory')s.home.memoryId=data.memoryId;}
   })){dialog.close();refresh();notify('小组件已保存。');}
  });
  dialog.addEventListener('close',()=>{draft=null;app.querySelector(`[data-home-widget="${type}"]`)?.focus({preventScroll:true});});
