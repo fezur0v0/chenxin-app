@@ -1,3 +1,4 @@
+import { createMusicApp } from './apps/music/controller.js';
 import { createDiaryApp } from './apps/diary/controller.js';
 import { createHomeEditor } from './home-editor.js';
 import { appView, findApp } from './apps/index.js';
@@ -17,6 +18,7 @@ const expressionDialog=document.createElement('dialog');expressionDialog.classNa
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
 const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,renderHome,notify,compressImage,openApp:goto});
 const diaryApp=createDiaryApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
+const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -25,7 +27,7 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const activePage=page==='sessions'?'chat':page,desktopApp=findApp(page),immersive=['chat','sessions'].includes(page)||desktopApp;
- app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state,diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
+ app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${button('chat','back','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
@@ -50,7 +52,7 @@ function renderHome(){
  }
  if(focusedDot!==undefined)dots.querySelector(`[data-page="${focusedDot}"]`)?.focus({preventScroll:true});
 }
-function goto(next){homeEditor.exit();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next))app.querySelector('.desktop-app-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
+function goto(next){homeEditor.exit();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next))app.querySelector('.desktop-app-header h1,.music-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
 function focusSettings(id){if(id==='appearance-settings'){goto('app-appearance');return;}goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
@@ -152,7 +154,7 @@ app.addEventListener('change',async e=>{
    try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
  }
  if(t.id==='import-data'&&t.files[0]){
-   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}state=next;composeDraft='';chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
+   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
  }
 });
 app.addEventListener('keydown',e=>{if(e.target.name==='message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!e.repeat){e.preventDefault();e.target.form.requestSubmit();}});

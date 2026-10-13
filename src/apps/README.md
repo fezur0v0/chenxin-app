@@ -5,7 +5,7 @@
 | App | 文件夹 | 页面与样式 |
 | --- | --- | --- |
 | 日记 | `diary/` | `view.js`、`style.css`、`model.js`、`controller.js` |
-| 音乐 | `music/` | `view.js`、`style.css` |
+| 音乐 | `music/` | `view.js`、`style.css`、`controller.js`、`model.js`、`files.js`、`icons.js` |
 | 图库 | `gallery/` | `view.js`、`style.css` |
 | 预设 | `presets/` | `view.js`、`style.css` |
 | 世界书 | `worldbook/` | `view.js`、`style.css` |
@@ -24,3 +24,5 @@
 入口从主页移除只修改 `home.hiddenApps`，保留内容及设置。不要改已发布的 `app-*` ID 或存储键。
 
 修改后运行 `npm run check`、`npm test`，再检查手机大小、昼夜模式、返回导航与备份恢复。
+
+音乐 view.js 管理首页/歌单/黑胶页/编辑抽屉，controller.js 共享一个 Audio 实例，时间更新只改变进度，不重写页面。model.js 管理曲库、真实集合和队列；files.js 保存 IndexedDB 音频。音乐 JSON 只备份元数据、封面与歌单，不含音频；缺失文件可绑定回原歌曲 ID。删除歌单保留歌曲，删除歌曲则移除各歌单和队列的引用。
