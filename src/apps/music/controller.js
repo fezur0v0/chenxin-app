@@ -3,7 +3,7 @@ import { musicIcon } from './icons.js';
 import { musicCollections, trackFromFile, nextMusicId, PLAY_MODES, formatMusicTime } from './model.js';
 import { musicFile } from './files.js';
 export function createMusicApp({app,getState,setState,persist,notify,compressImage}) {
- const ui={screen:'home',playlistId:'builtin:all',returnScreen:'home',search:'',playing:false,time:0,duration:0,loading:false,missing:false,busy:false,seeking:false};
+ const ui={screen:'home',playlistId:'builtin:all',returnScreen:'home',search:'',playing:false,time:0,duration:0,loading:false,missing:false,busy:false,seeking:false,together:{distanceKm:null,elapsedSeconds:null}};
  const audio=new Audio();audio.preload='metadata';
  const dialog=document.createElement('dialog');dialog.className='music-sheet glass';document.body.append(dialog);
  const picker=document.createElement('input');picker.type='file';picker.multiple=true;picker.accept='audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.opus';picker.hidden=true;picker.dataset.musicFiles='';document.body.append(picker);
@@ -53,7 +53,7 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
   for(const scope of [app,dialog]) {
    scope.querySelectorAll('[data-music-action=toggle]:not(.music-vinyl)').forEach(el=>{el.innerHTML=musicIcon(ui.playing?'pause':'play');el.setAttribute('aria-label',ui.playing?'暂停':'播放');});
    scope.querySelectorAll('.music-vinyl,.music-mini-disc').forEach(el=>{el.classList.toggle('is-spinning',ui.playing);if(el.matches('.music-vinyl'))el.setAttribute('aria-label',ui.playing?'暂停音乐':'播放音乐');});
-   scope.querySelectorAll('.music-player-page,.music-equalizer').forEach(el=>el.classList.toggle('is-playing',ui.playing));
+   scope.querySelectorAll('.music-player-page').forEach(el=>el.classList.toggle('is-playing',ui.playing));
   }
  }
  function syncProgress() {
