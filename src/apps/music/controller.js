@@ -12,7 +12,25 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
  function refresh(focus,top=false) {
   const scope=app.querySelector('.music-app');if(!scope)return;
   const scroller=app.querySelector('.page-content'),scroll=scroller.scrollTop;
-  scope.innerHTML=music(getState(),ui);scroller.scrollTop=top?0:scroll;
+  const template=document.createElement('template');template.innerHTML=music(getState(),ui);
+  const next=template.content.firstElementChild,current=scope.querySelector('.music-app-inner');
+  if(current){
+   // Keep the header and chevron mounted so an interrupted turn continues smoothly.
+   const header=current.querySelector('.music-header'),nextHeader=next.querySelector('.music-header');
+   const buttons=header.querySelectorAll('button'),nextButtons=nextHeader.querySelectorAll('button');
+   buttons.forEach((button,index)=>{
+    const replacement=nextButtons[index];
+    for(const attribute of [...button.attributes])if(!replacement.hasAttribute(attribute.name))button.removeAttribute(attribute.name);
+    for(const attribute of replacement.attributes)button.setAttribute(attribute.name,attribute.value);
+    if(index!==0)button.replaceChildren(...replacement.childNodes);
+   });
+   const title=header.querySelector('h1'),nextTitle=nextHeader.querySelector('h1');title.textContent=nextTitle.textContent;
+   if(nextTitle.hasAttribute('lang'))title.setAttribute('lang',nextTitle.lang);else title.removeAttribute('lang');
+   current.dataset.musicScreen=next.dataset.musicScreen;
+   for(const child of [...current.children])if(child!==header)child.remove();
+   current.append(...[...next.children].filter(child=>child!==nextHeader));
+  }else scope.replaceChildren(next);
+  scroller.scrollTop=top?0:scroll;
   if(focus)scope.querySelector(focus)?.focus({preventScroll:true});
   app.querySelectorAll('[data-music-action=import]').forEach(el=>el.disabled=ui.busy);
  }
@@ -116,7 +134,13 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
    case 'delete-track':if(confirm('删除这首本机音乐？它会从曲库和歌单中移除。')){const id=sheetItem;if(commit(state=>{const m=state.music;m.tracks=m.tracks.filter(t=>t.id!==id);m.queue=m.queue.filter(x=>x!==id);m.playlists.forEach(p=>p.trackIds=p.trackIds.filter(x=>x!==id));if(m.currentId===id)m.currentId='';})){if(loadedId===id)stop();dialog.close();refresh();void musicFile(id,null).catch(error=>notify(error.message));notify('歌曲已删除。');}}break;
   }
  }
- app.addEventListener('click',event=>{if(event.target.closest('.music-app'))handle(event);});
+ app.addEventListener('click',event=>{
+  if(!event.target.closest('.music-app'))return;
+  const button=event.target.closest('button');
+  // A retained button can change its action during navigation; dispatch this click once.
+  if(button&&!button.hasAttribute('data-action'))event.stopImmediatePropagation();
+  handle(event);
+ });
  dialog.addEventListener('click',handle);
  dialog.addEventListener('close',()=>{if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});});
  app.addEventListener('pointerdown',event=>{if(event.target.name==='music-seek')ui.seeking=true;});
