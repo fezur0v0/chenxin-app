@@ -1,3 +1,4 @@
+import { animateDrawerClose, bindDrawerDismiss } from '../../drawer.js';
 import { music, musicSheet, musicArtwork } from './view.js';
 import { musicIcon } from './icons.js';
 import { musicCollections, trackFromFile, nextMusicId, PLAY_MODES, formatMusicTime } from './model.js';
@@ -5,9 +6,9 @@ import { musicFile } from './files.js';
 export function createMusicApp({app,getState,setState,persist,notify,compressImage}) {
  const ui={screen:'home',playlistId:'builtin:all',returnScreen:'home',search:'',playing:false,time:0,duration:0,loading:false,missing:false,busy:false,seeking:false,together:{distanceKm:null,elapsedSeconds:null}};
  const audio=new Audio();audio.preload='metadata';
- const dialog=document.createElement('dialog');dialog.className='music-sheet glass';document.body.append(dialog);
+ const dialog=document.createElement('dialog');dialog.className='music-sheet glass bottom-sheet';document.body.append(dialog);
  const picker=document.createElement('input');picker.type='file';picker.multiple=true;picker.accept='audio/*,.mp3,.m4a,.aac,.wav,.ogg,.flac,.opus';picker.hidden=true;picker.dataset.musicFiles='';document.body.append(picker);
- let objectUrl='',loadedId='',generation=0,sheetKind='',sheetItem='',draftArt='',returnFocus,importTarget='builtin:all',replaceId='';
+ let objectUrl='',loadedId='',generation=0,sheetKind='',sheetItem='',draftArt='',returnFocus,importTarget='builtin:all',replaceId='',sheetRevision=0,closingSheet=false;
  function data(){return getState().music;}
  function refresh(focus,top=false) {
   const scope=app.querySelector('.music-app');if(!scope)return;
@@ -90,13 +91,24 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
   else chooseFiles();
  }
  function openSheet(kind,item) {
-  returnFocus=document.activeElement;sheetKind=kind;sheetItem=item?.id||'';draftArt=item?.cover||'';
+  sheetRevision++;closingSheet=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());
+  if(!dialog.open)returnFocus=document.activeElement;
+  sheetKind=kind;sheetItem=item?.id||'';draftArt=item?.cover||'';
   dialog.setAttribute('aria-label',{queue:'播放队列',playlist:'歌单编辑',track:'歌曲信息'}[kind]);dialog.innerHTML=musicSheet(kind,getState(),ui,item);
   const title=dialog.querySelector('[name=title]');if(title){title.required=true;title.maxLength=kind==='playlist'?60:120;}
   const description=dialog.querySelector('[name=description]');if(description)description.maxLength=300;
   const artist=dialog.querySelector('[name=artist]');if(artist)artist.maxLength=120;
   dialog.showModal();dialog.querySelector('[data-music-action=close-sheet]').focus({preventScroll:true});
  }
+ async function closeSheet() {
+  if(!dialog.open||closingSheet)return;
+  closingSheet=true;const revision=sheetRevision;
+  await animateDrawerClose(dialog);
+  if(revision!==sheetRevision)return;
+  if(dialog.open)dialog.close();closingSheet=false;dialog.style.transform='';
+ }
+ bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closingSheet?dialog:null,close:closeSheet,backdrop:true});
+ dialog.addEventListener('cancel',event=>{event.preventDefault();void closeSheet();});
  function updateQueue(){if(dialog.open&&sheetKind==='queue'){const scroll=dialog.scrollTop;dialog.innerHTML=musicSheet('queue',getState(),ui);dialog.scrollTop=scroll;}}
  function chooseFiles(replace=false) {
   if(ui.busy)return;
@@ -112,7 +124,7 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
    else{navigate('playlist',list?.id||'builtin:all');notify('先添加一些喜欢的音乐吧。');}return;
   }
   if(button.dataset.musicTrack){const queue=button.hasAttribute('data-music-from-queue')?data().queue:queueForTrack();void playTrack(button.dataset.musicTrack,queue);return;}
-  if(button.dataset.musicTrackMenu){const track=data().tracks.find(t=>t.id===button.dataset.musicTrackMenu);if(track){if(dialog.open)dialog.close();openSheet('track',track);}return;}
+  if(button.dataset.musicTrackMenu){const track=data().tracks.find(t=>t.id===button.dataset.musicTrackMenu);if(track)openSheet('track',track);return;}
   switch(button.dataset.musicAction) {
    case 'music-home':navigate('home');break;
    case 'player':navigate('player');break;
@@ -125,7 +137,7 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
    case 'mode':if(commit(state=>{state.music.mode=PLAY_MODES[(PLAY_MODES.indexOf(state.music.mode)+1)%PLAY_MODES.length];})){const mode={list:['repeat','列表循环'],one:['repeatOne','单曲循环'],shuffle:['shuffle','随机播放']}[data().mode];button.innerHTML=musicIcon(mode[0]);button.setAttribute('aria-label',mode[1]);}break;
    case 'like':if(commit(state=>{const track=state.music.tracks.find(t=>t.id===state.music.currentId);if(track)track.liked=!track.liked;})){const liked=Boolean(data().tracks.find(t=>t.id===data().currentId)?.liked);button.classList.toggle('is-liked',liked);button.setAttribute('aria-pressed',String(liked));button.setAttribute('aria-label',liked?'取消喜欢':'喜欢这首歌');}break;
    case 'queue':openSheet('queue');break;
-   case 'close-sheet':dialog.close();break;
+   case 'close-sheet':void closeSheet();break;
    case 'new-playlist':openSheet('playlist');break;
    case 'manage-playlist':{const list=data().playlists.find(p=>p.id===ui.playlistId);if(list)openSheet('playlist',list);break;}
    case 'edit-track':{const track=data().tracks.find(t=>t.id===data().currentId);if(track)openSheet('track',track);else chooseFiles();break;}
@@ -142,7 +154,7 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
   handle(event);
  });
  dialog.addEventListener('click',handle);
- dialog.addEventListener('close',()=>{if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;sheetRevision++;closingSheet=false;dialog.style.transform='';if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});});
  app.addEventListener('pointerdown',event=>{if(event.target.name==='music-seek')ui.seeking=true;});
  window.addEventListener('pointerup',()=>{if(ui.seeking){ui.seeking=false;syncProgress();}});
  window.addEventListener('pointercancel',()=>{ui.seeking=false;});

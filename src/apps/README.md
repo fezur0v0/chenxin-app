@@ -26,3 +26,5 @@
 修改后运行 `npm run check`、`npm test`，再检查手机大小、昼夜模式、返回导航与备份恢复。
 
 音乐 view.js 管理首页/歌单/黑胶页/编辑抽屉，controller.js 共享一个 Audio 实例，时间更新只改变进度，不重写页面。model.js 管理曲库、真实集合和队列；files.js 保存 IndexedDB 音频。音乐 JSON 只备份元数据、封面与歌单，不含音频；缺失文件可绑定回原歌曲 ID。删除歌单保留歌曲，删除歌曲则移除各歌单和队列的引用。
+
+音乐队列、歌曲编辑和歌单编辑与聊天抽屉共用 `../drawer.js` 和 `../drawer.css`。新增同类抽屉时，容器使用 `bottom-sheet`，内部标题由 `drawerHeader()` 生成；列表卡片可使用 `drawer-card`。统一样式控制玻璃材质、圆角、横条和间距，仍跟随全局主题、透明度和模糊。标题区不放 ×，顶部横条本身可以点击或键盘操作收起；`bindDrawerDismiss()` 处理横条下滑、短拖回弹、原生 dialog 遮罩点击，`animateDrawerClose()` 处理收起动画。容器自己的控制器保留内容保存、Escape、焦点恢复和生命周期管理；聊天为页面内对话框，音乐为原生 dialog，不重复保存业务数据。

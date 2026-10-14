@@ -1,3 +1,4 @@
+import { animateDrawerClose, bindDrawerDismiss } from './drawer.js';
 import { createMusicApp } from './apps/music/controller.js';
 import { createDiaryApp } from './apps/diary/controller.js';
 import { createHomeEditor } from './home-editor.js';
@@ -11,7 +12,7 @@ let state=loadState(storage), page='home', memoryFilter='all', memorySearch='', 
 const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['settings','settings','设置']];
 const opened=new Set();
 let sessionSearch='',oldestFirst=false;
-let visibleTray='',closingTray=false,dragStart=null;
+let visibleTray='',closingTray=false;
 const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
 let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
@@ -190,13 +191,9 @@ expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.t
 
 const trayMotion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
 function syncTray(){const panel=app.querySelector('.chat-tray');if(!panel){visibleTray='';closingTray=false;return;}for(const el of app.querySelectorAll('.chat-header,.messages,.composer-wrap'))el.inert=true;panel.focus({preventScroll:true});if(visibleTray!==chatUI.tray&&trayMotion())panel.animate([{transform:'translateY(100%)'},{transform:'translateY(0)'}],{duration:280,easing:'cubic-bezier(.2,.8,.2,1)'});visibleTray=chatUI.tray;}
-async function closeTray(){if(closingTray)return;const previous=chatUI.tray,panel=app.querySelector('.chat-tray');closingTray=true;if(panel&&trayMotion()){const from=panel.style.transform||'translateY(0)';await panel.animate([{transform:from},{transform:'translateY(100%)'}],{duration:200,easing:'ease-in',fill:'forwards'}).finished.catch(()=>{});}if(panel&&app.querySelector('.chat-tray')!==panel){closingTray=false;return;}const scroll=app.querySelector('#messages')?.scrollTop;chatUI.tray='';render();if(scroll!==undefined)app.querySelector('#messages').scrollTop=scroll;const trigger=previous==='reasoning'?[...app.querySelectorAll('[data-action=show-reasoning]')].find(e=>e.dataset.id===chatUI.messageId):app.querySelector(`[data-action="toggle-${previous}"]`);trigger?.focus({preventScroll:true});}
+async function closeTray(){if(closingTray)return;const previous=chatUI.tray,panel=app.querySelector('.chat-tray');closingTray=true;await animateDrawerClose(panel);if(panel&&app.querySelector('.chat-tray')!==panel){closingTray=false;return;}const scroll=app.querySelector('#messages')?.scrollTop;chatUI.tray='';render();if(scroll!==undefined)app.querySelector('#messages').scrollTop=scroll;const trigger=previous==='reasoning'?[...app.querySelectorAll('[data-action=show-reasoning]')].find(e=>e.dataset.id===chatUI.messageId):app.querySelector(`[data-action="toggle-${previous}"]`);trigger?.focus({preventScroll:true});}
 app.addEventListener('keydown',e=>{const panel=app.querySelector('.chat-tray');if(!panel||e.key!=='Tab')return;const nodes=[...panel.querySelectorAll('button:not(:disabled),input,textarea')];const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}});
-function resetTrayDrag(panel){if(!panel)return;const from=panel.style.transform;panel.style.transform='';if(from&&trayMotion())panel.animate([{transform:from},{transform:'translateY(0)'}],{duration:220,easing:'cubic-bezier(.2,.8,.2,1)'});}
-app.addEventListener('pointerdown',e=>{const handle=e.target.closest('.tray-handle');if(!handle||closingTray)return;const panel=handle.closest('.chat-tray');panel.getAnimations().forEach(a=>a.cancel());dragStart={y:e.clientY,id:e.pointerId,panel};handle.setPointerCapture(e.pointerId);});
-app.addEventListener('pointermove',e=>{if(!dragStart||e.pointerId!==dragStart.id)return;const delta=e.clientY-dragStart.y;dragStart.panel.style.transform=`translateY(${delta<0?Math.max(-32,delta*.2):delta}px)`;});
-app.addEventListener('pointerup',e=>{if(!dragStart||e.pointerId!==dragStart.id)return;const {y,panel}=dragStart;dragStart=null;if(e.clientY-y>70)closeTray();else resetTrayDrag(panel);});
-app.addEventListener('pointercancel',()=>{resetTrayDrag(dragStart?.panel);dragStart=null;});
+bindDrawerDismiss(app,{panel:()=>closingTray?null:app.querySelector('.chat-tray'),close:closeTray});
 
 const messageDialog=document.createElement('dialog');messageDialog.className='glass message-dialog';messageDialog.setAttribute('aria-label','消息操作');document.body.append(messageDialog);
 let press=null,messageTarget=null;
