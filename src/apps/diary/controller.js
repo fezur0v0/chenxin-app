@@ -1,9 +1,13 @@
 import { diary, diaryEditor } from './view.js';
 import { diaryDate, validDiaryDate, diaryCalendar, shiftDiaryMonth, saveDiaryEntry } from './model.js';
+import { bindDrawerDismiss,animateDrawerClose } from '../../drawer.js';
 export function createDiaryApp({app,getState,setState,persist,notify}) {
  const today=diaryDate(),ui={month:today.slice(0,7),selected:today};
- const dialog=document.createElement('dialog');dialog.className='diary-editor glass';dialog.setAttribute('aria-label','日记编辑');document.body.append(dialog);
- let editingId='',returnFocus;
+ const dialog=document.createElement('dialog');dialog.className='diary-editor glass app-sheet bottom-sheet';dialog.setAttribute('aria-label','日记编辑');document.body.append(dialog);
+ let editingId='',returnFocus,closing=false,revision=0;
+ async function close(){if(!dialog.open||closing)return;closing=true;const current=revision;await animateDrawerClose(dialog);if(current!==revision)return;dialog.close();closing=false;}
+ bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closing?dialog:null,close,backdrop:true});
+ dialog.addEventListener('cancel',event=>{event.preventDefault();void close();});
  function refresh(focusSelector) {
   const body=app.querySelector('.diary-app .desktop-app-body');if(!body)return;
   const scroller=app.querySelector('.page-content'),top=scroller.scrollTop;
@@ -16,6 +20,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   if(scroll)app.querySelector(`[data-entry-date="${date}"]`)?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
  }
  function open(entry) {
+  revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());
   returnFocus=document.activeElement;editingId=entry?.id||'';
   dialog.innerHTML=diaryEditor(entry,ui.selected);
   const date=dialog.querySelector('[name=date]');date.required=true;date.min='0001-01-01';date.max='9999-12-31';
@@ -53,7 +58,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   event.preventDefault();date.setDate(date.getDate()+offset);select(diaryDate(date));
  });
  dialog.addEventListener('click',event=>{
-  if(event.target.closest('[data-diary-close]'))dialog.close();
+  if(event.target.closest('[data-diary-close]')){void close();return;}
   if(event.target.closest('[data-diary-delete]')&&confirm('删除这篇日记？删除后无法恢复。')) {
    const saved=commit(state=>{state.diaryEntries=state.diaryEntries.filter(e=>e.id!==editingId);return true;});
    if(saved){dialog.close();refresh('[data-diary-action=write]');notify('日记已删除。');}
@@ -65,6 +70,6 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   ui.month=entry.date.slice(0,7);ui.selected=entry.date;dialog.close();refresh(`[data-diary-edit="${CSS.escape(entry.id)}"]`);notify('日记已保存。');
  });
  dialog.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();dialog.querySelector('form').requestSubmit();}});
- dialog.addEventListener('close',()=>{if(returnFocus?.isConnected)returnFocus.focus({preventScroll:true});});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());const target=returnFocus?.isConnected?returnFocus:app.querySelector(editingId?`[data-diary-edit="${CSS.escape(editingId)}"]`:'.diary-write');target?.focus({preventScroll:true});});
  return {ui};
 }

@@ -1,6 +1,7 @@
 import { escape, field } from '../../ui.js';
 import { icon } from '../../icons.js';
 import { appIcon } from '../icons.js';
+import { drawerHeader } from '../../drawer.js';
 import { DIARY_MOODS, diaryDate, diaryCalendar, diaryMonthEntries } from './model.js';
 const weekday=['SUN','MON','TUE','WED','THU','FRI','SAT'];
 const moodColor=name=>DIARY_MOODS.find(m=>m.name===name)?.color||'var(--muted)';
@@ -25,7 +26,7 @@ export function diary(state,ui={}) {
  <button class="diary-write glass" data-diary-action="write" aria-label="写 ${selected} 的日记">${icon('edit')}<span class="sr-only">写日记</span></button>`;
 }
 export function diaryEditor(entry,date) {
- return `<form id="diary-entry-form"><header class="diary-editor-heading"><h2>${entry?'这一天的日记':'写一篇日记'}</h2><button type="button" data-diary-close aria-label="关闭日记编辑">${icon('close')}</button></header><p class="diary-editor-error" role="alert" hidden></p><input type="hidden" name="id" value="${escape(entry?.id||'')}">
+ return `<form id="diary-entry-form">${drawerHeader({title:entry?'这一天的日记':'写一篇日记',action:'close',actionAttribute:'data-diary-close'})}<p class="diary-editor-error" role="alert" hidden></p><input type="hidden" name="id" value="${escape(entry?.id||'')}">
  ${field('日期','date',entry?.date||date,'','date')}
  <fieldset class="diary-mood-picker"><legend>这一天的心情</legend>${[...DIARY_MOODS,{name:'',color:'var(--muted)'}].map(mood=>`<label style="--mood:${mood.color}"><input type="radio" name="mood" value="${mood.name}" ${(entry?.mood||'')===mood.name?'checked':''}><span><i aria-hidden="true"></i>${mood.name||'不标记'}</span></label>`).join('')}</fieldset>
  ${field('标题（可选）','title',entry?.title||'','给这一天起个名字')}

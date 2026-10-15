@@ -103,7 +103,7 @@
 - `src/home-calendar.js`：三周日历的本地日期窗口。
 - `src/store.js`：状态、迁移、验证、会话/分支、记忆、备份。
 - `src/style.css`：主题、玻璃材质、布局与动效。
-- `src/drawer.js` / `src/drawer.css`：聊天与音乐共用的抽屉标题模板、关闭/拖动行为与材质。新增同类抽屉使用 bottom-sheet、drawerHeader、bindDrawerDismiss；小卡片可用 drawer-card，具体数据操作与焦点生命周期由各控制器负责。
+- `src/drawer.js` / `src/drawer.css`：聊天、音乐、主页组件、日记和配置 App 共用的抽屉标题模板、关闭/拖动行为与材质。新增同类抽屉使用 bottom-sheet、drawerHeader、bindDrawerDismiss；小卡片可用 drawer-card，具体数据操作与焦点生命周期由各控制器负责。
 - `src/icons.js`：图标。
 - `src/splash.js` / `src/splash.css` / `assets/`：水雾开屏。
 - `legacy/`：旧桌面程序存档，不是当前入口。
@@ -188,3 +188,11 @@ npm test
 - https://github.com/SillyTavern/SillyTavern/blob/release/default/content/presets/openai/Default.json
 
 本轮使用了项目本地的 ui-ux-pro-max 技能。自动设计系统输出不符合现有手机应用布局，未采用其网站结构或配色；界面沿用用户已确认的主题和高透玻璃，按通用规则检查触摸区域、键盘焦点与减少动态效果。
+
+
+## 主页与日记编辑抽屉统一（2026-10-15）
+
+- 主页心情、便签、日历、记忆、纪念日编辑和添加组件面板，以及日记编辑，已接入 drawerHeader / bindDrawerDismiss / animateDrawerClose。去掉旧的右上角 ×，顶部横条可下拖收起，短拖回弹，也支持点横条、遮罩和 Escape；关闭后恢复焦点。
+- 删除各自复制的表面、遮罩、标题与进场动画样式，使用 app-sheet bottom-sheet 的共用玻璃材质与底部布局。保留原来的取消／保存、数据字段和头像草稿处理；收起不保存未提交内容。
+- 验证：39 项 Node 测试、语法与 diff 检查通过；Chromium 在 320×640、390×844 检查各主页编辑入口、无 ×、拖动／回弹、保存／取消、遮罩／Escape、焦点恢复和无横向溢出，涵盖普通与减少动态效果；触屏模拟复查主页／日记手势及日记夜间底部定位。
+- 实际预览：docs/preview-home-mood-drawer.webp、docs/preview-diary-drawer.webp。预览中的临时编辑内容不写入默认状态。

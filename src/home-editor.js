@@ -4,10 +4,12 @@ import { appIcon } from './apps/icons.js';
 import { avatar, escape, field, widgetLabels } from './views.js';
 import { icon } from './icons.js';
 import { daysTogether, isExpired, localDate } from './store.js';
+import { drawerHeader, bindDrawerDismiss, animateDrawerClose } from './drawer.js';
 
 export function createHomeEditor({app,getState,setState,persist,renderHome,notify,compressImage,openApp}) {
  const ui={editing:false,page:0,dragPages:null};
- const dialog=document.createElement('dialog');dialog.className='glass home-editor-dialog';dialog.setAttribute('aria-label','编辑主页小组件');document.body.append(dialog);
+ const dialog=document.createElement('dialog');dialog.className='glass home-editor-dialog app-sheet bottom-sheet';dialog.setAttribute('aria-label','编辑主页小组件');document.body.append(dialog);
+ let closingDialog=false,dialogRevision=0,returnFocus;
  let draft=null,type='',press=null,ignoreClickUntil=0,held=false,lastDate=localDate(),uploads=0;
  const menu=document.createElement('dialog');menu.className='glass home-context-menu';menu.setAttribute('aria-label','小组件菜单');document.body.append(menu);
  let menuType='',suppressMenuClick=false;
@@ -32,8 +34,12 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
  function report(message){const el=dialog.querySelector('.home-editor-error');if(el){el.hidden=false;el.textContent=message;}else notify(message);}
  function commit(change){const before=structuredClone(getState());change(getState());if(!persist()){setState(before);if(dialog.open)report('保存失败，本机存储空间可能不足。当前修改尚未保存。');return false;}return true;}
  function begin(){closeMenu();if(ui.editing)return;ui.editing=true;refresh();if(motion())app.querySelectorAll('.home-widget').forEach(el=>el.animate([{transform:'rotate(-.5deg)'},{transform:'rotate(.5deg)'},{transform:'rotate(0)'}],{duration:260,iterations:2}));}
- function header(title){return `<div class="home-editor-heading"><h2>${title}</h2><button type="button" data-home-close aria-label="关闭编辑">${icon('close')}</button></div><p class="home-editor-error hint" role="alert" hidden></p>`;}
+ async function closeEditor(){if(!dialog.open||closingDialog)return;closingDialog=true;const revision=dialogRevision;await animateDrawerClose(dialog);if(revision!==dialogRevision)return;dialog.close();closingDialog=false;}
+ bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closingDialog?dialog:null,close:closeEditor,backdrop:true});
+ dialog.addEventListener('cancel',event=>{event.preventDefault();void closeEditor();});
+ function header(title){return `${drawerHeader({title,action:'close',actionAttribute:'data-home-close'})}<p class="home-editor-error hint" role="alert" hidden></p>`;}
  function open(kind){
+  dialogRevision++;closingDialog=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());if(!dialog.open)returnFocus=document.activeElement;
   type=kind;uploads=0;draft=structuredClone(getState());const h=draft.home;
   let content='';
   if(kind==='add'){
@@ -115,8 +121,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
   if(!ui.editing&&['Enter',' ','ContextMenu'].includes(e.key)||!ui.editing&&e.shiftKey&&e.key==='F10'){e.preventDefault();showMenu(widget);}
  });
  dialog.addEventListener('click',e=>{
-  if(e.target.closest('[data-home-close]')){dialog.close();return;}
-  if(e.target===dialog){const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();return;}
+  if(e.target.closest('[data-home-close]')){void closeEditor();return;}
   const add=e.target.closest('[data-home-add]');if(add){
    const kind=add.dataset.homeAdd,visible=type=>type===kind||homeItemVisible(getState().home,type),pages=structuredClone(getState().home.pages);
    if(!homePageFits([...pages[ui.page].filter(type=>type!==kind),kind],visible)){report('这一页放不下了，请先新增一页，再添加入口。');return;}
@@ -133,7 +138,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
    else{if(typeof data.widgetTitle==='string')s.home.widgetTitles={...s.home.widgetTitles,[type]:data.widgetTitle.trim().slice(0,20)};if(type==='note')s.home.note=data.note.slice(0,500);if(type==='date')s.home.showWeekday=data.showWeekday==='on';if(type==='mood')s.home.mood=data.mood;if(type==='memory')s.home.memoryId=data.memoryId;}
   })){dialog.close();refresh();notify('小组件已保存。');}
  });
- dialog.addEventListener('close',()=>{draft=null;app.querySelector(`[data-home-widget="${type}"]`)?.focus({preventScroll:true});});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;dialogRevision++;closingDialog=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());draft=null;const target=app.querySelector(type==='add'?'[data-home-action=add]':`[data-home-widget="${type}"]`);(target||(returnFocus?.isConnected?returnFocus:null))?.focus({preventScroll:true});});
  function clock(){if(lastDate!==localDate()){lastDate=localDate();if(app.querySelector('.home-page'))refresh();}const clock=app.querySelector('[data-home-clock]');const now=new Date(),h=getState().home,days=daysTogether(h.since);if(clock){clock.textContent=now.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false});clock.dateTime=now.toISOString();}const count=app.querySelector('[data-home-days]');if(count)count.textContent=days>0?days:1-(days||0);const unit=app.querySelector('[data-home-days-unit]');if(unit)unit.textContent='days';}
  setInterval(clock,1000);document.addEventListener('visibilitychange',clock);
  return {ui,exit(){closeMenu();finishDrag(false);ui.editing=false;ui.page=Math.max(0,Math.min(ui.page,getState().home.pages.length-1));cancel();gesture=null;},clock};
