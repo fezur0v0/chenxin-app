@@ -6,6 +6,7 @@ import { createHomeEditor } from './home-editor.js';
 import { appView, findApp } from './apps/index.js';
 import { finishSplash } from './splash.js';
 import { icon } from './icons.js';
+import { launcherIcon } from './launcher-icons.js';
 import { backButton } from './ui.js';
 import { localDate, loadState, saveState, normalizeState, newSession, addDraftMessage, exportData, saveMemory, changeMessage } from './store.js';
 import { home, chat, sessions, settings, memory, memoryEditor, sidebar, escape, button } from './views.js';
@@ -31,7 +32,7 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const activePage=page==='sessions'?'chat':page,desktopApp=findApp(page),immersive=['chat','sessions'].includes(page)||desktopApp;
- app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
+ app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="dock-launch ${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}><span class="launcher-tile">${launcherIcon(i)}</span><span class="dock-current" aria-hidden="true"></span></button>`).join('')}</nav></div>`}</div>`;
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;

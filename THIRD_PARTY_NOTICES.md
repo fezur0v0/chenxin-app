@@ -97,7 +97,7 @@ Distribution: https://www.npmjs.com/package/@fontsource-variable/noto-serif-sc
 
 ---
 
-## Desktop app icons — React Icons / Lucide
+## Internal app icons — React Icons / Lucide
 
 `src/apps/icons.js` contains SVG node data extracted from the Lucide (`lu`)
 set distributed in `react-icons` version 5.7.0. Selected exports:
@@ -133,3 +133,30 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+---
+
+## Launcher icons — Nucleo Glass
+
+`src/launcher-icons.js` embeds eleven SVGs from the official free Nucleo Glass
+collection: feather, headphones, image, slider, book-open, box-archive,
+color-palette, house, msgs, hearts and gear. They are used for the seven desktop
+App entrances and four bottom navigation entrances. Internal UI controls retain
+their existing Lucide icons.
+
+Copyright © Nucleo. These icons remain subject to Nucleo's license and are not
+relicensed under the application or Lucide licenses. Their use is restricted to
+the product they are bundled with; standalone redistribution is prohibited.
+The copyright notice, sources and local adaptations are recorded in
+`assets/licenses/nucleo-glass.txt`.
+
+Official collection: https://nucleoapp.com/svg-glass-icons
+Free icons: https://nucleoapp.com/free-icons
+License: https://nucleoapp.com/license
+Open-source usage: https://nucleoapp.com/qa/include-icons-in-open-source-projects
+Official package: https://www.npmjs.com/package/nucleo-glass/v/1.4.1
+
+Geometry is unchanged. SVG IDs are namespaced per rendered instance; gradient
+colors use CSS custom properties to keep the glass artwork legible in dark mode.
+No Nucleo runtime, account credentials or paid icon library is bundled.

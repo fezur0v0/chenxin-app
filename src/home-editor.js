@@ -1,6 +1,7 @@
 import { moveHomeWidget, widgetMenuPosition, homeItemVisible, homePageFits } from './home-layout.js';
 import { APPS, findApp } from './apps/catalog.js';
 import { appIcon } from './apps/icons.js';
+import { launcherIcon } from './launcher-icons.js';
 import { avatar, escape, field, widgetLabels } from './views.js';
 import { icon } from './icons.js';
 import { daysTogether, isExpired, localDate } from './store.js';
@@ -84,6 +85,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
  function finishDrag(save){if(!drag)return;clearEdge();drag.ghost.remove();const pages=ui.dragPages,kind=drag.type;drag=null;ui.dragPages=null;if(save)commit(s=>{s.home.pages=pages;s.home.widgets.sort((a,b)=>pages.flat().indexOf(a.type)-pages.flat().indexOf(b.type));});ui.page=Math.max(0,getState().home.pages.findIndex(list=>list.includes(kind)));refresh();ignoreClickUntil=Date.now()+200;}
  function startDrag(e){
   const widget=app.querySelector(`[data-home-widget="${gesture.type}"]`),r=widget.getBoundingClientRect(),ghost=widget.cloneNode(true);
+  const appEntry=findApp(gesture.type);if(appEntry){ghost.querySelector('.launcher-tile').innerHTML=launcherIcon(appEntry.icon);ghost.style.setProperty('--launcher-size',`${widget.querySelector('.launcher-tile').getBoundingClientRect().width}px`);}
   ghost.classList.add('home-drag-ghost');ghost.inert=true;ghost.removeAttribute('tabindex');ghost.setAttribute('aria-hidden','true');ghost.querySelectorAll('.widget-remove,.widget-drag-surface').forEach(el=>el.remove());ghost.style.width=`${r.width}px`;ghost.style.height=`${r.height}px`;document.body.append(ghost);
   ui.dragPages=structuredClone(getState().home.pages);drag={type:gesture.type,ghost,dx:gesture.x-r.left,dy:gesture.y-r.top};app.setPointerCapture(e.pointerId);widget.classList.add('home-drag-placeholder');updateDrag(e);
  }

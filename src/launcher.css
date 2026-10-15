@@ -1,0 +1,15 @@
+/* One material for desktop apps and the four independent bottom shortcuts. */
+.launcher-tile{display:grid;place-items:center;flex-shrink:0;width:var(--launcher-size,clamp(44px,17cqw,64px));aspect-ratio:1;border-radius:27%;border:1px solid rgb(255 255 255 / .5);background:linear-gradient(145deg,rgb(255 255 255 / calc(.16 * var(--glass-soften))),rgb(255 255 255 / calc(.025 * var(--glass-soften))) 55%,rgb(255 255 255 / calc(.1 * var(--glass-soften))));background-color:rgb(var(--glass-tint) / var(--glass-solid));box-shadow:inset 0 1px 1px rgb(255 255 255 / .55),inset 0 -1px 0 rgb(255 255 255 / .06),0 5px 14px rgb(24 30 40 / .055);backdrop-filter:blur(var(--glass-blur)) saturate(150%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(150%);transition:box-shadow 160ms ease,border-color 160ms ease,filter 160ms ease}
+.launcher-tile>.launcher-glyph{width:64%;height:64%;overflow:visible;pointer-events:none}
+:root[data-theme=dark] .launcher-tile{--nc-gradient-1-color-1:#f4f5f7;--nc-gradient-1-color-2:#b9c0cc;--nc-gradient-2-color-1:#cfd4de;--nc-gradient-2-color-2:#848c9a;border-color:rgb(255 255 255 / .2);background:linear-gradient(145deg,rgb(255 255 255 / calc(.075 * var(--glass-soften))),rgb(24 26 31 / calc(.03 * var(--glass-soften))) 55%,rgb(255 255 255 / calc(.025 * var(--glass-soften))));background-color:rgb(var(--glass-tint) / var(--glass-solid));box-shadow:inset 0 1px 1px rgb(255 255 255 / .18),inset 0 -1px 0 rgb(255 255 255 / .025),0 5px 14px rgb(0 0 0 / .13)}
+.home-app-launch:active .launcher-tile,.dock-launch:active .launcher-tile{filter:brightness(.9)}
+.nav-dock{position:relative;z-index:5;flex-shrink:0;padding:10px 28px calc(12px + env(safe-area-inset-bottom));background:none}
+.bottom-nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;max-width:480px;margin:auto;padding:0;border:0;background:none;box-shadow:none;container-type:inline-size}
+.bottom-nav .dock-launch{min-width:44px;min-height:44px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:7px;padding:0;color:var(--ink);border-radius:18px;touch-action:manipulation}
+.dock-current{width:4px;height:4px;flex-shrink:0;border-radius:50%;background:var(--ink);visibility:hidden}
+.dock-launch[aria-current=page] .dock-current{visibility:visible}
+.dock-launch[aria-current=page] .launcher-tile{box-shadow:inset 0 1px 1px rgb(255 255 255 / .65),inset 0 0 0 1px rgb(var(--tint) / .2),0 5px 16px rgb(24 30 40 / .09)}
+:root[data-theme=dark] .dock-launch[aria-current=page] .launcher-tile{box-shadow:inset 0 1px 1px rgb(255 255 255 / .3),inset 0 0 0 1px rgb(255 255 255 / .13),0 5px 16px rgb(0 0 0 / .2)}
+@media(max-width:380px){.nav-dock{padding-left:20px;padding-right:20px}}
+@media(prefers-reduced-motion:reduce){.launcher-tile{transition:none}}
+@supports not (backdrop-filter:blur(1px)){.launcher-tile{background:var(--solid)}}

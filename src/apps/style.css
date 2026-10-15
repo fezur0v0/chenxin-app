@@ -7,21 +7,19 @@
 @import './archives/style.css';
 @import './appearance/style.css';
 
-.home-app{min-width:0;--app-line:#3f4148}
-[data-theme=dark] .home-app{--app-line:#fff}
+.home-app{min-width:0;--app-line:var(--ink)}
 .home-app-launch{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:5px;border:0;background:none;padding:0;color:var(--app-line);border-radius:18px;font-family:var(--font-ui)}
-.home-app-icon{display:grid;place-items:center;width:clamp(44px,15.5cqw,58px);aspect-ratio:1;flex-shrink:0;border-radius:27%;border:1px solid rgb(255 255 255 / .6);background:linear-gradient(145deg,rgb(255 255 255 / calc(.22 * var(--glass-soften))),rgb(255 255 255 / calc(.035 * var(--glass-soften))) 52%,rgb(255 255 255 / calc(.13 * var(--glass-soften))));background-color:rgb(var(--glass-tint) / var(--glass-solid));box-shadow:inset 0 1px 0 rgb(255 255 255 / .65),inset 0 -1px 0 rgb(255 255 255 / .1),0 4px 12px rgb(32 38 49 / .06);backdrop-filter:blur(var(--glass-blur)) saturate(165%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(165%)}
-.home-app-icon svg{width:48%;height:48%}.home-app-name{font-size:clamp(10px,3.2cqw,12px);line-height:1.2;white-space:nowrap}
-[data-theme=dark] .home-app-icon{border-color:rgb(255 255 255 / .25);background:linear-gradient(145deg,rgb(255 255 255 / calc(.1 * var(--glass-soften))),rgb(24 26 31 / calc(.065 * var(--glass-soften))) 52%,rgb(255 255 255 / calc(.045 * var(--glass-soften))));background-color:rgb(var(--glass-tint) / var(--glass-solid));box-shadow:inset 0 1px 0 rgb(255 255 255 / .24),inset 0 -1px 0 rgb(255 255 255 / .04),0 4px 12px rgb(0 0 0 / .14)}
-.home-app-launch:active .home-app-icon{filter:brightness(.92)}.home-editing .home-app .widget-remove{width:44px;height:44px;top:-12px;left:-12px}.home-app .widget-remove svg{width:13px;height:13px}
+
+.home-app-name{font-size:clamp(10px,3.2cqw,12px);line-height:1.2;white-space:nowrap}
+
+.home-editing .home-app .widget-remove{width:44px;height:44px;top:-12px;left:-12px}.home-app .widget-remove svg{width:13px;height:13px}
 .desktop-app-page{padding-top:0!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
 .desktop-app{max-width:480px;margin:auto;padding-bottom:12px}.desktop-app-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(8px + env(safe-area-inset-top)) 0 8px;min-height:60px}.desktop-app-header h1{font-size:18px;font-weight:550;margin:0}.desktop-app-header>span{width:44px;height:44px;flex-shrink:0;display:grid;place-items:center}
 .desktop-app-intro{margin:12px 0 24px;font-size:13px;line-height:1.8;color:var(--muted)}
 .desktop-app .app-panel{border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,rgb(255 255 255 / calc(.19 * var(--glass-soften))),rgb(255 255 255 / calc(.045 * var(--glass-soften))) 54%,rgb(255 255 255 / calc(.11 * var(--glass-soften))));background-color:rgb(var(--glass-tint) / var(--glass-solid));box-shadow:inset 0 1px 0 var(--glass-glint),0 6px 18px rgb(var(--tint) / .045);backdrop-filter:blur(var(--glass-blur)) saturate(150%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(150%)}
 [data-theme=dark] .desktop-app .app-panel{background:linear-gradient(145deg,rgb(255 255 255 / calc(.045 * var(--glass-soften))),rgb(25 27 33 / calc(.13 * var(--glass-soften))) 54%,rgb(255 255 255 / calc(.02 * var(--glass-soften))));background-color:rgb(var(--glass-tint) / var(--glass-solid))}
 .app-status{font-size:11px;line-height:1.9;color:var(--muted);margin:22px 4px;text-align:center}.app-link{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 16px;margin:16px auto 0;border-radius:18px;font-size:13px;border:1px solid var(--line);background:rgb(var(--glass-tint) / .15)}.app-link svg{width:16px;height:16px}.app-badge{border:1px solid var(--line);border-radius:20px;padding:6px 10px;color:var(--muted);font-size:10px}
-@media(max-width:350px){.home-app-launch{gap:4px}.home-app-icon{width:44px}.appearance-panel{padding:18px}.archive-person .avatar{width:60px;height:60px}.desktop-app-intro{font-size:12px}}
-@supports not (backdrop-filter:blur(1px)){.home-app-icon,.desktop-app .app-panel{background:var(--solid)}}
+@media(max-width:350px){.home-app-launch{gap:4px}.appearance-panel{padding:18px}.archive-person .avatar{width:60px;height:60px}.desktop-app-intro{font-size:12px}}
+@supports not (backdrop-filter:blur(1px)){.desktop-app .app-panel{background:var(--solid)}}
 
-.home-drag-ghost.home-app .home-app-icon{width:70%;min-width:44px;max-width:58px}
 .home-widget-picker svg{width:20px;height:20px;margin-right:12px;flex-shrink:0}.home-widget-picker span{margin-right:auto}
