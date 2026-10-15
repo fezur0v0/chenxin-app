@@ -14,6 +14,7 @@
 
 `view.js` 返回页面内容，`style.css` 保存这个 App 的外观。
 `index.js` 负责公共页头和返回主页；`catalog.js` 管理名称、图标和稳定的入口 ID。
+页头返回按钮统一调用 `../ui.js` 的 `backButton(action, label, options)`，样式与箭头动效由 `../navigation.css` 管理。默认使用全局 `data-action`；音乐内部导航传入 `{music:true}`，收起播放页再加 `{collapsed:true}`，箭头会平滑转为向下。组件统一 44×44px 点击区域、20px SVG、无背景／无边框、昼夜颜色及键盘焦点，不要在各 App 中重新添加圆形玻璃底。各控制器继续处理原来的返回动作；音乐刷新继续保留按钮与 SVG 节点，让快速反向切换保持连续。
 共享样式位于本目录的 `style.css`，图标来自 React Icons 的 Lucide 系列，SVG 数据在 `icons.js`。
 
 各界面沿用已有主题、壁纸和本机数据，不为每个 App 建立重复的数据副本。
