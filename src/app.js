@@ -1,6 +1,7 @@
 import { animateDrawerClose, bindDrawerDismiss } from './drawer.js';
 import { createMusicApp } from './apps/music/controller.js';
 import { createDiaryApp } from './apps/diary/controller.js';
+import { createPromptLibraries } from './apps/prompt-library/controller.js';
 import { createHomeEditor } from './home-editor.js';
 import { appView, findApp } from './apps/index.js';
 import { finishSplash } from './splash.js';
@@ -21,6 +22,7 @@ const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.c
 const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,renderHome,notify,compressImage,openApp:goto});
 const diaryApp=createDiaryApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
+const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -29,7 +31,7 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const activePage=page==='sessions'?'chat':page,desktopApp=findApp(page),immersive=['chat','sessions'].includes(page)||desktopApp;
- app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
+ app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav glass" aria-label="主导航">${nav.map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="${activePage===p?'active':''}" ${activePage===p?'aria-current="page"':''}>${icon(i)}</button>`).join('')}</nav></div>`}</div>`;
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
