@@ -17,9 +17,9 @@ Official free collection: https://nucleoapp.com/free-icons
 Official package reference: nucleo-glass 1.4.1 (README links the Nucleo license).
 Accessed: 2026-10-16
 
-Eleven icons used in Chenxin:
+Ten icons used in Chenxin:
 feather, headphones, image, slider, book-open, box-archive, color-palette,
-house, msgs, hearts, gear.
+msgs, hearts, gear.
 
 Adaptations: decorative SVG accessibility attributes; per-instance IDs for SVG
 filters/gradients/masks; gradient stop colors exposed as CSS custom properties

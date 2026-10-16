@@ -1,5 +1,5 @@
 import { APPS, findApp } from './catalog.js';
-import { backButton, escape } from '../ui.js';
+import { appPageHeader, escape } from '../ui.js';
 import { diary } from './diary/view.js';
 import { music } from './music/view.js';
 import { gallery } from './gallery/view.js';
@@ -13,5 +13,5 @@ export function appView(id,state,ui) {
  const app=findApp(id);
  if(!app)return '';
  if(['music','worldbook','presets'].includes(app.icon))return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}">${views[app.icon](state,ui)}</section>`;
- return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}"><header class="desktop-app-header">${backButton('home','返回主页')}<h1 tabindex="-1">${app.name}</h1><span aria-hidden="true"></span></header>${app.icon==='diary'?'':`<p class="desktop-app-intro">${escape(app.subtitle)}</p>`}<div class="desktop-app-body">${views[app.icon](state,ui)}</div></section>`;
+ return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}">${appPageHeader(app.name)}${app.icon==='diary'?'':`<p class="desktop-app-intro">${escape(app.subtitle)}</p>`}<div class="desktop-app-body">${views[app.icon](state,ui)}</div></section>`;
 }
