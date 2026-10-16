@@ -1,7 +1,7 @@
-import { APP_TYPES } from './apps/catalog.js';
+import { APP_TYPES, DESKTOP_APP_TYPES } from './apps/catalog.js';
 export const HOME_TYPES=['anniversary','date','note','mood','memory',...APP_TYPES];
 export function homeItemVisible(home,type){
- return APP_TYPES.includes(type)?!home.hiddenApps?.includes(type):type==='anniversary'?home.anniversaryVisible!==false:home.widgets.some(w=>w.type===type&&w.enabled);
+ return APP_TYPES.includes(type)?DESKTOP_APP_TYPES.includes(type)&&!home.hiddenApps?.includes(type):type==='anniversary'?home.anniversaryVisible!==false:home.widgets.some(w=>w.type===type&&w.enabled);
 }
 export function normalizeHomePages(pages,widgets,options={}){
  const fallback=['anniversary',...widgets.map(w=>w.type)],seen=new Set();
@@ -16,7 +16,7 @@ export function normalizeHomePages(pages,widgets,options={}){
  }
  for(const type of fallback)if(!seen.has(type))place(type);
  for(const type of overflow)place(type,result.length-1);
- const missing=APP_TYPES.filter(type=>!seen.has(type));
+ const missing=DESKTOP_APP_TYPES.filter(type=>!seen.has(type));
  if(missing.length){
   // Existing widget layouts stay intact. New app entrances get an empty/new page.
   let preferred=result.findIndex(list=>!list.length);

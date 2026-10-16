@@ -13,9 +13,9 @@
 | 外观 | `appearance/` | `view.js`、`style.css` |
 
 `view.js` 返回页面内容，`style.css` 保存这个 App 的外观。
-`index.js` 负责公共页头和返回主页；标准页头复用 `../ui.js` 的 `appPageHeader()`，记忆和系统设置全屏页也使用同一模板。`catalog.js` 管理名称、图标和稳定的入口 ID。
-页头返回按钮统一调用 `../ui.js` 的 `backButton(action, label, options)`，样式与箭头动效由 `../navigation.css` 管理。默认使用全局 `data-action`；音乐内部导航传入 `{music:true}`，收起播放页再加 `{collapsed:true}`，箭头会平滑转为向下。组件统一 44×44px 点击区域、20px SVG、无背景／无边框、昼夜颜色及键盘焦点，不要在各 App 中重新添加圆形玻璃底。所有标准页头、音乐页头和配置库页头都使用 app-topbar：同一最大宽度、16px 手机侧边留白、64px 高度加顶部安全区，sticky 固定在滚动容器顶部；箭头的 44px 点击区域统一位于顶部安全区下 10px。内容区可继续保留各自留白，不要重新单独定位页头。各控制器继续处理原来的返回动作；音乐刷新继续保留按钮与 SVG 节点，让快速反向切换保持连续。
-App 页面共享样式位于本目录的 `style.css`，内部线条图标来自 React Icons 的 Lucide 系列，SVG 数据在 `icons.js`。桌面七个 App 与底部四个入口使用 `../launcher-icons.js` 的 Nucleo Glass SVG，外框与底部布局共用 `../launcher.css`。入口外框使用固定乳白／深灰磨砂材质、柔亮边缘和 14px 模糊，不引用外观的 --glass-* 变量；不支持背景模糊时也使用独立的实色降级。保持入口与内部操作图标的用途区分；Nucleo 许可与来源见根目录 THIRD_PARTY_NOTICES.md 和 assets/licenses/nucleo-glass.txt。拖拽副本需重新生成 SVG ID，并沿用原图标宽度，避免渐变／遮罩冲突和尺寸跳变。
+`index.js` 负责公共页头和返回主页；标准页头复用 `../ui.js` 的 `appPageHeader()`，记忆和系统设置全屏页也使用同一模板。`catalog.js` 管理名称、图标和稳定的入口 ID。外观标记 desktop:false，仅从底部第三个快捷入口打开，不在桌面或添加列表重复展示；旧布局中的 ID 仍兼容保留，外观数据和路由不变。
+页头返回按钮统一调用 `../ui.js` 的 `backButton(action, label, options)`，样式与箭头动效由 `../navigation.css` 管理。默认使用全局 `data-action`；音乐内部导航传入 `{music:true}`，收起播放页再加 `{collapsed:true}`，箭头会平滑转为向下。组件统一 44×44px 点击区域、20px SVG、无背景／无边框、昼夜颜色及键盘焦点，不要在各 App 中重新添加圆形玻璃底。所有标准页头、音乐页头和配置库页头都使用 app-topbar：同一最大宽度、16px 手机侧边留白、64px 高度加顶部安全区，sticky 固定在滚动容器顶部；箭头的 44px 点击区域统一位于顶部安全区下 10px。页头背景完全透明，无填充、边框、阴影、模糊或实色降级遮罩，且不随外观滑块改变。内容区可继续保留各自留白，不要重新单独定位页头。各控制器继续处理原来的返回动作；音乐刷新继续保留按钮与 SVG 节点，让快速反向切换保持连续。
+App 页面共享样式位于本目录的 `style.css`，内部线条图标来自 React Icons 的 Lucide 系列，SVG 数据在 `icons.js`。桌面六个 App 与底部四个入口使用 `../launcher-icons.js` 的 Nucleo Glass SVG，外框与底部布局共用 `../launcher.css`。入口外框使用固定乳白／深灰磨砂材质、柔亮边缘和 14px 模糊，不引用外观的 --glass-* 变量；不支持背景模糊时也使用独立的实色降级。保持入口与内部操作图标的用途区分；Nucleo 许可与来源见根目录 THIRD_PARTY_NOTICES.md 和 assets/licenses/nucleo-glass.txt。拖拽副本需重新生成 SVG ID，并沿用原图标宽度，避免渐变／遮罩冲突和尺寸跳变。
 
 各界面沿用已有主题、壁纸和本机数据，不为每个 App 建立重复的数据副本。
 外观已经完整迁移原设置；图库展示已保存图片，档案沿用现有配置；世界书与预设支持本机配置管理。

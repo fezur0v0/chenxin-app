@@ -3,7 +3,7 @@ import { normalizeDiaryEntries } from './apps/diary/model.js';
 import { normalizeWorldbooks } from './apps/worldbook/model.js';
 import { normalizePresets } from './apps/presets/model.js';
 import { normalizeHomePages } from './home-layout.js';
-import { APP_TYPES } from './apps/catalog.js';
+import { APP_TYPES, DESKTOP_APP_TYPES } from './apps/catalog.js';
 export const STORAGE_KEY = 'chenxin.frontend.v1';
 export const WIDGETS = ['date', 'note', 'mood', 'memory'];
 const text = (v, fallback = '', max = 12000) => typeof v === 'string' ? v.slice(0, max) : fallback;
@@ -19,7 +19,7 @@ export function daysTogether(since, now = new Date()) {
 }
 function extras() {
  return { music:emptyMusic(), diaryEntries:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
- home: { pages:[['anniversary',...WIDGETS],[...APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[]} };
+ home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[]} };
 }
 export function createState() {
  const id = crypto.randomUUID();

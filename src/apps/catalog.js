@@ -6,7 +6,9 @@ export const APPS = [
  {id:'app-presets',name:'预设',icon:'presets',subtitle:'保存你喜欢的相处方式。'},
  {id:'app-worldbook',name:'世界书',icon:'worldbook',subtitle:'一起构建，属于你们的世界。'},
  {id:'app-archives',name:'档案',icon:'archives',subtitle:'关于你，也关于陪伴你的 TA。'},
- {id:'app-appearance',name:'外观',icon:'appearance',subtitle:'让这个小世界，更像你。'}
+ {id:'app-appearance',desktop:false,name:'外观',icon:'appearance',subtitle:'让这个小世界，更像你。'}
 ];
 export const APP_TYPES = APPS.map(app=>app.id);
+// Dock-only Apps keep their route and legacy layout IDs, without a desktop copy.
+export const DESKTOP_APP_TYPES = APPS.filter(app=>app.desktop!==false).map(app=>app.id);
 export const findApp = id => APPS.find(app=>app.id===id);

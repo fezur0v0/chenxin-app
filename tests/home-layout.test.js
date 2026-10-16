@@ -1,16 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {normalizeHomePages,moveHomeWidget,widgetMenuPosition,homeGridSlots,homeItemVisible,homePageFits} from '../src/home-layout.js';
-import { APP_TYPES } from '../src/apps/catalog.js';
+import { APP_TYPES, DESKTOP_APP_TYPES } from '../src/apps/catalog.js';
 import {createState,normalizeState,exportData} from '../src/store.js';
 test('old widgets keep their page and hidden state; new apps get their own page',()=>{
  const state=createState();delete state.home.pages;state.home.widgets.reverse();state.home.widgets[0].enabled=false;
- const restored=normalizeState(state);assert.deepEqual(restored.home.pages,[['anniversary','memory','mood','note','date'],APP_TYPES]);assert.equal(restored.home.widgets[0].enabled,false);
+ const restored=normalizeState(state);assert.deepEqual(restored.home.pages,[['anniversary','memory','mood','note','date'],DESKTOP_APP_TYPES]);assert.equal(restored.home.widgets[0].enabled,false);
 });
 test('moving between pages keeps one copy of every widget and round trips empty pages',()=>{
  const state=createState();state.home.pages.push([],[]);moveHomeWidget(state.home.pages,'note',2,0);moveHomeWidget(state.home.pages,'anniversary',2,0);
- const restored=normalizeState(JSON.parse(exportData(state)));assert.deepEqual(restored.home.pages,[['date','mood','memory'],APP_TYPES,['anniversary','note'],[]]);assert.equal(new Set(restored.home.pages.flat()).size,12);
- const repaired=normalizeHomePages([['note','note','bad'],['note','memory']],state.home.widgets);assert.equal(repaired.flat().filter(x=>x==='note').length,1);assert.equal(repaired.flat().length,12);
+ const restored=normalizeState(JSON.parse(exportData(state)));assert.deepEqual(restored.home.pages,[['date','mood','memory'],DESKTOP_APP_TYPES,['anniversary','note'],[]]);assert.equal(new Set(restored.home.pages.flat()).size,11);
+ const repaired=normalizeHomePages([['note','note','bad'],['note','memory']],state.home.widgets);assert.equal(repaired.flat().filter(x=>x==='note').length,1);assert.equal(repaired.flat().length,11);
 });
 test('context menu follows each widget and stays inside small or offset viewports',()=>{
  const size={width:220,height:168},viewport={left:0,top:0,width:390,height:844};
@@ -45,7 +45,7 @@ test('apps move between pages; a full destination refuses the move atomically',(
 });
 
 test('hidden app entrances, appearance and mixed layouts round trip without losing data',()=>{
- const state=normalizeState(createState());state.home.hiddenApps=['app-appearance'];state.appearance.accent='#8dc3f0';state.home.pages.push([]);
+ const state=normalizeState(createState());state.home.pages[1].push('app-appearance');state.home.hiddenApps=['app-appearance'];state.appearance.accent='#8dc3f0';state.home.pages.push([]);
  moveHomeWidget(state.home.pages,'app-music',2,0);
  const restored=normalizeState(JSON.parse(exportData(state)));
  assert.deepEqual(restored.home,state.home);assert.deepEqual(restored.appearance,state.appearance);
@@ -58,8 +58,21 @@ test('overfull imports and twelve-page legacy layouts keep every entrance exactl
  const state=createState();
  for(const pages of [[['anniversary','date','note','mood','memory',...APP_TYPES,...APP_TYPES]],Array.from({length:12},(_,i)=>i?[]:['anniversary','date','note','mood','memory'])]){
   const result=normalizeHomePages(pages,state.home.widgets);
-  assert.equal(result.flat().length,12);assert.equal(new Set(result.flat()).size,12);assert(result.length<=12);
-  result.forEach(page=>assert(homePageFits(page)));
+  const count=pages.flat().includes('app-appearance')?12:11;
+  assert.equal(result.flat().length,count);assert.equal(new Set(result.flat()).size,count);assert(result.length<=12);
+  result.forEach(page=>assert(homePageFits(page,type=>homeItemVisible(state.home,type))));
  }
  const restored=normalizeState(state);assert.deepEqual(normalizeState(restored),restored);
+});
+
+test('appearance is Dock-only for defaults and legacy backups while its data and layout IDs survive',()=>{
+ const fresh=normalizeState(createState());
+ assert(!fresh.home.pages.flat().includes('app-appearance'));
+ const old=structuredClone(fresh);old.home.pages[1].splice(2,0,'app-appearance');
+ old.appearance.accent='#f2a7be';old.home.note='保留旧便签';
+ const restored=normalizeState(JSON.parse(exportData(old)));
+ assert.deepEqual(restored.home,old.home);assert.deepEqual(restored.appearance,old.appearance);
+ assert.equal(homeItemVisible(restored.home,'app-appearance'),false);
+ assert.deepEqual(restored.home.pages[1].filter(type=>homeItemVisible(restored.home,type)),DESKTOP_APP_TYPES);
+ assert.deepEqual(normalizeState(restored),restored);
 });

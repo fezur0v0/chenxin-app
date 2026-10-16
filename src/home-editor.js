@@ -44,7 +44,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
   type=kind;uploads=0;draft=structuredClone(getState());const h=draft.home;
   let content='';
   if(kind==='add'){
-   const choices=[{type:'anniversary',enabled:h.anniversaryVisible!==false},...h.widgets,...APPS.map(a=>({type:a.id,enabled:!h.hiddenApps.includes(a.id)}))];
+   const choices=[{type:'anniversary',enabled:h.anniversaryVisible!==false},...h.widgets,...APPS.filter(a=>a.desktop!==false).map(a=>({type:a.id,enabled:!h.hiddenApps.includes(a.id)}))];
    content=`${header('添加组件或 App')}<div class="home-widget-picker">${choices.map(w=>`<button data-home-add="${w.type}" ${w.enabled?'disabled':''}>${findApp(w.type)?appIcon(findApp(w.type).icon):''}<span>${findApp(w.type)?.name||widgetLabels[w.type]||'纪念日'}</span><small>${w.enabled?'已在主页':'添加 +'}</small></button>`).join('')}</div>`;
   }
   else if(kind==='anniversary'){
