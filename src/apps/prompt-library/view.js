@@ -4,7 +4,7 @@ import { backButton,escape } from '../../ui.js';
 export const libraryIcon=name=>name==='sliders'?appIcon('presets'):icon(name);
 export const toolButton=(action,label,symbol='',extra='')=>`<button type="button" data-tool-action="${action}" ${extra}>${symbol?libraryIcon(symbol):''}<span>${escape(label)}</span></button>`;
 export function libraryHeader(title,detail=false) {
- return `<header class="desktop-app-header library-header">${detail?backButton('library','返回列表',{actionAttribute:'data-tool-action'}):backButton('home','返回主页')}<h1 tabindex="-1">${escape(title)}</h1>${toolButton(detail?'manage':'new',detail?'管理':'新建',detail?'edit':'plus',`class="library-icon" aria-label="${detail?'管理当前配置':'新建'}"`)}</header>`;
+ return `<header class="desktop-app-header library-header app-topbar">${detail?backButton('library','返回列表',{actionAttribute:'data-tool-action'}):backButton('home','返回主页')}<h1 tabindex="-1">${escape(title)}</h1>${toolButton(detail?'manage':'new',detail?'管理':'新建',detail?'edit':'plus',`class="library-icon" aria-label="${detail?'管理当前配置':'新建'}"`)}</header>`;
 }
 export function libraryHero(english,title,description,count,label) {
  return `<div class="library-hero"><div><p lang="en">${english}</p><h2>${title}</h2><span>${description}</span></div><div class="library-count"><strong>${count}</strong><small>${label}</small></div></div>`;

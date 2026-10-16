@@ -12,7 +12,7 @@ import { localDate, loadState, saveState, normalizeState, newSession, addDraftMe
 import { home, chat, sessions, settings, memory, memoryEditor, sidebar, escape, button } from './views.js';
 let storage;try{storage=localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
 let state=loadState(storage), page='home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
-const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['settings','settings','设置']];
+const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['app-appearance','appearance','外观'],['settings','settings','设置']];
 const opened=new Set();
 let sessionSearch='',oldestFirst=false;
 let visibleTray='',closingTray=false;

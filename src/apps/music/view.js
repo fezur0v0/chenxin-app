@@ -8,7 +8,7 @@ export function musicArtwork(track,symbol='music') {
  return track?.cover?`<img src="${escape(track.cover)}" alt="" loading="lazy">`:`<span class="music-art-placeholder" aria-hidden="true">${icon(symbol)}</span>`;
 }
 function header(title,left='home',right='search') {
- return `<header class="music-header">${backButton(left,left==='home'?'返回主页':left==='leave-player'?'收起播放页':'返回音乐首页',{music:left!=='home',collapsed:left==='leave-player'})}<h1 tabindex="-1" ${title==='music'?'lang="en"':''}>${escape(title)}</h1>${action(right,right==='search'?'search':right==='edit-track'?'more':'plus',right==='search'?'搜索本机歌曲':right==='edit-track'?'歌曲信息':'添加音乐')}</header>`;
+ return `<header class="music-header app-topbar">${backButton(left,left==='home'?'返回主页':left==='leave-player'?'收起播放页':'返回音乐首页',{music:left!=='home',collapsed:left==='leave-player'})}<h1 tabindex="-1" ${title==='music'?'lang="en"':''}>${escape(title)}</h1>${action(right,right==='search'?'search':right==='edit-track'?'more':'plus',right==='search'?'搜索本机歌曲':right==='edit-track'?'歌曲信息':'添加音乐')}</header>`;
 }
 function card(collection) {
  const artwork=collection.cover||collection.tracks.find(t=>t.cover)?.cover;
