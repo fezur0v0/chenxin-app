@@ -2,7 +2,6 @@
 .chat-view>.chat-tray.expression-tray{display:flex;flex-direction:column;max-height:min(620px,76dvh);overflow:hidden}
 .expression-tray>.drawer-handle,.expression-tray>.drawer-heading,.expression-toolbar,.sticker-category-row,.sticker-selection,.sticker-bulk-actions{flex-shrink:0}
 .expression-tray .expression-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;min-width:0}
-.expression-toolbar .tray-filters{margin:0;gap:0}.expression-toolbar .tray-filters button{min-height:44px;padding:8px 10px}
 .expression-toolbar-actions{display:flex;gap:4px;flex-shrink:0}.expression-toolbar-actions button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px;border-radius:14px;font-size:12px}.expression-toolbar-actions svg{width:16px;height:16px}
 .sticker-category-row{display:flex;align-items:center;gap:4px;min-width:0;padding-bottom:12px;border-bottom:1px solid var(--hairline);margin-bottom:12px}
 .sticker-categories{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1;overscroll-behavior:contain}
@@ -19,7 +18,7 @@
 .sticker-tools{display:flex;justify-content:space-between;padding:0 3px}.sticker-tools button{display:grid;place-items:center;min-width:44px;min-height:44px;border-radius:12px;color:var(--muted)}.sticker-tools svg{width:15px;height:15px}.sticker-tools [aria-pressed=true] svg{fill:rgb(var(--tint) / .35);color:var(--ink)}
 .sticker-selection{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin:-4px 0 6px}.sticker-selection button{min-height:44px;padding:8px}
 .sticker-check{position:absolute;right:7px;top:7px;width:22px;height:22px;border-radius:50%;border:1px solid var(--muted);background:var(--solid);display:grid;place-items:center}.sticker-check svg{width:15px;height:15px}
-.sticker-tile.is-selected{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}.is-selected .sticker-check{background:var(--ink);color:var(--solid)}
+.sticker-tile.is-selected,.kaomoji-tile.is-selected{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}.is-selected .sticker-check{background:var(--ink);color:var(--solid)}
 .sticker-bulk-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;border-top:1px solid var(--hairline);padding-top:12px}.sticker-bulk-actions button{display:flex;gap:8px;justify-content:center;align-items:center;min-height:46px;border-radius:16px;background:rgb(var(--tint) / .1);font-size:13px}.sticker-bulk-actions svg{width:17px;height:17px}
 .sticker-empty{display:grid;justify-items:center;gap:12px;width:100%;min-height:160px;margin:0}.sticker-empty>svg{width:30px;height:30px}.sticker-empty button{padding:10px 16px;min-height:44px;border-radius:15px;border:1px solid var(--hairline);color:var(--ink)}
 dialog.sticker-sheet,dialog.expression-dialog.bottom-sheet{position:fixed;inset:auto 0 0;margin:0 auto;max-width:none}
@@ -44,8 +43,14 @@ dialog.sticker-sheet,dialog.expression-dialog.bottom-sheet{position:fixed;inset:
 .expression-tray .drawer-heading{gap:8px}
 .expression-search{display:flex;align-items:center;flex:1;min-width:0;gap:9px;padding:0 12px;border:1px solid var(--hairline);border-radius:16px;background:color-mix(in srgb,rgb(var(--glass-tint) / calc(.22 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));color:var(--muted)}
 .expression-search>svg{width:17px;height:17px}
-.expression-search input{width:100%;min-width:0;min-height:44px;padding:10px 0;border:0;background:none;font-size:14px;line-height:1.5;outline-offset:0}
-.expression-search input::placeholder{color:var(--muted)}
-.expression-tray .expression-kind{flex-shrink:0;min-width:52px;min-height:44px;padding:8px 4px;border-radius:12px;font-size:12px;color:var(--muted)}
+.expression-search input{width:100%;min-width:0;min-height:44px;padding:10px 0;border:0;background:none;font-size:16px;line-height:1.5;outline-offset:0}
+.expression-search input::placeholder{color:var(--muted);font-size:12px}
 
 .expression-search:focus-within{outline:2px solid var(--accent);outline-offset:2px}.expression-search input:focus-visible{outline:none}.expression-search input::-webkit-search-cancel-button{filter:grayscale(1)}
+
+.kaomoji-tile{position:relative;min-width:0;transition:border-color 160ms,box-shadow 160ms}
+.kaomoji-tile .kaomoji-use{position:relative;min-height:88px;padding:22px 10px;font-size:18px}
+.kaomoji-tile .kaomoji-use>span:first-child{max-width:100%;overflow-wrap:anywhere}
+.kaomoji-tile .expression-tools{justify-content:flex-end;padding:0 2px}
+.kaomoji-tile .expression-tools button{width:44px;height:44px;min-width:44px}
+@media(prefers-reduced-motion:reduce){.kaomoji-tile{transition:none}}

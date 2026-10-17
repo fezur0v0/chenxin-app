@@ -1,3 +1,5 @@
+import {expressionCategories,saveKaomoji} from './expressions/model.js';
+import {categoryField} from './expressions/view.js';
 import {createStickerLibrary} from './expressions/controller.js';
 import { drawerHeader, animateDrawerClose, bindDrawerDismiss } from './drawer.js';
 import { createMusicApp } from './apps/music/controller.js';
@@ -18,7 +20,7 @@ const opened=new Set();
 let sessionSearch='',oldestFirst=false;
 let visibleTray='',closingTray=false;
 const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
-let chatUI={tray:'',tab:'stickers',filter:'all',attachments:[]},selection={start:0,end:0};
+let chatUI={tray:'',tab:'stickers',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog app-sheet bottom-sheet';document.body.append(expressionDialog);
 let expressionClosing=false,expressionRevision=0;
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
@@ -80,12 +82,11 @@ function handleAction(e){
 
  if(action?.startsWith('toggle-')){rememberSelection();const tray=action.slice(7);chatUI.tray=chatUI.tray===tray?'':tray;render();return;}
  if(action==='close-tray'){closeTray();return;}
- if(action==='expression-tab'){chatUI.tab=target.dataset.tab;chatUI.managing=false;chatUI.selected=[];render();return;}
- if(action==='expression-filter'){chatUI.filter=target.dataset.filter;chatUI.selected=[];render();return;}
+ if(action==='expression-tab'){chatUI.tab=target.dataset.tab;chatUI.category='all';chatUI.search='';chatUI.managing=false;chatUI.selected=[];render();app.querySelector(`[data-action=expression-tab][data-tab="${chatUI.tab}"]`)?.focus({preventScroll:true});return;}
  if(action==='open-mcp'){focusSettings('plugins-settings');return;}
  if(action==='pick-camera'||action==='pick-image'||action==='pick-file'){app.querySelector(action==='pick-camera'?'#chat-camera':action==='pick-image'?'#chat-images':'#chat-files').click();return;}
  if(action==='remove-attachment'){chatUI.attachments=chatUI.attachments.filter(a=>a.id!==target.dataset.id);render();return;}
- if(action==='add-kaomoji'||action==='edit-kaomoji'){expressionRevision++;expressionClosing=false;expressionDialog.style.transform='';expressionDialog.getAnimations().forEach(a=>a.cancel());const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form">${drawerHeader({title:(item?'编辑':'收藏')+'颜文字',action:'close',actionAttribute:'data-close-expression'})}<input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label><button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
+ if(action==='add-kaomoji'||action==='edit-kaomoji'){expressionRevision++;expressionClosing=false;expressionDialog.style.transform='';expressionDialog.getAnimations().forEach(a=>a.cancel());const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form">${drawerHeader({title:(item?'编辑':'收藏')+'颜文字',action:'close',actionAttribute:'data-close-expression'})}<p class="sticker-error" role="alert" hidden></p><input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label>${categoryField(state.expressions,item?.category||(!item&&expressionCategories(state.expressions,'kaomoji').some(c=>c.id===chatUI.category)?chatUI.category:''),'kaomoji')}<button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
  if(['use-expression','favorite-expression','delete-expression'].includes(action)){
  const items=state.expressions[chatUI.tab],item=items.find(x=>x.id===target.dataset.id);if(!item)return;
  if(action==='favorite-expression')item.favorite=!item.favorite;
@@ -157,7 +158,7 @@ app.addEventListener('change',async e=>{
    try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
  }
  if(t.id==='import-data'&&t.files[0]){
-   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}stickerLibrary.reset();state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'stickers',filter:'all',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
+   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}stickerLibrary.reset();state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
  }
 });
 app.addEventListener('keydown',e=>{if(e.target.name==='message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!e.repeat){e.preventDefault();e.target.form.requestSubmit();}});
@@ -188,10 +189,10 @@ const closeExpression=async()=>{if(!expressionDialog.open||expressionClosing)ret
 bindDrawerDismiss(expressionDialog,{panel:()=>expressionDialog.open&&!expressionClosing?expressionDialog:null,close:closeExpression,backdrop:true});
 expressionDialog.addEventListener('cancel',e=>{e.preventDefault();void closeExpression();});
 expressionDialog.addEventListener('click',e=>{if(e.target.closest('[data-close-expression]'))void closeExpression();});
-expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.target,value=form.elements.value.value.trim(),id=form.elements.id.value;if(!value)return;
- const snapshot=structuredClone(state.expressions),item=state.expressions.kaomoji.find(x=>x.id===id);
- if(item)item.value=value;else{if(state.expressions.kaomoji.length>=200)return notify('颜文字最多保存 200 项。');state.expressions.kaomoji.unshift({id:crypto.randomUUID(),value,favorite:true,used:0});}
- if(!persist()){state.expressions=snapshot;return;}expressionDialog.close();render();notify('颜文字已保存。');
+expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.target,snapshot=structuredClone(state.expressions);
+ try{saveKaomoji(state.expressions,Object.fromEntries(new FormData(form)));if(!persist())throw new Error('保存失败，内容仍保留在这里，请释放本机空间后重试。');}
+ catch(error){state.expressions=snapshot;const alert=expressionDialog.querySelector('[role=alert]');alert.textContent=error.message;alert.hidden=false;return;}
+ expressionDialog.close();render();notify('颜文字已保存。');
 });
 
 const trayMotion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;

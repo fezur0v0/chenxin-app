@@ -20,7 +20,7 @@ export function daysTogether(since, now = new Date()) {
 }
 function extras() {
  return { music:emptyMusic(), diaryEntries:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
- home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[],categories:[]} };
+ home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,category:'',favorite:true,used:0})),stickers:[],categories:[],kaomojiCategories:[]} };
 }
 export function createState() {
  const id = crypto.randomUUID();

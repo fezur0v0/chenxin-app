@@ -2,13 +2,13 @@ import {drawerHeader,bindDrawerDismiss,animateDrawerClose} from '../drawer.js';
 import {escape} from '../ui.js';
 import {icon} from '../icons.js';
 import {expressionContents,categoryField,stickerForm,importForm} from './view.js';
-import {visibleStickers,saveCategory,deleteCategory,moveStickers,parseStickerText,importStickers,STICKER_LIMIT} from './model.js';
+import {visibleExpressions,expressionCategories,saveCategory,deleteCategory,moveExpressions,parseStickerText,importStickers,STICKER_LIMIT} from './model.js';
 import {readStickerFile} from './files.js';
 
 export function createStickerLibrary({app,getState,setState,getUI,persist,notify,compressImage}){
  const dialog=document.createElement('dialog');dialog.className='glass app-sheet bottom-sheet sticker-sheet';dialog.setAttribute('aria-label','表情包管理');document.body.append(dialog);
  let closing=false,revision=0,returnFocus,focusAction,upload='',rows=null,busy=false,press=null,suppress=false;
- const ui=()=>getUI(),library=()=>getState().expressions;
+ const ui=()=>getUI(),library=()=>getState().expressions,kind=()=>ui().tab==='kaomoji'?'kaomoji':'stickers',label=()=>kind()==='kaomoji'?'颜文字':'表情包';
  const button=(name,label,extra='')=>`<button type="button" data-sticker-action="${name}" ${extra}>${label}</button>`;
  function refresh(){
   const panel=app.querySelector('.expression-tray');if(!panel)return;
@@ -34,7 +34,7 @@ export function createStickerLibrary({app,getState,setState,getUI,persist,notify
  dialog.addEventListener('close',()=>{revision++;upload='';rows=null;const nodes=[...app.querySelectorAll('[data-sticker-action]')];const target=returnFocus?.isConnected?returnFocus:nodes.find(e=>e.dataset.stickerAction===focusAction?.action&&e.dataset.id===focusAction?.id)||app.querySelector('.expression-tray');target?.focus({preventScroll:true});});
  function show(content){
   if(!dialog.open){returnFocus=document.activeElement;focusAction=returnFocus?.dataset?{action:returnFocus.dataset.stickerAction,id:returnFocus.dataset.id}:null;}
-  revision++;closing=false;busy=false;upload='';rows=null;dialog.style.transform='';dialog.getAnimations().forEach(a=>a.cancel());dialog.innerHTML=content;
+  revision++;closing=false;busy=false;upload='';rows=null;dialog.style.transform='';dialog.getAnimations().forEach(a=>a.cancel());dialog.innerHTML=content;dialog.setAttribute('aria-label',dialog.querySelector('h2')?.textContent||'表情管理');
   if(!dialog.open)dialog.showModal();dialog.querySelector('.drawer-handle').focus({preventScroll:true});
  }
  function error(message){const el=dialog.querySelector('[role=alert]');if(el){el.textContent=message;el.hidden=false;el.scrollIntoView({block:'nearest'});}else notify(message);}
@@ -42,10 +42,10 @@ export function createStickerLibrary({app,getState,setState,getUI,persist,notify
   const before=structuredClone(getState());
   try{const result=change();if(!persist())throw new Error('保存失败，内容仍保留在这里，请释放本机空间后重试。');return {result};}catch(e){setState(before);error(e.message);return null;}
  }
- const currentCategory=()=>library().categories.some(c=>c.id===ui().category)?ui().category:'';
+ const currentCategory=()=>expressionCategories(library(),kind()).some(c=>c.id===ui().category)?ui().category:'';
  function openCategory(id=''){
-  const c=library().categories.find(c=>c.id===id);if(id&&!c)return;
-  show(`<form data-sticker-form="category">${drawerHeader({title:c?'管理分类':'新增分类',action:'close',actionAttribute:'data-sticker-action'})}<p class="sticker-error" role="alert" hidden></p><input name="id" type="hidden" value="${escape(c?.id||'')}"><label class="field"><span>分类名称</span><input name="name" required maxlength="30" value="${escape(c?.name||'')}" placeholder="给这份心情起个名字"></label><button class="primary" type="submit">${c?'保存名称':'创建分类'}</button>${c?`<p class="hint">删除分类会将表情包移到「未分类」，保留图片和备注。</p>${button('delete-category','删除分类',`class="sticker-danger" data-id="${escape(id)}"`)}`:''}</form>`);
+  const c=expressionCategories(library(),kind()).find(c=>c.id===id);if(id&&!c)return;
+  show(`<form data-sticker-form="category">${drawerHeader({title:c?'管理分类':'新增分类',action:'close',actionAttribute:'data-sticker-action'})}<p class="sticker-error" role="alert" hidden></p><input name="id" type="hidden" value="${escape(c?.id||'')}"><label class="field"><span>分类名称</span><input name="name" required maxlength="30" value="${escape(c?.name||'')}" placeholder="给这份心情起个名字"></label><button class="primary" type="submit">${c?'保存名称':'创建分类'}</button>${c?`<p class="hint">删除分类会将${label()}移到「未分类」，保留已有内容。</p>${button('delete-category','删除分类',`class="sticker-danger" data-id="${escape(id)}"`)}`:''}</form>`);
  }
  function act(action,target){
   if(action==='close'){void close();return;}
@@ -60,15 +60,15 @@ export function createStickerLibrary({app,getState,setState,getUI,persist,notify
   if(action==='select'){
    const set=new Set(ui().selected||[]),id=target.dataset.id;if(set.has(id))set.delete(id);else set.add(id);ui().selected=[...set];refresh();[...app.querySelectorAll('[data-sticker-action=select]')].find(e=>e.dataset.id===id)?.focus({preventScroll:true});return;
   }
-  if(action==='select-all'){const visible=visibleStickers(library(),ui()),set=new Set(ui().selected||[]),all=visible.every(s=>set.has(s.id));for(const s of visible)if(all)set.delete(s.id);else set.add(s.id);ui().selected=[...set];refresh();app.querySelector('[data-sticker-action=select-all]')?.focus({preventScroll:true});return;}
+  if(action==='select-all'){const visible=visibleExpressions(library(),{...ui(),filter:'all'}),set=new Set(ui().selected||[]),all=visible.every(s=>set.has(s.id));for(const s of visible)if(all)set.delete(s.id);else set.add(s.id);ui().selected=[...set];refresh();app.querySelector('[data-sticker-action=select-all]')?.focus({preventScroll:true});return;}
   if(action==='favorite'){const item=library().stickers.find(s=>s.id===target.dataset.id);if(item&&commit(()=>{item.favorite=!item.favorite;})){refresh();[...app.querySelectorAll('[data-sticker-action=favorite]')].find(e=>e.dataset.id===item.id)?.focus({preventScroll:true});}return;}
   if(action==='move'||action==='delete'){
    const count=ui().selected?.length||0;if(!count)return;
-   show(`<form data-sticker-form="${action}">${drawerHeader({title:action==='move'?'移动表情包':'删除表情包',action:'close',actionAttribute:'data-sticker-action'})}<p class="sticker-error" role="alert" hidden></p><p class="sticker-sheet-summary">${action==='move'?`将选中的 ${count} 项移动到`:`确定删除选中的 ${count} 项表情包？已发出的聊天图片会保留。`}</p>${action==='move'?categoryField(library(),currentCategory()):''}<div class="sticker-form-actions">${button('close','取消','class="secondary"')}<button type="submit" class="primary">${action==='move'?'确认移动':'确认删除'}</button></div></form>`);return;
+   show(`<form data-sticker-form="${action}">${drawerHeader({title:(action==='move'?'移动':'删除')+label(),action:'close',actionAttribute:'data-sticker-action'})}<p class="sticker-error" role="alert" hidden></p><p class="sticker-sheet-summary">${action==='move'?`将选中的 ${count} 项移动到`:`确定删除选中的 ${count} 项${label()}？已发出的聊天内容会保留。`}</p>${action==='move'?categoryField(library(),currentCategory(),kind()):''}<div class="sticker-form-actions">${button('close','取消','class="secondary"')}<button type="submit" class="primary">${action==='move'?'确认移动':'确认删除'}</button></div></form>`);return;
   }
   if(action==='delete-category'){
-   const id=target.dataset.id;if(!confirm('删除这个分类？其中的表情包将移到未分类，不会删除图片。'))return;
-   if(commit(()=>deleteCategory(library(),id))){if(ui().category===id)ui().category='';ui().selected=[];refresh();void close();notify('分类已删除，表情包已移到未分类。');}return;
+   const id=target.dataset.id;if(!confirm(`删除这个分类？其中的${label()}将移到未分类，不会删除内容。`))return;
+   if(commit(()=>deleteCategory(library(),id,kind()))){if(ui().category===id)ui().category='';ui().selected=[];refresh();void close();notify(`分类已删除，${label()}已移到未分类。`);}return;
   }
   if(action==='preview'){preview();return;}
  }
@@ -96,15 +96,15 @@ export function createStickerLibrary({app,getState,setState,getUI,persist,notify
  });
  function errorMessage(e){error(e.message||'文件读取失败，请检查文件内容。');}
  dialog.addEventListener('submit',e=>{
-  e.preventDefault();if(busy)return;const form=e.target,kind=form.dataset.stickerForm,data=Object.fromEntries(new FormData(form));let result;
-  if(kind==='save'){
+  e.preventDefault();if(busy)return;const form=e.target,formKind=form.dataset.stickerForm,data=Object.fromEntries(new FormData(form));let result;
+  if(formKind==='save'){
    const note=data.note?.trim();if(!note)return error('请填写表情含义。');const item=library().stickers.find(s=>s.id===data.id);if(!item&&!upload)return error('请先选择一张图片。');
-   result=commit(()=>{if(item){item.note=note;item.name=note.slice(0,80);moveStickers(library(),[item.id],data.category);}else{if(library().stickers.length>=STICKER_LIMIT)throw new Error('表情包最多保存 200 项。');library().stickers.push({id:crypto.randomUUID(),value:upload,name:note.slice(0,80),note,category:data.category,favorite:true,used:0});}});
-  }else if(kind==='category'){result=commit(()=>saveCategory(library(),data.name,data.id));if(result)ui().category=result.result.id;}
-  else if(kind==='import'){if(!rows)return error('请先预览导入内容。');result=commit(()=>importStickers(library(),rows,data.category));}
-  else if(kind==='move'){result=commit(()=>moveStickers(library(),ui().selected||[],data.category));}
-  else if(kind==='delete'){result=commit(()=>{const ids=new Set(ui().selected||[]);library().stickers=library().stickers.filter(s=>!ids.has(s.id));});}
-  if(result){ui().selected=[];refresh();void close();notify(kind==='import'?`已导入 ${result.result.added} 项${result.result.skipped?`，跳过 ${result.result.skipped} 项重复表情`:''}。`:kind==='delete'?'选中的表情包已删除。':kind==='move'?'表情包已移动。':'已保存。');}
+   result=commit(()=>{if(item){item.note=note;item.name=note.slice(0,80);moveExpressions(library(),[item.id],data.category);}else{if(library().stickers.length>=STICKER_LIMIT)throw new Error('表情包最多保存 200 项。');library().stickers.push({id:crypto.randomUUID(),value:upload,name:note.slice(0,80),note,category:data.category,favorite:true,used:0});}});
+  }else if(formKind==='category'){result=commit(()=>saveCategory(library(),data.name,data.id,kind()));if(result)ui().category=result.result.id;}
+  else if(formKind==='import'){if(!rows)return error('请先预览导入内容。');result=commit(()=>importStickers(library(),rows,data.category));}
+  else if(formKind==='move'){result=commit(()=>moveExpressions(library(),ui().selected||[],data.category,kind()));}
+  else if(formKind==='delete'){result=commit(()=>{const ids=new Set(ui().selected||[]);library()[kind()]=library()[kind()].filter(s=>!ids.has(s.id));});}
+  if(result){ui().selected=[];refresh();void close();notify(formKind==='import'?`已导入 ${result.result.added} 项${result.result.skipped?`，跳过 ${result.result.skipped} 项重复表情`:''}。`:formKind==='delete'?`选中的${label()}已删除。`:formKind==='move'?`${label()}已移动。`:'已保存。');}
  });
  function cancelPress(){if(press)clearTimeout(press.timer);press=null;}
  app.addEventListener('pointerdown',e=>{suppress=false;const target=e.target.closest('[data-custom-category]');if(!target||e.button!==0)return;cancelPress();press={x:e.clientX,y:e.clientY,timer:setTimeout(()=>{press=null;suppress=true;openCategory(target.dataset.id);},500)};});

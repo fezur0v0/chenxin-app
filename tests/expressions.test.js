@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState,normalizeState,exportData,addDraftMessage} from '../src/store.js';
-import {parseStickerText,importStickers,saveCategory,deleteCategory,moveStickers,visibleStickers,stickerSource} from '../src/expressions/model.js';
+import {parseStickerText,importStickers,saveCategory,deleteCategory,moveStickers,visibleStickers,stickerSource,visibleExpressions,saveKaomoji,moveExpressions} from '../src/expressions/model.js';
 import {chat} from '../src/views.js';
 import {expressionContents} from '../src/expressions/view.js';
 
@@ -53,4 +53,32 @@ test('search matches notes and legacy names together with category and favorite/
  assert.equal(visibleStickers(e,{search:'good night',filter:'favorites'}).length,0);
  e.stickers[1].name='old-name.png';assert.equal(visibleStickers(e,{search:'OLD-NAME'}).length,1);e.stickers[1].name=original.stickers[1].name;
  assert.deepEqual(e,original);
+});
+
+
+test('kaomoji categories remain independent of sticker categories and survive backups with legacy data',()=>{
+ const state=createState(),e=state.expressions;
+ e.categories=[{id:'shared-category',name:'表情包分类'}];e.stickers=[{id:'shared-item',note:'抱抱',name:'抱抱',value:'https://example.com/hug',category:'shared-category',favorite:true,used:9}];
+ e.kaomoji=[{id:'shared-item',value:'^_^',favorite:true,used:123}];delete e.kaomojiCategories;
+ const restored=normalizeState(state);assert.deepEqual(restored.expressions.kaomojiCategories,[]);assert.equal(restored.expressions.kaomoji[0].category,'');
+ const cat=saveCategory(restored.expressions,'表情包分类','','kaomoji');
+ saveKaomoji(restored.expressions,{id:'shared-item',value:'^ω^',category:cat.id});
+ assert.equal(restored.expressions.kaomoji[0].used,123);assert.equal(restored.expressions.kaomoji[0].favorite,true);
+ const backup=normalizeState(JSON.parse(exportData(restored)));assert.deepEqual(backup.expressions,restored.expressions);
+ deleteCategory(backup.expressions,cat.id,'kaomoji');assert.equal(backup.expressions.kaomoji[0].category,'');assert.deepEqual(backup.expressions.stickers,e.stickers);
+ assert.deepEqual(backup.expressions.categories,e.categories);
+});
+test('kaomoji search and batch moves act only on their collection, preserving identical sticker IDs',()=>{
+ const e=createState().expressions,a=saveCategory(e,'开心','','kaomoji'),b=saveCategory(e,'抱抱','','kaomoji');
+ e.kaomoji=[{id:'same',value:'^_^',category:a.id,favorite:true,used:7},{id:'two',value:'^ω^',category:b.id,favorite:false,used:0}];
+ e.stickers=[{id:'same',name:'图片',note:'图片',value:'https://example.com/a',category:''}];const stickers=structuredClone(e.stickers);
+ assert.deepEqual(visibleExpressions(e,{tab:'kaomoji',category:a.id,search:'^'}).map(x=>x.id),['same']);
+ moveExpressions(e,['same','two'],b.id,'kaomoji');assert(e.kaomoji.every(x=>x.category===b.id));assert.deepEqual(e.stickers,stickers);
+ deleteCategory(e,b.id,'kaomoji');assert.equal(e.kaomoji.length,2);assert(e.kaomoji.every(x=>x.category===''));
+});
+test('invalid kaomoji edits and wrong collection destinations leave all data untouched',()=>{
+ const e=createState().expressions,stickerCategory=saveCategory(e,'图片分类'),before=structuredClone(e);
+ for(const entry of [{value:'  '},{value:'x'.repeat(201)},{id:'missing',value:'^_^'},{value:'^_^',category:stickerCategory.id}]){
+  assert.throws(()=>saveKaomoji(e,entry));assert.deepEqual(e,before);
+ }
 });
