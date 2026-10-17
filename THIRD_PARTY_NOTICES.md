@@ -160,3 +160,15 @@ Official package: https://www.npmjs.com/package/nucleo-glass/v/1.4.1
 Geometry is unchanged. SVG IDs are namespaced per rendered instance; gradient
 colors use CSS custom properties to keep the glass artwork legible in dark mode.
 No Nucleo runtime, account credentials or paid icon library is bundled.
+
+
+## fflate 0.8.2
+
+`src/vendor/fflate.js` vendors the browser ES module from fflate 0.8.2 (MIT),
+used to create and read portable ZIP backups without a CDN dependency.
+Copyright (c) 2023 Arjun Barrett. The full license is in
+`src/vendor/fflate.LICENSE`.
+
+Source: https://github.com/101arrowz/fflate/tree/v0.8.2
+Package: https://www.npmjs.com/package/fflate/v/0.8.2
+The npm tarball was verified against its published SHA-512 integrity value.

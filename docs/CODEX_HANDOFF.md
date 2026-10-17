@@ -77,7 +77,7 @@
 - 到期记忆保留在已到期分类，不静默删除。
 - 外观中的玻璃透明度滑块从左到右为 70% → 0%：左侧更透明，右侧更实，input 仍保存旧的 appearance.opacity（不透明度 30–100），显示值为 100 - opacity；默认值和旧备份值不重置。新增范围可保存 100（显示 0%），旧的 95 仍保持 95（显示 5%）。
 - 小组件、SVG 纪念日气泡、聊天气泡/输入框、侧栏、设置/独立 App 面板、菜单及编辑弹窗的玻璃填充已接入 --glass-alpha、--glass-soften、--glass-solid，会实时变化。桌面及底部入口图标使用独立固定材质，除夜间模式外不跟随外观调节。材质映射保留原默认 60 的清透视觉；向 30 减淡原填充，向 100 增加中性实色底层，0% 时玻璃表面不透明。亮边与反光保留，正文/图标不使用整体 opacity，背景模糊仍独立由 --glass-blur 控制。新增普通玻璃表面需要使用这套材质变量；入口图标为用户明确要求的例外。模态遮罩深浅保持原有层次。
-- 系统设置包含角色、API/模型配置、MCP/插件配置、数据储存和用量；外观已迁入独立 App（底部快捷栏第三个入口）；JSON 完整备份导入/导出。分组卡片为高透玻璃，保留壁纸；已接入统一透明度控制。外观 App 的背景模糊 0–40px 统一控制小组件、纪念日气泡、聊天气泡/输入框、侧栏、菜单/弹窗和已有模糊遮罩（桌面与底部入口图标除外），通过 --glass-blur 实时更新；0 表示不模糊，保存与备份字段沿用 appearance.blur。透明无材质的纪念日主体不额外加模糊。滑块填充使用主题色、未填充为淡主题色染色，支持键盘；自定义颜色以圆形色块和色值标签呈现，仍使用原生取色器。
+- 系统设置包含角色、API/模型配置、MCP/插件配置、数据储存和用量；外观已迁入独立 App（底部快捷栏第三个入口）；完整 ZIP／轻量 JSON、校验恢复与本机快照（详见最新备份章节）。分组卡片为高透玻璃，保留壁纸；已接入统一透明度控制。外观 App 的背景模糊 0–40px 统一控制小组件、纪念日气泡、聊天气泡/输入框、侧栏、菜单/弹窗和已有模糊遮罩（桌面与底部入口图标除外），通过 --glass-blur 实时更新；0 表示不模糊，保存与备份字段沿用 appearance.blur。透明无材质的纪念日主体不额外加模糊。滑块填充使用主题色、未填充为淡主题色染色，支持键盘；自定义颜色以圆形色块和色值标签呈现，仍使用原生取色器。
 
 ## 功能边界：务必区分 UI 和真实服务
 
@@ -320,3 +320,16 @@ npm test
 - AI 收藏：`src/app.js` 导出 saveConversationPhoto({sessionId,messageId,attachmentId,albumId?,name?,caption?})，返回 {photo,created} 或失败 null；模型层纯函数 saveChatPhoto 校验消息必须为用户已有照片，拒绝表情包／语音／远程地址／AI 消息／不存在来源。按 session/message/attachment 去重，副本独立于聊天删除，默认进入「对话珍藏」，可指定已存在自建相册。只提供可执行的本机工具接口，目前没有真实模型服务，不会假装自主收藏，也没有额外手动从聊天收藏的第三入口。
 - 验证：67 项 Node 测试、全模块语法检查；Chromium 390×844、320×640 触屏、844×390 横屏完整跑通相册 CRUD／多图上传／四列 1:1／大图／日期重新分组／封面／批量新建移动删除／AI 保存与去重及拒绝表情包／旧数据保留／配额失败／刷新。375×812 普通动效触屏另测横滑／键盘、无效批次与上传失败回滚、共享抽屉全宽／拖动关闭、真实设置导入备份后 UI 重置、夜间多选。
 - 新实际截图：docs/preview-app-gallery.webp（替换旧聚合图库）、preview-gallery-timeline.webp、preview-gallery-selection.webp、preview-gallery-album-editor.webp、preview-gallery-photo-editor.webp、preview-gallery-viewer.webp、preview-gallery-move.webp、preview-gallery-dark.webp、preview-gallery-timeline-dark.webp。示例照片来自 Unsplash，仅注入截图用临时浏览器状态，不写入默认图库。
+
+
+## 2026-10-17：完整备份与本机快照
+
+- 新增 src/backup/{model,controller,view,snapshots,style}，系统设置「数据与备份」接入独立管理器；沿用 storage-settings ID、统一玻璃底部抽屉／横条拖动／Escape／遮罩与焦点恢复，无 ×。ZIP 导出有内容预览，恢复有当前／备份数量比较、缺失原文件提示与确认覆盖；默认勾选恢复前保存完整快照，可取消勾选。
+- ZIP format=chenxin-backup/version=1，manifest.json + data.json + media/{music,voice}/序号.bin；数据沿用 normalizeState v1/v2，新增 backupSettings:{dailyEnabled:true,keep:5}（3/5/10）。音乐以 track.id、语音以 voice.fileId 收集原文件，对共享语音去重。图片继续完整内嵌数据 JSON；音频保留 File 名称／类型／修改时间。完整 ZIP 记录缺失文件，不冒充已包含所有媒体；轻量 JSON 仍不含音乐／语音原文件。
+- 内置 fflate 0.8.2 浏览器 ES 模块与 MIT LICENSE，下载 npm tarball 时核对 SHA-512，见 THIRD_PARTY_NOTICES.md。无 CDN 或 npm 构建依赖。ZIP／解压总量 256MB、data.json／JSON 导入 16MB、清单 1MB、文件总数 4096；拒绝未知路径、重复条目、不一致大小／压缩方式、不支持版本、缺失或多余索引。校验数据与每个音频的 SHA-256 后才出现恢复按钮。需要 HTTPS 或 localhost 的 Web Crypto。
+- 恢复在独立新 ID 中暂存原文件，成功后重映射歌曲、歌单、队列、当前歌曲与共享语音引用，最后一次 localStorage.setItem 提交元数据；失败或取消清理暂存文件，不改原数据与原音频。ZIP 中标记缺失的音频也生成新 ID，避免误用目标浏览器的旧文件；旧 JSON 沿用原 ID 以兼容本机补文件习惯。成功后重置聊天语音／表情／图库／音乐状态，回到系统设置并展开数据与备份，不自动播放。旧音频暂不自动清理，重复恢复会占额外空间。
+- chenxin.backups.v1 数据库当前 schema version 2：snapshots 存完整 ZIP Blob 与元数据，metadata 存设备侧 lastAutoDay，v1 升级保留已有快照。每日在启动／回到前台时检查，空白数据不创建；每日标记与快照在同一事务中提交，保留数量清理不会导致当天重复自动备份。手动、自动、恢复前快照可恢复／下载／删除，保留 3/5/10 份默认 5。存入和清理同一事务，失败保留旧快照。浏览器关闭后不保证自动任务，不是云备份。聊天样式预览注入内存媒体／快照并禁用自动快照，隔离正式数据。
+- 备份／恢复与音乐、语音、照片导入互斥，避免捕获正在变动的媒体。本机音频缺失时保留元数据并显示缺失清单；空间不足保存失败可重试，恢复前快照失败可取消勾选后恢复已下载的包。通过每日开关和保留数量设置管理快照。
+- 验证：77 项 Node 测试、全模块语法检查通过；新增 ZIP 完整往返、共享语音／歌单索引、数据／音频损坏、未知版本／路径、ZIP 大小声明、缺失文件与 ID 冲突、媒体／元数据配额失败回滚、取消恢复、旧 JSON/BOM、快照保留与每日标记测试。Chromium 390×844、320×640 触屏用独立浏览器上下文完成真实下载／恢复，验证照片、日记、设置、歌单与恢复前快照，并实际播放恢复的音乐和语音。375×812 普通动效触屏检查自动每日快照、保留清理、缺失提示、损坏文件拒绝、真实配额失败后的暂存清理、旧 JSON 确认恢复、快照删除、昼夜布局；844×390 横屏检查滚动预览和恢复。另测快照 v1→v2 升级、同日并发写入去重、取消导出，以及从真实完整快照恢复。Playwright 的 waitForFunction 不等待 async 谓词真值，IDB 状态检查使用 Node 侧 await evaluate 轮询，避免假通过。
+- 新预览：docs/preview-backup-export.webp、preview-backup-restore.webp、preview-backup-snapshots.webp、preview-backup-snapshots-dark.webp、preview-backup-settings.webp、preview-backup-settings-dark.webp、preview-backup-missing.webp。备份格式详见 docs/BACKUP_FORMAT.md。
+- 用户下一步计划搭建后端，已展示 Google Cloud 一台运行中的 VM。尚未连接或更改该 VPS；后续需要确认系统、规格、SSH 连接方式与域名／HTTPS，再部署 API、数据库和文件存储。当前仍是本机前端，没有服务器账号／云同步。

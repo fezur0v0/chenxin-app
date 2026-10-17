@@ -21,7 +21,7 @@ export function daysTogether(since, now = new Date()) {
  return Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()) - Date.UTC(y,m-1,d))/86400000) + 1;
 }
 function extras() {
- return { gallery:emptyGallery(), music:emptyMusic(), diaryEntries:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
+ return { backupSettings:{dailyEnabled:true,keep:5}, gallery:emptyGallery(), music:emptyMusic(), diaryEntries:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
  home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,category:'',favorite:true,used:0})),stickers:[],categories:[],kaomojiCategories:[]} };
 }
 export function createState() {
@@ -45,7 +45,7 @@ export function normalizeState(s) {
  const normalizedWidgets = widgets.filter(w=>!seen.has(w.type) && seen.add(w.type)).map(w=>({type:w.type,enabled:w.enabled !== false}));
  WIDGETS.forEach(type=>{if(!seen.has(type)) normalizedWidgets.push({type,enabled:true});});
  const worldbooks=normalizeWorldbooks(s.worldbooks),promptPresets=normalizePresets(s.promptPresets);
- return {version:2, gallery:normalizeGallery(s.gallery), worldbooks,promptPresets,activePromptPreset:promptPresets.some(item=>item.id===s.activePromptPreset)?s.activePromptPreset:'',music:normalizeMusic(s.music), diaryEntries:normalizeDiaryEntries(s.diaryEntries), expressions:normalizeExpressions(s.expressions,defaults.expressions), active:ids.has(s.active)?s.active:sessions[0].id, theme:s.theme==='dark'?'dark':'light', sessions,
+ return {version:2, backupSettings:{dailyEnabled:s.backupSettings?.dailyEnabled!==false,keep:[3,5,10].includes(s.backupSettings?.keep)?s.backupSettings.keep:5}, gallery:normalizeGallery(s.gallery), worldbooks,promptPresets,activePromptPreset:promptPresets.some(item=>item.id===s.activePromptPreset)?s.activePromptPreset:'',music:normalizeMusic(s.music), diaryEntries:normalizeDiaryEntries(s.diaryEntries), expressions:normalizeExpressions(s.expressions,defaults.expressions), active:ids.has(s.active)?s.active:sessions[0].id, theme:s.theme==='dark'?'dark':'light', sessions,
  persona:{name:text(s.persona.name,'尘',40)||'尘',prompt:text(s.persona.prompt)},
  provider:{protocol:['openai','anthropic','gemini'].includes(s.provider.protocol)?s.provider.protocol:'openai',baseUrl:text(s.provider.baseUrl,'',2000),model:text(s.provider.model,'',200)},
  plugins:s.plugins.map(p=>{if(typeof p?.id!=='string'||typeof p.name!=='string'||typeof p.url!=='string')throw new Error('插件数据损坏');return {id:p.id,name:text(p.name,'',80),url:text(p.url,'',2000),type:p.type==='plugin'?'plugin':'mcp'};}),
