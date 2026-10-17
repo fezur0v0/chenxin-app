@@ -30,7 +30,7 @@
 .voice-transcript{white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;font:13px/1.8 var(--font-ui);padding:9px 3px 3px;border-top:1px solid var(--hairline)}
 .voice-status{font:11px/1.7 var(--font-ui);color:var(--muted);margin-top:8px}.voice-relink{min-height:44px;font-size:12px;padding:9px 0;color:var(--ink)}
 .voice-import-state{font-size:12px;color:var(--muted);padding:5px 3px 10px}.voice-message.is-loading .voice-play{animation:thought-breathe 1.2s ease-in-out infinite}
-.chat-tray .attachment-options{grid-template-columns:repeat(4,minmax(0,1fr));margin-inline:0;gap:8px}.chat-tray .attachment-options button{min-height:84px;padding:12px 4px;font-size:12px}
+.chat-tray .attachment-options{grid-template-columns:repeat(3,minmax(0,1fr));margin-inline:0;gap:8px}.chat-tray .attachment-options button{min-height:84px;padding:12px 4px;font-size:12px}
 @media(max-height:550px){.chat-view>.reasoning-tray.bottom-sheet{max-height:calc(100dvh - 24px)}.reasoning-intro{padding-bottom:12px}.reasoning-tray .reasoning-content{max-height:37dvh;padding-block:12px}}
 @media(prefers-reduced-motion:reduce){.reasoning-trigger.is-thinking>svg:first-child,.voice-message.is-loading .voice-play{animation:none}.voice-transcript-toggle svg,.message.is-reference-target .bubble{transition:none}}
 @supports not (backdrop-filter:blur(1px)){.voice-message{background:var(--solid)}}
@@ -39,3 +39,19 @@
 .message .bubble:empty{display:none}.message:has(.bubble:empty)>.message-meta{display:none}
 
 .bubble:not(.voice-only)>.voice-message{background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;padding:6px 0}
+
+/* A single quiet row: attachment, text, voice, expressions, send. */
+.composer{padding:4px 6px;border-radius:28px}
+.compose-row{display:flex;align-items:flex-end;min-width:0;gap:2px}
+.compose-row>button,.composer-actions>button{display:grid;place-items:center;flex:0 0 44px;width:44px;height:44px;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--ink);touch-action:manipulation}
+.composer .compose-row textarea{flex:1;min-width:0;width:0;min-height:44px;max-height:164px;padding:10px 3px;border:0;background:none;line-height:24px;font-size:16px;border-radius:8px;outline-offset:-2px}
+.compose-row textarea::placeholder{color:var(--muted);opacity:.85}
+.composer-actions{display:flex;align-items:center;flex-shrink:0;gap:0}
+.compose-row button>svg{width:21px;height:21px}.compose-row .send>svg{width:22px;height:22px}
+.compose-row [aria-expanded=true]{background:rgb(var(--tint) / .1)}
+.composer .pending-attachments:empty{display:none}.composer .pending-attachments:not(:empty){padding:7px 6px 8px}
+.composer .reply-compose{margin:6px 7px 5px;padding-bottom:9px}.composer .voice-import-state{padding:9px 10px 5px}
+.chat-preview-entry{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;color:var(--muted);text-decoration:none;font-size:12px;border-radius:12px}.chat-preview-entry>svg{width:13px;height:13px}
+.chat-preview-note{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 12px;font:11px/1.8 var(--font-ui);color:var(--muted)}
+.chat-preview-note button{min-height:44px;padding:8px 0;color:var(--ink);font-size:12px;text-decoration:underline;text-underline-offset:4px}
+.chat-header-actions .preview-exit{display:grid;place-items:center;width:44px;height:44px;color:var(--ink);border-radius:50%}

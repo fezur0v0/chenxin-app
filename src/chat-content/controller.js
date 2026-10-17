@@ -1,7 +1,7 @@
 import {voiceFile,analyzeVoice} from './voice-files.js';
 import {formatVoiceTime} from './model.js';
 import {musicIcon} from '../apps/music/icons.js';
-export function createChatMedia({app,getState,getUI,isChat,render,notify}){
+export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,render,notify}){
  const audio=new Audio();audio.preload='metadata';
  const picker=document.createElement('input');picker.type='file';picker.accept='audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac,.webm';picker.hidden=true;picker.dataset.chatVoice='';document.body.append(picker);
  let active=null,url='',revision=0,importRevision=0,busy=false,relink=null,loading=false,error='',pendingSession='',seeking=false;
@@ -30,7 +30,7 @@ export function createChatMedia({app,getState,getUI,isChat,render,notify}){
   for(const id of drafts){
    const sent=getState().sessions.some(s=>s.messages.some(m=>m.attachments?.some(a=>a.voice?.fileId===id)));
    if(sent){drafts.delete(id);continue;}
-   if(!getUI().attachments.some(a=>a.voice?.fileId===id)){drafts.delete(id);void voiceFile(id,null).catch(()=>{});}
+   if(!getUI().attachments.some(a=>a.voice?.fileId===id)){drafts.delete(id);void files(id,null).catch(()=>{});}
   }
   paint();
  }
@@ -43,7 +43,7 @@ export function createChatMedia({app,getState,getUI,isChat,render,notify}){
   }
   stop();active={key,fileId:entry.attachment.voice.fileId,session:getState().active};loading=true;paint();const ticket=revision;
   try{
-   const file=await voiceFile(active.fileId);if(ticket!==revision)return;
+   const file=await files(active.fileId);if(ticket!==revision)return;
    if(!file)throw new Error('音频不在此浏览器中，请重新选择原音频。');
    url=URL.createObjectURL(file);audio.src=url;await audio.play();if(ticket!==revision)return;
    loading=false;paint();
@@ -74,15 +74,15 @@ export function createChatMedia({app,getState,getUI,isChat,render,notify}){
     if(target.session!==getState().active)throw new Error('对话已切换，请回到原消息补回音频。');
     const entry=resolve(target.key);if(!entry)throw new Error('原语音消息已不存在。');
     if((entry.attachment.size&&entry.attachment.size!==file.size)||(entry.attachment.voice.duration&&Math.abs(entry.attachment.voice.duration-metadata.duration)>.5))throw new Error('这份文件与原语音不一致，请选择原来的音频。');
-    await voiceFile(entry.attachment.voice.fileId,file);if(ticket!==importRevision)return;stop();notify('原音频已补回，可以播放了。');
+    await files(entry.attachment.voice.fileId,file);if(ticket!==importRevision)return;stop();notify('原音频已补回，可以播放了。');
    }else{
-    const id=crypto.randomUUID();stored=id;await voiceFile(id,file);if(ticket!==importRevision)return;
+    const id=crypto.randomUUID();stored=id;await files(id,file);if(ticket!==importRevision)return;
     if(getUI().attachments.length>=6)throw new Error('一次最多添加 6 项附件。');
     getUI().attachments.push({id:crypto.randomUUID(),name:file.name,size:file.size,type:file.type,kind:'voice',data:'',voice:{fileId:id,...metadata,transcript:''}});drafts.add(id);stored='';notify('语音已加入待发送内容。');
    }
   }catch(e){if(ticket===importRevision)notify(e.message||'音频读取失败。');}
   finally{
-   if(stored)void voiceFile(stored,null).catch(()=>{});
+   if(stored)void files(stored,null).catch(()=>{});
    if(ticket===importRevision){busy=false;pendingSession='';picker.disabled=false;picker.value='';getUI().voiceBusy=false;if(isChat())render();}
   }
  });

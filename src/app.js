@@ -1,3 +1,4 @@
+import {createChatPreview} from './chat-content/preview.js';
 import {createChatMedia} from './chat-content/controller.js';
 import {makeReply} from './chat-content/model.js';
 import {expressionCategories,saveKaomoji} from './expressions/model.js';
@@ -15,8 +16,10 @@ import { launcherIcon } from './launcher-icons.js';
 import { backButton } from './ui.js';
 import { localDate, loadState, saveState, normalizeState, newSession, addDraftMessage, exportData, saveMemory, changeMessage } from './store.js';
 import { home, chat, sessions, settings, memory, memoryEditor, sidebar, escape, button } from './views.js';
-let storage;try{storage=localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
-let state=loadState(storage), page='home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
+const chatPreview=new URLSearchParams(location.search).get('preview')==='chat'?createChatPreview():null;
+let storage;try{storage=chatPreview?.storage||localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
+let state=loadState(storage), page=chatPreview?'chat':'home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
+chatPreview?.seed(state);
 const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['app-appearance','appearance','外观'],['settings','settings','设置']];
 const opened=new Set();
 let sessionSearch='',oldestFirst=false;
@@ -31,7 +34,7 @@ const diaryApp=createDiaryApp({app,getState:()=>state,setState:value=>{state=val
 const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
 const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const stickerLibrary=createStickerLibrary({app,getState:()=>state,setState:value=>{state=value;},getUI:()=>chatUI,persist,notify,compressImage});
-const chatMedia=createChatMedia({app,getState:()=>state,getUI:()=>chatUI,isChat:()=>page==='chat',render,notify});
+const chatMedia=createChatMedia({files:chatPreview?.files,app,getState:()=>state,getUI:()=>chatUI,isChat:()=>page==='chat',render,notify});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -44,7 +47,7 @@ function render(){
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
- const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();chatMedia.sync();
+ const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}chatPreview?.decorate({app,state,ui:chatUI,render});updateViewport();syncTray();chatMedia.sync();
 }
 // Keep the wallpaper, dock and scroll container mounted during desktop updates.
 function renderHome(){
@@ -184,7 +187,7 @@ render();
 finishSplash().catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});
 
 function rememberSelection(){const input=app.querySelector('[name=message]');if(input)selection={start:input.selectionStart,end:input.selectionEnd};}
-function resizeComposer(){const input=app.querySelector('[name=message]');if(!input)return;input.style.height='auto';const max=parseFloat(getComputedStyle(input).lineHeight)*6;input.style.height=`${Math.min(input.scrollHeight,max)}px`;input.style.overflowY=input.scrollHeight>max?'auto':'hidden';const footer=app.querySelector('.composer-wrap');if(footer)app.querySelector('.chat-view').style.setProperty('--composer-height',`${footer.getBoundingClientRect().height}px`);}
+function resizeComposer(){const input=app.querySelector('[name=message]');if(!input)return;input.style.height='auto';const style=getComputedStyle(input),max=parseFloat(style.lineHeight)*6+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);input.style.height=`${Math.min(input.scrollHeight,max)}px`;input.style.overflowY=input.scrollHeight>max?'auto':'hidden';const footer=app.querySelector('.composer-wrap');if(footer)app.querySelector('.chat-view').style.setProperty('--composer-height',`${footer.getBoundingClientRect().height}px`);}
 function updateViewport(){const shell=app.querySelector('.immersive');if(!shell)return;const vv=window.visualViewport;shell.style.height=`${vv?vv.height:window.innerHeight}px`;shell.style.top=`${vv?vv.offsetTop:0}px`;}
 window.visualViewport?.addEventListener('resize',updateViewport);window.visualViewport?.addEventListener('scroll',updateViewport);window.addEventListener('resize',()=>{updateViewport();resizeComposer();});
 app.addEventListener('focusout',e=>{if(e.target.name==='message')rememberSelection();});

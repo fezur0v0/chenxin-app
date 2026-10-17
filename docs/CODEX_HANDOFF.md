@@ -299,3 +299,12 @@ npm test
 - 新表面使用全局 glass-soften／glass-solid／glass-blur，文字不使用整体 opacity；日间中性清透、夜间炭灰玻璃与柔白文字，主题色只点在波形进度／引用细线等局部。支持 44px 点击区域、键盘焦点、安全区及减少动态效果。没有恢复顶部 App 页头遮罩或底部 Dock 底座。
 - 验证：57 项 Node 测试与全部模块语法检查通过。Chromium 在 390×844、320×640 触屏、844×390 验证摘要条件／耗时／分段、引用取消／保存失败／发送／定位／删除原消息、真实 WAV 导入播放／暂停／进度／结束／重播／刷新／补回、提供的转写展开、旧数据和备份保留、昼夜及无横向溢出。375px 普通动效／实际触屏另检查无效音频、取消解码后不追加到新页面、草稿保留、音乐与语音互斥、玻璃 70%／0% 和 blur 0／40px、摘要复制及无 Clipboard API 时的提示、拖动关闭及焦点恢复。未用真实 iOS 设备验证音频格式兼容性。
 - 新实际预览：docs/preview-chat-details.webp、preview-chat-details-dark.webp、preview-chat-voice.webp、preview-chat-voice-dark.webp、preview-chat-reply.webp、preview-chat-reply-dark.webp；preview-reasoning-sheet.webp 和新增 -dark 版本同步更新。临时上下文使用自制测试音频、明确提供的摘要／转写演示数据，不写入默认会话，不假装已连接模型。
+
+
+## 2026-10-17：输入框位置修正与可交互样式预览
+
+- 按用户示例将输入框改为一排：左侧加号、弹性文本区、右侧麦克风／表情／发送。语音导入从附件抽屉移至输入框，附件恢复相机／图片／文件三列；按钮去独立底色，保留外层透明玻璃与细边。44px 点击区域、六行增高、引用／待发送附件独占上方区域、Enter／Shift+Enter 行为保留。
+- 新增 `src/chat-content/preview.js`：通过 `?preview=chat` 打开，或聊天侧边栏点「聊天样式预览」。复用正式聊天、思考抽屉、语音播放器、引用和输入框，支持日夜切换与退出。所有示例消息、偏好与音频文件只存在内存，不写入真实 localStorage／聊天音频 IndexedDB，刷新重置。顶部明确标示示例，语音使用自制 6 秒测试音，不冒充 AI 语音或真实模型思考。
+- chat media controller 支持可注入 files 存储；正式聊天默认仍使用现有 IndexedDB。麦克风目前选择本机音频文件，不提供录音、识别或合成。
+- 验证：59 项 Node 测试、全模块语法检查；Chromium 390×844、320×640 触屏、844×390 横屏检查按钮顺序／44px 区域、六行限制、语音文件导入／播放、表情切换、引用与音频一起发送、预览刷新／退出／重进、日夜和正式聊天数据隔离；原有摘要／引用／真实音频／缺失文件恢复回归通过。
+- 新截图 `docs/preview-chat-playground.webp`、`-dark.webp`、`-thought.webp`；原有聊天细节／语音／引用截图同步为单排输入框。
