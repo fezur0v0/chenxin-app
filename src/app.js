@@ -1,4 +1,5 @@
-import { animateDrawerClose, bindDrawerDismiss } from './drawer.js';
+import {createStickerLibrary} from './expressions/controller.js';
+import { drawerHeader, animateDrawerClose, bindDrawerDismiss } from './drawer.js';
 import { createMusicApp } from './apps/music/controller.js';
 import { createDiaryApp } from './apps/diary/controller.js';
 import { createPromptLibraries } from './apps/prompt-library/controller.js';
@@ -17,13 +18,15 @@ const opened=new Set();
 let sessionSearch='',oldestFirst=false;
 let visibleTray='',closingTray=false;
 const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
-let chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]},selection={start:0,end:0};
-const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog';document.body.append(expressionDialog);
+let chatUI={tray:'',tab:'stickers',filter:'all',attachments:[]},selection={start:0,end:0};
+const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog app-sheet bottom-sheet';document.body.append(expressionDialog);
+let expressionClosing=false,expressionRevision=0;
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
 const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,renderHome,notify,compressImage,openApp:goto});
 const diaryApp=createDiaryApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
 const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
+const stickerLibrary=createStickerLibrary({app,getState:()=>state,setState:value=>{state=value;},getUI:()=>chatUI,persist,notify,compressImage});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -77,19 +80,19 @@ function handleAction(e){
 
  if(action?.startsWith('toggle-')){rememberSelection();const tray=action.slice(7);chatUI.tray=chatUI.tray===tray?'':tray;render();return;}
  if(action==='close-tray'){closeTray();return;}
- if(action==='expression-tab'){chatUI.tab=target.dataset.tab;render();return;}
- if(action==='expression-filter'){chatUI.filter=target.dataset.filter;render();return;}
+ if(action==='expression-tab'){chatUI.tab=target.dataset.tab;chatUI.managing=false;chatUI.selected=[];render();return;}
+ if(action==='expression-filter'){chatUI.filter=target.dataset.filter;chatUI.selected=[];render();return;}
  if(action==='open-mcp'){focusSettings('plugins-settings');return;}
- if(action==='pick-camera'||action==='pick-image'||action==='pick-file'||action==='add-sticker'){app.querySelector(action==='pick-camera'?'#chat-camera':action==='pick-image'?'#chat-images':action==='pick-file'?'#chat-files':'#sticker-image').click();return;}
+ if(action==='pick-camera'||action==='pick-image'||action==='pick-file'){app.querySelector(action==='pick-camera'?'#chat-camera':action==='pick-image'?'#chat-images':'#chat-files').click();return;}
  if(action==='remove-attachment'){chatUI.attachments=chatUI.attachments.filter(a=>a.id!==target.dataset.id);render();return;}
- if(action==='add-kaomoji'||action==='edit-kaomoji'){const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form"><div class="dialog-heading"><h2>${item?'编辑':'收藏'}颜文字</h2><button type="button" data-close-expression aria-label="关闭">${icon('close')}</button></div><input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label><button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
+ if(action==='add-kaomoji'||action==='edit-kaomoji'){expressionRevision++;expressionClosing=false;expressionDialog.style.transform='';expressionDialog.getAnimations().forEach(a=>a.cancel());const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form">${drawerHeader({title:(item?'编辑':'收藏')+'颜文字',action:'close',actionAttribute:'data-close-expression'})}<input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label><button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
  if(['use-expression','favorite-expression','delete-expression'].includes(action)){
  const items=state.expressions[chatUI.tab],item=items.find(x=>x.id===target.dataset.id);if(!item)return;
  if(action==='favorite-expression')item.favorite=!item.favorite;
  if(action==='delete-expression'){if(!confirm('删除这项收藏？'))return;state.expressions[chatUI.tab]=items.filter(x=>x.id!==item.id);}
  if(action==='use-expression'){
   if(chatUI.tab==='kaomoji'){const before=composeDraft.slice(0,selection.start),after=composeDraft.slice(selection.end);if(before.length+item.value.length+after.length>12000)return notify('消息太长，先删掉一些文字吧。');composeDraft=before+item.value+after;selection.start=selection.end=before.length+item.value.length;}
-  else{if(chatUI.attachments.length>=6)return notify('一次最多添加 6 项附件。');chatUI.attachments.push({id:crypto.randomUUID(),name:item.name,size:0,type:'image/jpeg',data:item.value});}
+  else{if(chatUI.attachments.length>=6)return notify('一次最多添加 6 项附件。');chatUI.attachments.push({id:crypto.randomUUID(),name:item.name,note:item.note||item.name,kind:'sticker',size:0,type:'image/*',data:item.value});}
   item.used=Date.now();
  }
  if(action==='use-expression')chatUI.tray='';
@@ -136,21 +139,16 @@ app.addEventListener('input',e=>{
 });
 app.addEventListener('change',async e=>{
  const t=e.target;
- if(['chat-camera','chat-images','chat-files','sticker-image'].includes(t.id)&&t.files?.length){
+ if(['chat-camera','chat-images','chat-files'].includes(t.id)&&t.files?.length){
   t.disabled=true;
   try{
    for(const file of t.files){
-    if(t.id==='sticker-image'){
-     if(state.expressions.stickers.length>=200)throw new Error('表情包最多保存 200 项。');
-     const data=await compressImage(file,512),item={id:crypto.randomUUID(),name:file.name.slice(0,80),value:data,favorite:true,used:0};state.expressions.stickers.push(item);if(!persist()){state.expressions.stickers.pop();break;}
-    }else{
      if(chatUI.attachments.length>=6)throw new Error('一次最多添加 6 项附件。');
      if(file.size>10*1024*1024)throw new Error('单个附件不能超过 10MB。');
      const data=['chat-camera','chat-images'].includes(t.id)?await compressImage(file,1024):'';
      chatUI.attachments.push({id:crypto.randomUUID(),name:file.name,size:file.size,type:file.type,data});
     }
-   }
-  }catch(error){notify(error.message);}finally{t.disabled=false;t.value='';if(page==='chat'){if(t.id!=='sticker-image')chatUI.tray='';render();}}
+  }catch(error){notify(error.message);}finally{t.disabled=false;t.value='';if(page==='chat'){chatUI.tray='';render();}}
   return;
  }
  if(['accent','blur','opacity'].includes(t.name)&&t.closest('#appearance-settings'))persist();
@@ -159,18 +157,18 @@ app.addEventListener('change',async e=>{
    try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
  }
  if(t.id==='import-data'&&t.files[0]){
-   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'kaomoji',filter:'all',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
+   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}stickerLibrary.reset();state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'stickers',filter:'all',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
  }
 });
 app.addEventListener('keydown',e=>{if(e.target.name==='message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!e.repeat){e.preventDefault();e.target.form.requestSubmit();}});
 dialog.addEventListener('click',e=>{if(e.target.closest('[data-action=close-modal]'))closeModal();});
 dialog.addEventListener('change',e=>{if(e.target.name==='kind')document.querySelector('#memory-days-field').hidden=e.target.value==='permanent';});
 dialog.addEventListener('submit',e=>{e.preventDefault();try{saveMemory(state,Object.fromEntries(new FormData(e.target)));const ok=persist();closeModal();render();if(ok)notify('记忆已收藏。');}catch(error){notify(error.message);}});
-async function compressImage(file,max){
+async function compressImage(file,max,{transparent=false}={}){
  if(!['image/jpeg','image/png','image/webp'].includes(file.type))throw new Error('请选择 JPG、PNG 或 WebP 图片。');
  if(file.size>12*1024*1024)throw new Error('图片超过 12MB，请先压缩。');
  const url=URL.createObjectURL(file);
- try{const img=new Image();img.src=url;await img.decode();if(!img.naturalWidth||!img.naturalHeight)throw new Error('无法读取图片。');const ratio=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));const context=canvas.getContext('2d');context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(img,0,0,canvas.width,canvas.height);const data=canvas.toDataURL('image/jpeg',.78);if(data.length>1100000)throw new Error('图片保存后仍然太大，请换一张较小图片。');return data;}finally{URL.revokeObjectURL(url);}
+ try{const img=new Image();img.src=url;await img.decode();if(!img.naturalWidth||!img.naturalHeight)throw new Error('无法读取图片。');const ratio=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*ratio));canvas.height=Math.max(1,Math.round(img.naturalHeight*ratio));const context=canvas.getContext('2d');if(!transparent){context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);}context.drawImage(img,0,0,canvas.width,canvas.height);const data=canvas.toDataURL(transparent?'image/webp':'image/jpeg',.78);if(data.length>1100000)throw new Error('图片保存后仍然太大，请换一张较小图片。');return data;}finally{URL.revokeObjectURL(url);}
 }
 let shownDate=localDate();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&page==='home'&&shownDate!==localDate()){shownDate=localDate();render();}});
@@ -186,7 +184,10 @@ app.addEventListener('focusout',e=>{if(e.target.name==='message')rememberSelecti
 app.addEventListener('keyup',e=>{if(e.target.name==='message')rememberSelection();});
 app.addEventListener('click',e=>{if(e.target.name==='message')rememberSelection();});
 app.addEventListener('keydown',e=>{if(e.key==='Escape'&&chatUI.tray){e.preventDefault();closeTray();}});
-expressionDialog.addEventListener('click',e=>{if(e.target.closest('[data-close-expression]'))expressionDialog.close();});
+const closeExpression=async()=>{if(!expressionDialog.open||expressionClosing)return;expressionClosing=true;const revision=expressionRevision;await animateDrawerClose(expressionDialog);if(revision!==expressionRevision)return;expressionDialog.close();expressionClosing=false;};
+bindDrawerDismiss(expressionDialog,{panel:()=>expressionDialog.open&&!expressionClosing?expressionDialog:null,close:closeExpression,backdrop:true});
+expressionDialog.addEventListener('cancel',e=>{e.preventDefault();void closeExpression();});
+expressionDialog.addEventListener('click',e=>{if(e.target.closest('[data-close-expression]'))void closeExpression();});
 expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.target,value=form.elements.value.value.trim(),id=form.elements.id.value;if(!value)return;
  const snapshot=structuredClone(state.expressions),item=state.expressions.kaomoji.find(x=>x.id===id);
  if(item)item.value=value;else{if(state.expressions.kaomoji.length>=200)return notify('颜文字最多保存 200 项。');state.expressions.kaomoji.unshift({id:crypto.randomUUID(),value,favorite:true,used:0});}
@@ -196,7 +197,7 @@ expressionDialog.addEventListener('submit',e=>{e.preventDefault();const form=e.t
 const trayMotion=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
 function syncTray(){const panel=app.querySelector('.chat-tray');if(!panel){visibleTray='';closingTray=false;return;}for(const el of app.querySelectorAll('.chat-header,.messages,.composer-wrap'))el.inert=true;panel.focus({preventScroll:true});if(visibleTray!==chatUI.tray&&trayMotion())panel.animate([{transform:'translateY(100%)'},{transform:'translateY(0)'}],{duration:280,easing:'cubic-bezier(.2,.8,.2,1)'});visibleTray=chatUI.tray;}
 async function closeTray(){if(closingTray)return;const previous=chatUI.tray,panel=app.querySelector('.chat-tray');closingTray=true;await animateDrawerClose(panel);if(panel&&app.querySelector('.chat-tray')!==panel){closingTray=false;return;}const scroll=app.querySelector('#messages')?.scrollTop;chatUI.tray='';render();if(scroll!==undefined)app.querySelector('#messages').scrollTop=scroll;const trigger=previous==='reasoning'?[...app.querySelectorAll('[data-action=show-reasoning]')].find(e=>e.dataset.id===chatUI.messageId):app.querySelector(`[data-action="toggle-${previous}"]`);trigger?.focus({preventScroll:true});}
-app.addEventListener('keydown',e=>{const panel=app.querySelector('.chat-tray');if(!panel||e.key!=='Tab')return;const nodes=[...panel.querySelectorAll('button:not(:disabled),input,textarea')];const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}});
+app.addEventListener('keydown',e=>{const panel=app.querySelector('.chat-tray');if(!panel||e.key!=='Tab')return;const nodes=[...panel.querySelectorAll('button:not(:disabled),input,textarea,select')];const first=nodes[0],last=nodes.at(-1);if(e.shiftKey&&(document.activeElement===first||document.activeElement===panel)){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}});
 bindDrawerDismiss(app,{panel:()=>closingTray?null:app.querySelector('.chat-tray'),close:closeTray});
 
 const messageDialog=document.createElement('dialog');messageDialog.className='glass message-dialog';messageDialog.setAttribute('aria-label','消息操作');document.body.append(messageDialog);

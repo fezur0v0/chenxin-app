@@ -1,3 +1,4 @@
+import {normalizeExpressions,stickerSource} from './expressions/model.js';
 import { emptyMusic, normalizeMusic } from './apps/music/model.js';
 import { normalizeDiaryEntries } from './apps/diary/model.js';
 import { normalizeWorldbooks } from './apps/worldbook/model.js';
@@ -19,7 +20,7 @@ export function daysTogether(since, now = new Date()) {
 }
 function extras() {
  return { music:emptyMusic(), diaryEntries:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
- home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[]} };
+ home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,favorite:true,used:0})),stickers:[],categories:[]} };
 }
 export function createState() {
  const id = crypto.randomUUID();
@@ -67,12 +68,7 @@ export function saveMemory(state,data) {
 export function exportData(state) { return JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2); }
 
 export function normalizeAttachments(items) {
- return (Array.isArray(items)?items:[]).slice(0,6).filter(x=>typeof x?.name==='string').map(x=>({id:text(x.id,crypto.randomUUID(),100),name:text(x.name,'文件',180),size:Number.isFinite(x.size)?Math.max(0,x.size):0,type:text(x.type,'',100),data:image(x.data)}));
-}
-function normalizeExpressions(value,defaults) {
- if(!value)return defaults;
- const clean=(items,sticker)=>{const ids=new Set();return (Array.isArray(items)?items:[]).slice(0,200).filter(x=>typeof x?.id==='string'&&!ids.has(x.id)&&ids.add(x.id)).map(x=>({id:x.id,value:sticker?image(x.value):text(x.value,'',200),name:text(x.name,'表情包',80),favorite:x.favorite===true,used:Number.isFinite(x.used)?Math.max(0,x.used):0})).filter(x=>x.value.trim());};
- return {kaomoji:clean(value.kaomoji,false),stickers:clean(value.stickers,true)};
+ return (Array.isArray(items)?items:[]).slice(0,6).filter(x=>typeof x?.name==='string').map(x=>({id:text(x.id,crypto.randomUUID(),100),name:text(x.name,'文件',180),size:Number.isFinite(x.size)?Math.max(0,x.size):0,type:text(x.type,'',100),kind:x.kind==='sticker'?'sticker':'file',note:text(x.note,'',200),data:x.kind==='sticker'?stickerSource(x.data):image(x.data)}));
 }
 
 export function orderedSessions(state,query='',oldest=false){

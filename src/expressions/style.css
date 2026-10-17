@@ -1,0 +1,41 @@
+/* Sticker library: shared glass sheet, fixed tools, scrollable collection. */
+.chat-view>.chat-tray.expression-tray{display:flex;flex-direction:column;max-height:min(620px,76dvh);overflow:hidden}
+.expression-tray>.drawer-handle,.expression-tray>.drawer-heading,.expression-toolbar,.sticker-category-row,.sticker-selection,.sticker-bulk-actions{flex-shrink:0}
+.expression-tray .expression-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;min-width:0}
+.expression-toolbar .tray-filters{margin:0;gap:0}.expression-toolbar .tray-filters button{min-height:44px;padding:8px 10px}
+.expression-toolbar-actions{display:flex;gap:4px;flex-shrink:0}.expression-toolbar-actions button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px;border-radius:14px;font-size:12px}.expression-toolbar-actions svg{width:16px;height:16px}
+.sticker-category-row{display:flex;align-items:center;gap:4px;min-width:0;padding-bottom:12px;border-bottom:1px solid var(--hairline);margin-bottom:12px}
+.sticker-categories{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;min-width:0;flex:1;overscroll-behavior:contain}
+.sticker-categories button{flex-shrink:0;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:44px;padding:8px 13px;border-radius:15px;font-size:12px;color:var(--muted);border:1px solid transparent;touch-action:pan-x;-webkit-touch-callout:none;user-select:none}
+.sticker-categories [aria-pressed=true]{color:var(--ink);background:rgb(var(--tint) / .12);border-color:var(--hairline)}
+.sticker-category-row>button{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;flex-shrink:0}.sticker-category-row>button svg{width:18px;height:18px}
+.expression-tray .expression-grid{flex:0 1 auto;min-height:0;max-height:min(330px,42dvh);padding:3px;scroll-padding:4px}
+.expression-tray .sticker-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
+.sticker-tile{position:relative;min-width:0;transition:border-color 160ms,box-shadow 160ms}
+.sticker-tile .sticker-use{position:relative;display:grid;place-items:center;width:100%;min-height:72px;aspect-ratio:1;padding:10px}
+.sticker-use img{width:100%;height:100%;min-height:0;max-height:106px;object-fit:contain}
+.sticker-note{font:11px/1.5 var(--font-ui);color:var(--muted);padding:0 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sticker-tools{display:flex;justify-content:space-between;padding:0 3px}.sticker-tools button{display:grid;place-items:center;min-width:44px;min-height:44px;border-radius:12px;color:var(--muted)}.sticker-tools svg{width:15px;height:15px}.sticker-tools [aria-pressed=true] svg{fill:rgb(var(--tint) / .35);color:var(--ink)}
+.sticker-selection{display:flex;justify-content:space-between;align-items:center;font-size:12px;margin:-4px 0 6px}.sticker-selection button{min-height:44px;padding:8px}
+.sticker-check{position:absolute;right:7px;top:7px;width:22px;height:22px;border-radius:50%;border:1px solid var(--muted);background:var(--solid);display:grid;place-items:center}.sticker-check svg{width:15px;height:15px}
+.sticker-tile.is-selected{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}.is-selected .sticker-check{background:var(--ink);color:var(--solid)}
+.sticker-bulk-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;border-top:1px solid var(--hairline);padding-top:12px}.sticker-bulk-actions button{display:flex;gap:8px;justify-content:center;align-items:center;min-height:46px;border-radius:16px;background:rgb(var(--tint) / .1);font-size:13px}.sticker-bulk-actions svg{width:17px;height:17px}
+.sticker-empty{display:grid;justify-items:center;gap:12px;width:100%;min-height:160px;margin:0}.sticker-empty>svg{width:30px;height:30px}.sticker-empty button{padding:10px 16px;min-height:44px;border-radius:15px;border:1px solid var(--hairline);color:var(--ink)}
+dialog.sticker-sheet,dialog.expression-dialog.bottom-sheet{position:fixed;inset:auto 0 0;margin:0 auto;max-width:none}
+.sticker-sheet .primary,.expression-dialog.bottom-sheet .primary{width:100%;min-height:48px;margin:12px 0 0;font-size:14px}
+.sticker-sheet .field{margin:18px 0}.sticker-sheet .hint{font:12px/1.7 var(--font-ui);color:var(--muted);overflow-wrap:anywhere}
+.sticker-error{font:13px/1.7 var(--font-ui);padding:12px;border:1px solid var(--hairline);border-radius:12px;background:rgb(var(--tint) / .12);margin-bottom:12px;overflow-wrap:anywhere}
+.sticker-add-choices{display:grid;gap:12px;padding:8px 0}.sticker-add-choices button{display:flex;gap:16px;align-items:center;min-height:90px;padding:18px;border:1px solid var(--line);border-radius:20px;background:rgb(var(--glass-tint) / calc(.2 * var(--glass-soften)));text-align:left}
+.sticker-add-choices button>svg{width:25px;height:25px}.sticker-add-choices button>span{display:grid;gap:8px;font-size:15px}.sticker-add-choices small{font-size:11px;color:var(--muted);line-height:1.7}
+.sticker-upload-preview{display:flex;justify-content:center;align-items:center;gap:16px;flex-wrap:wrap;margin:16px 0}.sticker-upload-preview>img{width:120px;height:120px;object-fit:contain}
+.sticker-upload{display:grid;place-items:center;gap:8px;position:relative;min-width:136px;min-height:126px;border:1px dashed var(--muted);border-radius:20px;padding:16px;overflow:hidden;font-size:14px;cursor:pointer}.sticker-upload small{font-size:10px;color:var(--muted)}
+.sticker-upload input,.sticker-file-choice input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}.sticker-upload:focus-within,.sticker-file-choice:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+.sticker-import-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.sticker-import-actions>button,.sticker-file-choice{display:flex;align-items:center;justify-content:center;gap:7px;position:relative;min-height:48px;padding:12px 8px;border:1px solid var(--hairline);border-radius:16px;font-size:13px;cursor:pointer}
+.sticker-import-actions svg{width:18px;height:18px}.sticker-import-preview:empty{display:none}.sticker-import-preview{border:1px solid var(--hairline);padding:14px;border-radius:18px;margin:14px 0;font-size:13px}.sticker-import-preview ul{list-style:none;margin:8px 0 0;padding:0}.sticker-import-preview li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--hairline)}.sticker-import-preview li>span{overflow-wrap:anywhere;min-width:0}.sticker-import-preview small{font-size:11px;color:var(--muted);max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sticker-form-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.sticker-form-actions .primary{margin:0}.sticker-sheet-summary{font-size:14px;line-height:1.8;padding:8px 0 16px}.sticker-danger{display:block;min-height:48px;padding:12px;width:100%;margin-top:12px;border-radius:15px;border:1px solid var(--hairline);font-size:13px}
+@media(max-height:550px){.chat-view>.chat-tray.expression-tray{max-height:calc(100dvh - 32px)}.expression-tray .expression-grid{max-height:180px}.expression-tray .drawer-heading{margin-bottom:0}.sticker-category-row{padding-bottom:4px;margin-bottom:4px}.sticker-sheet .field{margin:12px 0}}
+@media(prefers-reduced-motion:reduce){.sticker-tile{transition:none}}
+/* On short landscape screens, scroll the whole sheet so cards stay tappable. */
+@media(max-height:550px){.chat-view>.chat-tray.expression-tray{display:block;max-height:calc(100dvh - 16px);overflow:auto}.expression-tray .expression-grid{max-height:none;overflow:visible}.sticker-bulk-actions{margin-bottom:4px}}
+
+.sticker-format-help{font-size:12px;color:var(--muted);margin:8px 0}.sticker-format-help summary{min-height:44px;padding:12px 0;cursor:pointer}.sticker-format-help pre{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:12px;border-radius:14px;background:rgb(var(--tint) / .08);font-size:11px}
