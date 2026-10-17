@@ -12,6 +12,6 @@ const views={diary,music,gallery,presets,worldbook,archives,appearance};
 export function appView(id,state,ui) {
  const app=findApp(id);
  if(!app)return '';
- if(['music','worldbook','presets'].includes(app.icon))return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}">${views[app.icon](state,ui)}</section>`;
+ if(['music','worldbook','presets','gallery'].includes(app.icon))return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}">${views[app.icon](state,ui)}</section>`;
  return `<section class="desktop-app ${app.icon}-app" data-app-page="${app.id}">${appPageHeader(app.name)}${app.icon==='diary'?'':`<p class="desktop-app-intro">${escape(app.subtitle)}</p>`}<div class="desktop-app-body">${views[app.icon](state,ui)}</div></section>`;
 }

@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | 日记 | `diary/` | `view.js`、`style.css`、`model.js`、`controller.js` |
 | 音乐 | `music/` | `view.js`、`style.css`、`controller.js`、`model.js`、`files.js`、`icons.js` |
-| 图库 | `gallery/` | `view.js`、`style.css` |
+| 图库 | `gallery/` | `view.js`、`style.css`、`model.js`、`controller.js` |
 | 预设 | `presets/` | `view.js`、`style.css`、`model.js` |
 | 世界书 | `worldbook/` | `view.js`、`style.css`、`model.js` |
 | 档案 | `archives/` | `view.js`、`style.css` |
@@ -36,3 +36,6 @@ App 页面共享样式位于本目录的 `style.css`，内部线条图标来自 
 导入兼容 entries 世界书与 prompts/prompt_order 聊天补全核心结构；预设保留白名单中的生成／格式参数，连接地址与凭据不导入。编辑只更新已支持的字段，保留世界书其他高级数据与提示词条目元数据、非当前编排组。内置上下文标记不提供正文覆盖；新内容要通过真实保存行为落盘，失败保留表单。当前不执行触发、宏、正则、向量、脚本或模型请求编排。
 
 backButton() 与 drawerHeader() 可通过内部 actionAttribute 选择组件事件命名空间。本地配置编辑抽屉使用 app-sheet bottom-sheet，仍由 drawer.css 控制公共材质；不要增加右上角 × 或复制一套抽屉样式。
+
+
+图库使用独立 gallery:{albums,photos} 状态，不再扫描壁纸／头像／所有聊天附件。图库入口显示分类，内部返回使用 backButton 的 data-gallery-action；相册与照片编辑共用 drawerHeader／app-sheet bottom-sheet。每行照片固定四张正方形，不要改成自适应列数。model.js 的 saveChatPhoto 校验用户照片来源和重复收藏，controller.js 提供保存、失败回滚与局部刷新；src/app.js 导出 saveConversationPhoto 供未来模型工具调用，目前尚无真实模型触发。
