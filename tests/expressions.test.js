@@ -40,3 +40,17 @@ test('chat image captions are hidden while notes and file names remain accessibl
  assert(!html.includes('<span>不显示的图片名'));assert(!html.includes('<span>&lt;img onerror'));assert(html.includes('alt="抱抱"'));assert(html.includes('保留的文件名.txt'));assert(html.includes('我写的正文'));
  importStickers(s.expressions,[{note:'<script>test</script>',value:'https://example.com/a'}]);const panel=expressionContents(s,{tab:'stickers',managing:true,selected:[s.expressions.stickers[0].id]});assert(panel.includes('&lt;script&gt;'));assert(!panel.includes('<script>'));assert(panel.includes('aria-pressed="true"'));assert(panel.includes('移动'));
 });
+
+test('search matches notes and legacy names together with category and favorite/recent filters without mutating the library',()=>{
+ const e=createState().expressions,a=saveCategory(e,'日常'),b=saveCategory(e,'抱抱');
+ importStickers(e,parseStickerText('温柔抱抱：https://example.com/a\nGOOD NIGHT：https://example.com/b'),a.id);
+ importStickers(e,parseStickerText('抱抱你：https://example.com/c'),b.id);
+ e.stickers[0].used=10;e.stickers[1].favorite=false;e.stickers[2].used=20;
+ const original=structuredClone(e);
+ assert.deepEqual(visibleStickers(e,{search:' 抱抱 ',filter:'recent'}).map(s=>s.note),['抱抱你','温柔抱抱']);
+ assert.deepEqual(visibleStickers(e,{search:'抱抱',category:a.id,filter:'favorites'}).map(s=>s.note),['温柔抱抱']);
+ assert.deepEqual(visibleStickers(e,{search:'good night'}).map(s=>s.note),['GOOD NIGHT']);
+ assert.equal(visibleStickers(e,{search:'good night',filter:'favorites'}).length,0);
+ e.stickers[1].name='old-name.png';assert.equal(visibleStickers(e,{search:'OLD-NAME'}).length,1);e.stickers[1].name=original.stickers[1].name;
+ assert.deepEqual(e,original);
+});

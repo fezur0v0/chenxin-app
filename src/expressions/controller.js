@@ -15,6 +15,19 @@ export function createStickerLibrary({app,getState,setState,getUI,persist,notify
   const scroll=panel.querySelector('.expression-grid')?.scrollTop||0,categoryScroll=panel.querySelector('.sticker-categories')?.scrollLeft||0;
   panel.innerHTML=expressionContents(getState(),ui());panel.querySelector('.expression-grid').scrollTop=scroll;const categories=panel.querySelector('.sticker-categories');if(categories)categories.scrollLeft=categoryScroll;
  }
+ // Update results without replacing the search input or interrupting Chinese IME.
+ function search(event){
+  const input=event.target;if(!input.matches('[data-expression-search]'))return;
+  ui().search=input.value;if(event.isComposing)return;ui().selected=[];
+  const panel=input.closest('.expression-tray'),template=document.createElement('template');
+  // Keep the search field still when the result list becomes shorter.
+  panel.style.height=input.value?(panel.style.height||`${panel.getBoundingClientRect().height}px`):'';
+  template.innerHTML=expressionContents(getState(),ui());
+  for(const selector of ['.expression-grid','.sticker-selection','.sticker-bulk-actions']){
+   const current=panel.querySelector(selector),next=template.content.querySelector(selector);if(current&&next)current.replaceChildren(...next.childNodes);
+  }
+ }
+ app.addEventListener('input',search);app.addEventListener('compositionend',search);
  async function close(){if(!dialog.open||closing||busy)return;closing=true;const current=revision;await animateDrawerClose(dialog);if(current!==revision)return;dialog.close();closing=false;}
  bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closing&&!busy?dialog:null,close,backdrop:true});
  dialog.addEventListener('cancel',e=>{e.preventDefault();void close();});

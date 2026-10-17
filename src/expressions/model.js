@@ -14,8 +14,9 @@ export function normalizeExpressions(value,defaults){
  return {kaomoji:clean(value.kaomoji,false),stickers:clean(value.stickers,true),categories};
 }
 export function visibleStickers(expressions,ui={}){
+ const query=(ui.search||'').trim().toLocaleLowerCase();
  const category=ui.category&&expressions.categories.some(c=>c.id===ui.category)?ui.category:ui.category===''?'':'all';
- return expressions.stickers.filter(x=>(category==='all'||(x.category||'')===category)&&(ui.filter==='favorites'?x.favorite:ui.filter==='recent'?x.used>0:true)).slice().sort((a,b)=>ui.filter==='recent'?b.used-a.used:0);
+ return expressions.stickers.filter(x=>(!query||[x.note,x.name].some(value=>value?.toLocaleLowerCase().includes(query)))&&(category==='all'||(x.category||'')===category)&&(ui.filter==='favorites'?x.favorite:ui.filter==='recent'?x.used>0:true)).slice().sort((a,b)=>ui.filter==='recent'?b.used-a.used:0);
 }
 export function saveCategory(expressions,name,id=''){
  name=typeof name==='string'?name.trim():'';
