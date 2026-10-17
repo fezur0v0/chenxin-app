@@ -1,3 +1,4 @@
+import {normalizeReply,normalizeVoice} from './chat-content/model.js';
 import {normalizeExpressions,stickerSource} from './expressions/model.js';
 import { emptyMusic, normalizeMusic } from './apps/music/model.js';
 import { normalizeDiaryEntries } from './apps/diary/model.js';
@@ -34,7 +35,7 @@ export function normalizeState(s) {
    ids.add(x.id);
    return { id:x.id, title:text(x.title,'新的对话',80), created:Number.isFinite(x.created)?x.created:Date.now(), pinned:x.pinned===true,branchedFrom:text(x.branchedFrom,'',100),model:text(x.model,'',200), messages:x.messages.map(m=>{
      if (typeof m?.text !== 'string') throw new Error('消息数据损坏');
-     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',reasoningSummary:text(m.reasoningSummary,'',30000),model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments) };
+     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',reasoningSummary:text(m.reasoningSummary,'',30000),reasoningStatus:m.role==='assistant'&&m.reasoningStatus==='thinking'?'thinking':'',reasoningDurationMs:Number.isFinite(m.reasoningDurationMs)&&m.reasoningDurationMs>=0?Math.min(3600000,m.reasoningDurationMs):null,replyTo:normalizeReply(m.replyTo),model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments) };
    }) };
  });
  const defaults = extras(), a = s.appearance || {}, h = s.home || {};
@@ -57,7 +58,7 @@ export function normalizeState(s) {
 export function loadState(storage) { try { return normalizeState(JSON.parse(storage.getItem(STORAGE_KEY))); } catch { return createState(); } }
 export function saveState(storage,state) { storage.setItem(STORAGE_KEY,JSON.stringify(state)); }
 export function newSession(state) { const s={id:crypto.randomUUID(),title:'新的对话',created:Date.now(),pinned:false,messages:[]};state.sessions.unshift(s);state.active=s.id;return s; }
-export function addDraftMessage(state,value,attachments=[]) { const s=state.sessions.find(x=>x.id===state.active), content=value.trim();const files=normalizeAttachments(attachments);if(!content&&!files.length)return null;const m={id:crypto.randomUUID(),role:'user',text:content,time:Date.now(),status:'local',attachments:files,model:s.model||state.provider.model||''};if(!s.messages.length)s.title=content.slice(0,18)||files[0].name;s.messages.push(m);return m; }
+export function addDraftMessage(state,value,attachments=[],replyTo=null) { const s=state.sessions.find(x=>x.id===state.active), content=value.trim();const files=normalizeAttachments(attachments);if(!content&&!files.length)return null;const m={id:crypto.randomUUID(),role:'user',text:content,time:Date.now(),status:'local',attachments:files,replyTo:normalizeReply(replyTo),model:s.model||state.provider.model||''};if(!s.messages.length)s.title=content.slice(0,18)||files[0].name;s.messages.push(m);return m; }
 export function isExpired(memory,now=Date.now()) { return memory.kind==='short' && Number.isFinite(memory.expires) && memory.expires <= now; }
 export function saveMemory(state,data) {
  const content=data.content.trim(); if(!content)throw new Error('请填写记忆内容');
@@ -68,7 +69,7 @@ export function saveMemory(state,data) {
 export function exportData(state) { return JSON.stringify({...state,exportedAt:new Date().toISOString()},null,2); }
 
 export function normalizeAttachments(items) {
- return (Array.isArray(items)?items:[]).slice(0,6).filter(x=>typeof x?.name==='string').map(x=>({id:text(x.id,crypto.randomUUID(),100),name:text(x.name,'文件',180),size:Number.isFinite(x.size)?Math.max(0,x.size):0,type:text(x.type,'',100),kind:x.kind==='sticker'?'sticker':'file',note:text(x.note,'',200),data:x.kind==='sticker'?stickerSource(x.data):image(x.data)}));
+ return (Array.isArray(items)?items:[]).slice(0,6).filter(x=>typeof x?.name==='string').map(x=>({id:text(x.id,crypto.randomUUID(),100),name:text(x.name,'文件',180),size:Number.isFinite(x.size)?Math.max(0,x.size):0,type:text(x.type,'',100),kind:x.kind==='sticker'?'sticker':x.kind==='voice'&&normalizeVoice(x.voice)?'voice':'file',voice:x.kind==='voice'?normalizeVoice(x.voice):null,note:text(x.note,'',200),data:x.kind==='voice'?'':x.kind==='sticker'?stickerSource(x.data):image(x.data)}));
 }
 
 export function orderedSessions(state,query='',oldest=false){

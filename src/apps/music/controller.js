@@ -199,7 +199,8 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
   }catch(error){errorText=error.message;}
   finally{ui.busy=false;picker.disabled=false;picker.value='';if(dialog.open&&sheetKind==='track'&&replacement)dialog.close();refresh();notify(`${count?`已添加 ${count} 首音乐。`:''}${errorText||(count?'':'没有添加新的音乐。')}`);}
  });
- audio.addEventListener('play',()=>{ui.loading=false;syncPlayback();});audio.addEventListener('pause',syncPlayback);audio.addEventListener('timeupdate',syncProgress);
+ audio.addEventListener('play',()=>{document.dispatchEvent(new CustomEvent('chenxin:media-play',{detail:'music'}));ui.loading=false;syncPlayback();});
+ document.addEventListener('chenxin:media-play',event=>{if(event.detail==='voice'){generation++;audio.pause();ui.loading=false;syncPlayback();}});audio.addEventListener('pause',syncPlayback);audio.addEventListener('timeupdate',syncProgress);
  audio.addEventListener('loadedmetadata',()=>{
   if(!loadedId||loadedId!==data().currentId)return;syncProgress();
   const track=data().tracks.find(t=>t.id===loadedId);if(track&&Number.isFinite(audio.duration)&&Math.abs(track.duration-audio.duration)>.1)commit(()=>{track.duration=audio.duration;});

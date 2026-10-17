@@ -1,3 +1,5 @@
+import {createChatMedia} from './chat-content/controller.js';
+import {makeReply} from './chat-content/model.js';
 import {expressionCategories,saveKaomoji} from './expressions/model.js';
 import {categoryField} from './expressions/view.js';
 import {createStickerLibrary} from './expressions/controller.js';
@@ -29,6 +31,7 @@ const diaryApp=createDiaryApp({app,getState:()=>state,setState:value=>{state=val
 const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
 const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const stickerLibrary=createStickerLibrary({app,getState:()=>state,setState:value=>{state=value;},getUI:()=>chatUI,persist,notify,compressImage});
+const chatMedia=createChatMedia({app,getState:()=>state,getUI:()=>chatUI,isChat:()=>page==='chat',render,notify});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -41,7 +44,7 @@ function render(){
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
- const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();
+ const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}updateViewport();syncTray();chatMedia.sync();
 }
 // Keep the wallpaper, dock and scroll container mounted during desktop updates.
 function renderHome(){
@@ -70,10 +73,13 @@ function exportBackup(){const url=URL.createObjectURL(new Blob([exportData(state
 function validEndpoint(value){if(!value)return true;try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash;}catch{return false;}}
 function handleAction(e){
  const target=e.target.closest('button');if(!target)return;
- if(target.dataset.open){if(state.active!==target.dataset.open){composeDraft='';chatUI.attachments=[];}state.active=target.dataset.open;persist();goto('chat');return;}
+ if(target.dataset.open){if(state.active!==target.dataset.open){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}state.active=target.dataset.open;persist();goto('chat');return;}
  const action=target.dataset.action;
  if(action==='open-app'){if(findApp(target.dataset.app))goto(target.dataset.app);return;}
  if(action==='show-reasoning'){const scroll=app.querySelector('#messages').scrollTop;rememberSelection();chatUI.messageId=target.dataset.id;chatUI.tray='reasoning';render();app.querySelector('#messages').scrollTop=scroll;return;}
+ if(action==='cancel-reply'){chatUI.replyTo=null;render();app.querySelector('[name=message]')?.focus({preventScroll:true});return;}
+ if(action==='jump-reply'){const targetMessage=[...app.querySelectorAll('.bubble[data-message-id]')].find(el=>el.dataset.messageId===target.dataset.id);if(!targetMessage)return notify('原消息已不在当前对话中。');const article=targetMessage.closest('.message');targetMessage.scrollIntoView({block:'center',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});targetMessage.focus({preventScroll:true});article.classList.add('is-reference-target');setTimeout(()=>article.classList.remove('is-reference-target'),1600);return;}
+ if(action==='copy-reasoning'){const message=state.sessions.find(s=>s.id===state.active)?.messages.find(m=>m.id===chatUI.messageId);if(message?.reasoningSummary&&!navigator.clipboard?.writeText)return notify('可以长按选择摘要文字后复制。');if(message?.reasoningSummary)navigator.clipboard.writeText(message.reasoningSummary).then(()=>notify('摘要已复制。')).catch(()=>notify('浏览器未允许复制，可以长按选择摘要文字。'));return;}
  if(action==='open-sidebar'){rememberSelection();chatUI.tray='';render();sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.showModal();sidebarDialog.querySelector('[data-action=close-sidebar]').focus();return;}
  if(action==='close-sidebar'){sidebarDialog.close();return;}
  if(action==='sort-sessions'){oldestFirst=!oldestFirst;render();return;}
@@ -111,8 +117,8 @@ function handleAction(e){
  else if(action==='accent'){state.appearance.accent=target.dataset.color;persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='clear-image'){const key=target.dataset.key;if(!['wallpaper','userAvatar','aiAvatar'].includes(key))return;state.appearance[key]='';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='mood'){state.home.mood=target.dataset.mood;persist();render();}
- else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];persist();goto('chat');app.querySelector('[name=message]').focus();}
- else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;if(state.active===target.dataset.id){composeDraft='';chatUI.attachments=[];}state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
+ else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;persist();goto('chat');app.querySelector('[name=message]').focus();}
+ else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;if(state.active===target.dataset.id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
  else if(action==='delete-plugin'){if(!confirm('删除这项插件配置？'))return;state.plugins=state.plugins.filter(p=>p.id!==target.dataset.id);persist();render();}
  else if(action==='edit-plugin'){const p=state.plugins.find(x=>x.id===target.dataset.id),form=app.querySelector('#plugin-form');for(const key of ['id','name','url','type'])form.elements[key].value=p[key];document.querySelector('#plugin-form-title').textContent='编辑配置';form.scrollIntoView({behavior:'smooth'});form.elements.name.focus();}
  else if(action==='new-memory')showMemoryEditor();
@@ -126,7 +132,7 @@ app.addEventListener('click',handleAction);
 sidebarDialog.addEventListener('click',e=>{if(e.target===sidebarDialog){const r=sidebarDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)sidebarDialog.close();}else handleAction(e);});
 app.addEventListener('submit',e=>{
  e.preventDefault();const form=e.target,data=Object.fromEntries(new FormData(form));
- if(form.getAttribute('id')==='compose'){if(!data.message.trim()&&!chatUI.attachments.length)return;const snapshot=structuredClone(state);addDraftMessage(state,data.message,chatUI.attachments);const ok=persist();if(!ok){state=snapshot;return;}composeDraft='';selection={start:0,end:0};chatUI.attachments=[];chatUI.tray='';render();app.querySelector('[name=message]').focus();if(ok)notify('已保存本机；模型未连接，这条消息没有发送。');}
+ if(form.getAttribute('id')==='compose'){if(chatUI.voiceBusy)return notify('语音还在读取，稍等一下。');if(!data.message.trim()&&!chatUI.attachments.length)return;const snapshot=structuredClone(state);addDraftMessage(state,data.message,chatUI.attachments,chatUI.replyTo);const ok=persist();if(!ok){state=snapshot;return;}composeDraft='';selection={start:0,end:0};chatUI.attachments=[];chatUI.replyTo=null;chatUI.tray='';render();app.querySelector('[name=message]').focus();if(ok)notify('已保存本机；模型未连接，这条消息没有发送。');}
  else if(form.getAttribute('id')==='persona-form'){if(!data.name.trim())return notify('请填写 AI 名字。');state.persona={name:data.name.trim().slice(0,40),prompt:data.prompt};saveNotice('角色已保存。');}
  else if(form.getAttribute('id')==='provider-form'){if(!validEndpoint(data.baseUrl.trim()))return notify('请使用不含密钥、查询参数或账号信息的 HTTPS 地址。');state.provider={protocol:data.protocol,baseUrl:data.baseUrl.trim(),model:data.model.trim()};saveNotice('模型配置已保存，尚未连接服务。');}
  else if(form.getAttribute('id')==='plugin-form'){if(!data.name.trim()||!data.url.trim())return notify('请填写名称和服务地址。');if(!validEndpoint(data.url.trim()))return notify('请使用不含密钥、查询参数或账号信息的 HTTPS 地址。');const p={id:data.id||crypto.randomUUID(),name:data.name.trim().slice(0,80),type:data.type,url:data.url.trim()},i=state.plugins.findIndex(x=>x.id===p.id);if(i<0)state.plugins.push(p);else state.plugins[i]=p;saveNotice('配置已保存，插件运行尚未接入。');render();}
@@ -158,7 +164,7 @@ app.addEventListener('change',async e=>{
    try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
  }
  if(t.id==='import-data'&&t.files[0]){
-   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}stickerLibrary.reset();state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
+   try{if(t.files[0].size>6*1024*1024)throw new Error('备份超过 6MB，请先缩小备份。');const next=normalizeState(JSON.parse(await t.files[0].text()));if(!confirm('导入会替换当前会话、日记、音乐歌单、记忆、主页布局和外观。已导出当前备份了吗？'))return;try{saveState(storage,next);}catch{throw new Error('本机存储不足，原数据未替换。');}chatMedia.reset();stickerLibrary.reset();state=next;musicApp.reset();composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';goto('home');notify('备份已恢复。');}catch(error){notify(`导入失败：${error.message}`);}finally{t.value='';}
  }
 });
 app.addEventListener('keydown',e=>{if(e.target.name==='message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing&&!e.repeat){e.preventDefault();e.target.form.requestSubmit();}});
@@ -184,7 +190,7 @@ window.visualViewport?.addEventListener('resize',updateViewport);window.visualVi
 app.addEventListener('focusout',e=>{if(e.target.name==='message')rememberSelection();});
 app.addEventListener('keyup',e=>{if(e.target.name==='message')rememberSelection();});
 app.addEventListener('click',e=>{if(e.target.name==='message')rememberSelection();});
-app.addEventListener('keydown',e=>{if(e.key==='Escape'&&chatUI.tray){e.preventDefault();closeTray();}});
+app.addEventListener('keydown',e=>{if(e.key==='Escape'&&chatUI.tray){e.preventDefault();closeTray();}else if(e.key==='Escape'&&chatUI.replyTo){chatUI.replyTo=null;render();app.querySelector('[name=message]')?.focus({preventScroll:true});}});
 const closeExpression=async()=>{if(!expressionDialog.open||expressionClosing)return;expressionClosing=true;const revision=expressionRevision;await animateDrawerClose(expressionDialog);if(revision!==expressionRevision)return;expressionDialog.close();expressionClosing=false;};
 bindDrawerDismiss(expressionDialog,{panel:()=>expressionDialog.open&&!expressionClosing?expressionDialog:null,close:closeExpression,backdrop:true});
 expressionDialog.addEventListener('cancel',e=>{e.preventDefault();void closeExpression();});
@@ -203,19 +209,20 @@ bindDrawerDismiss(app,{panel:()=>closingTray?null:app.querySelector('.chat-tray'
 
 const messageDialog=document.createElement('dialog');messageDialog.className='glass message-dialog';messageDialog.setAttribute('aria-label','消息操作');document.body.append(messageDialog);
 let press=null,messageTarget=null;
-function openMessageMenu(id,anchor){const session=state.sessions.find(s=>s.id===state.active),message=session.messages.find(m=>m.id===id);if(!message||chatUI.tray||messageDialog.open)return;messageTarget={session:session.id,id};const actions=message.role==='user'?[['copy','复制'],['edit','编辑消息'],['rollback','回滚至此'],['branch','创建分支'],['delete','删除']]:[['copy','复制'],['branch','创建分支'],['delete','删除']];messageDialog.innerHTML=`<div class="message-menu">${actions.map(([action,label])=>`<button data-message-action="${action}" class="${action==='delete'?'destructive':''}">${label}</button>`).join('')}</div>`;messageDialog.style.left=`${Math.max(12,Math.min(innerWidth-212,anchor.x))}px`;messageDialog.style.top=`${Math.max(12,Math.min(innerHeight-actions.length*48-24,anchor.y))}px`;messageDialog.showModal();messageDialog.querySelector('button').focus({preventScroll:true});}
+function openMessageMenu(id,anchor){const session=state.sessions.find(s=>s.id===state.active),message=session.messages.find(m=>m.id===id);if(!message||chatUI.tray||messageDialog.open)return;messageTarget={session:session.id,id};const actions=message.role==='user'?[['copy','复制'],['reply','引用'],['edit','编辑消息'],['rollback','回滚至此'],['branch','创建分支'],['delete','删除']]:[['copy','复制'],['reply','引用'],['branch','创建分支'],['delete','删除']];messageDialog.innerHTML=`<div class="message-menu">${actions.map(([action,label])=>`<button data-message-action="${action}" class="${action==='delete'?'destructive':''}">${label}</button>`).join('')}</div>`;messageDialog.style.left=`${Math.max(12,Math.min(innerWidth-212,anchor.x))}px`;messageDialog.style.top=`${Math.max(12,Math.min(innerHeight-actions.length*48-24,anchor.y))}px`;messageDialog.showModal();messageDialog.querySelector('button').focus({preventScroll:true});}
 function cancelPress(){if(press)clearTimeout(press.timer);press=null;}
-app.addEventListener('pointerdown',e=>{const bubble=e.target.closest('[data-message-id]');if(!bubble||e.button!==0)return;cancelPress();const id=bubble.dataset.messageId,x=e.clientX,y=e.clientY;press={x,y,timer:setTimeout(()=>{press=null;openMessageMenu(id,{x,y});},500)};});
+app.addEventListener('pointerdown',e=>{const bubble=e.target.closest('[data-message-id]');if(!bubble||e.button!==0||e.target.closest('button,input,textarea,select,a'))return;cancelPress();const id=bubble.dataset.messageId,x=e.clientX,y=e.clientY;press={x,y,timer:setTimeout(()=>{press=null;openMessageMenu(id,{x,y});},500)};});
 app.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>10)cancelPress();});
 for(const event of ['pointerup','pointercancel','scroll'])app.addEventListener(event,cancelPress,true);
 app.addEventListener('contextmenu',e=>{const bubble=e.target.closest('[data-message-id]');if(!bubble)return;e.preventDefault();cancelPress();openMessageMenu(bubble.dataset.messageId,{x:e.clientX,y:e.clientY});});
 app.addEventListener('keydown',e=>{const bubble=e.target.closest('[data-message-id]');if(bubble&&(e.key==='ContextMenu'||e.shiftKey&&e.key==='F10')){e.preventDefault();const r=bubble.getBoundingClientRect();openMessageMenu(bubble.dataset.messageId,{x:r.left,y:r.bottom});}});
 messageDialog.addEventListener('click',async e=>{if(e.target===messageDialog){const r=messageDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)messageDialog.close();return;}if(e.target.closest('[data-cancel-edit]')){messageDialog.close();return;}const action=e.target.closest('[data-message-action]')?.dataset.messageAction;if(!action||messageTarget?.session!==state.active)return;const message=state.sessions.find(s=>s.id===state.active)?.messages.find(m=>m.id===messageTarget.id);if(!message)return;
  if(action==='copy'){try{await navigator.clipboard.writeText(message.text||message.attachments?.map(a=>a.name).join('、')||'');messageDialog.close();notify('已复制。');}catch{notify('浏览器未允许复制，请重试或手动选择文字。');}return;}
+ if(action==='reply'){chatUI.replyTo=makeReply(state,message);messageTarget=null;messageDialog.close();render();app.querySelector('[name=message]')?.focus({preventScroll:true});return;}
  if(action==='edit'){messageDialog.style.left='';messageDialog.style.top='';messageDialog.classList.add('editing');messageDialog.innerHTML=`<form id="message-edit-form"><div class="dialog-heading"><h2>编辑消息</h2><button type="button" data-cancel-edit aria-label="取消">${icon('close')}</button></div><label class="field"><span>消息内容</span><textarea name="text" maxlength="12000" rows="6">${escape(message.text)}</textarea></label><p class="hint">附件会保留，已有回复不会重新生成。</p><button type="submit" class="primary">保存修改</button></form>`;messageDialog.querySelector('textarea').focus();return;}
  if(action==='rollback'&&!confirm('保留这条消息，移除它后面的所有消息？'))return;
  if(action==='delete'&&!confirm('删除这条消息？'))return;
- const snapshot=structuredClone(state);try{changeMessage(state,messageTarget.id,action);if(!persist()){state=snapshot;return;}messageDialog.close();if(action==='branch'){composeDraft='';chatUI.attachments=[];}render();notify(action==='branch'?'已创建分支，原对话保留。':action==='rollback'?'已回滚至这条消息。':'消息已删除。');}catch(error){state=snapshot;notify(error.message);}
+ const snapshot=structuredClone(state);try{changeMessage(state,messageTarget.id,action);if(!persist()){state=snapshot;return;}messageDialog.close();if(action==='branch'){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}render();notify(action==='branch'?'已创建分支，原对话保留。':action==='rollback'?'已回滚至这条消息。':'消息已删除。');}catch(error){state=snapshot;notify(error.message);}
 });
 messageDialog.addEventListener('submit',e=>{e.preventDefault();if(e.target.id!=='message-edit-form'||messageTarget?.session!==state.active)return;const snapshot=structuredClone(state),scroll=app.querySelector('#messages')?.scrollTop;try{changeMessage(state,messageTarget.id,'edit',e.target.elements.text.value);if(!persist()){state=snapshot;return;}messageDialog.close();render();app.querySelector('#messages').scrollTop=scroll;notify('消息已修改。');}catch(error){state=snapshot;notify(error.message);}});
 messageDialog.addEventListener('close',()=>{messageDialog.classList.remove('editing');const bubble=[...app.querySelectorAll('[data-message-id]')].find(e=>e.dataset.messageId===messageTarget?.id);bubble?.focus({preventScroll:true});});
