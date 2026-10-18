@@ -34,7 +34,7 @@ const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat',
 const opened=new Set();
 let sessionSearch='',oldestFirst=false,composerSession=state.active;
 let visibleTray='',closingTray=false;
-const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
+const sidebarDialog=document.createElement('dialog');sidebarDialog.id='sidebar-dialog';sidebarDialog.className='glass app-sidebar';sidebarDialog.setAttribute('aria-label','侧边栏');document.body.append(sidebarDialog);
 let chatUI={tray:'',tab:'stickers',attachments:[]},selection={start:0,end:0};
 const expressionDialog=document.createElement('dialog');expressionDialog.className='glass expression-dialog app-sheet bottom-sheet';document.body.append(expressionDialog);
 let expressionClosing=false,expressionRevision=0;

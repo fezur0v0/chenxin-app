@@ -1,4 +1,6 @@
 /* Shared navigation back button, including the music player's down chevron. */
+button.nav-sidebar{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:12px;background:none;box-shadow:none;color:var(--ink);touch-action:manipulation}
+button.nav-sidebar>svg{width:21px;height:21px}
 button.nav-back{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:12px;background:none;box-shadow:none;color:var(--ink);touch-action:manipulation}
 .nav-back>svg{width:20px;height:20px;transform:rotate(0deg);transform-origin:center;transition:transform 280ms cubic-bezier(.22,.7,.2,1)}
 .nav-back.is-collapsed>svg{transform:rotate(-90deg)}

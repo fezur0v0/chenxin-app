@@ -1,6 +1,15 @@
 import { icon } from './icons.js';
 export const escape = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export const button = (action, symbol, label, extra = '') => `<button type="button" data-action="${action}" aria-label="${label}" ${extra}>${icon(symbol)}</button>`;
+export function sidebarButton(action,label,{actionAttribute='data-action',expanded,controls=''}={}) {
+ return `<button type="button" class="nav-sidebar" ${actionAttribute}="${escape(action)}" aria-label="${escape(label)}"${expanded===undefined?'':` aria-expanded="${expanded}"`}${controls?` aria-controls="${escape(controls)}"`:''}>${icon('sidebar')}</button>`;
+}
+export function sidebarHeader(state,{title=state.home.userName,subtitle='属于你的安静角落',closeAction='close-sidebar',actionAttribute='data-action'}={}) {
+ return `<div class="sidebar-profile">${avatar(state,'user')}<div><strong>${escape(title)}</strong>${subtitle?`<small>${escape(subtitle)}</small>`:''}</div>${sidebarButton(closeAction,'收起侧边栏',{actionAttribute})}</div>`;
+}
+export function sidebarNavigation(items,{current='',actionAttribute='data-action'}={}) {
+ return `<nav class="sidebar-nav" aria-label="侧边导航">${items.map(([action,symbol,label,trailing])=>`<button type="button" ${actionAttribute}="${escape(action)}"${current===action?' aria-current="page"':''}>${icon(symbol)}${escape(label)}${trailing?icon('chevron'):''}</button>`).join('')}</nav>`;
+}
 // Navigation only: keep action ownership while sharing the chevron and its states.
 export function backButton(action,label='返回',{music=false,collapsed=false,actionAttribute='data-action'}={}) {
  const attribute=music?'data-music-action':actionAttribute;

@@ -19,8 +19,7 @@ export function createMoomPreview(){
  }
  function decorate({app}){
   if(!app.querySelector('.chat-view'))return;
-  const note=document.createElement('div');note.className='chat-preview-note';note.innerHTML='<span>moom 场景示例 · 不影响正式聊天</span><a href="?">退出预览</a>';
-  app.querySelector('.date-line')?.replaceWith(note);
+  app.querySelector('.peer-details small').textContent='moom 示例 · 不影响正式聊天';
  }
  return {storage,files,seed,decorate};
 }
