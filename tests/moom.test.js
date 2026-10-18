@@ -34,7 +34,7 @@ test('scene normalization rejects unsupported entries, deduplicates IDs and rend
  assert(storyCard(state,{storyLink:{kind:'invite',sceneId:'deleted'}}).includes('已不在'));assert.equal(storyCard(state,{}),'');
 });
 test('complete ZIP and legacy JSON keep scene entries, bookmarks, summary and invitation links',async()=>{
- const state=createState(),scene=createScene(state,{title:'晚间散步'},{invite:true});acceptScene(state,scene.id);const entry=addSceneEntry(state,scene.id,'去看看那边吧。','say');entry.bookmarked=true;endScene(state,scene.id,'一起走了很远。');
+ const state=createState(),scene=createScene(state,{title:'晚间散步'},{invite:true});scene.pinned=true;acceptScene(state,scene.id);const entry=addSceneEntry(state,scene.id,'去看看那边吧。','say');entry.bookmarked=true;endScene(state,scene.id,'一起走了很远。');
  const files={music:async()=>{},voice:async()=>{}},bundle=await createArchive(state,files),preview=await inspectArchive(new File([bundle.blob],'moom.zip'));
  let json='';const restored=await restoreArchive(preview,{stores:files,storage:{setItem:(_,value)=>{json=value;}}});assert.deepEqual(restored.moom,state.moom);assert.deepEqual(JSON.parse(json).moom,state.moom);assert.equal(summarize(restored).sceneEntries,1);assert.equal(restored.sessions[0].messages[1].storyLink.kind,'record');
  const old=await inspectArchive(new File([exportData(state)],'moom.json'));assert.deepEqual(old.state.moom,state.moom);

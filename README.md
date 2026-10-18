@@ -176,3 +176,7 @@ AI 消息的「思考摘要」打开底部抽屉，显示服务明确提供的 `
 运行后访问 `http://127.0.0.1:5173/?preview=moom` 可看隔离的海边场景示例，不影响正式数据。
 
 [剧情页](docs/preview-moom.webp) · [夜间](docs/preview-moom-dark.webp) · [Moom 侧栏](docs/preview-moom-scenes.webp) · [新桌面](docs/preview-moom-desktop.webp) · [实现与边界](docs/MOOM.md)
+
+两边侧栏的记录支持长按（电脑右键或 Shift+F10）置顶、重命名、删除；moom 顶部显示用户昵称，列表仅保留标题和日期。
+
+[moom 长按菜单](docs/preview-moom-menu.webp) · [聊天长按菜单](docs/preview-sidebar-menu.webp)

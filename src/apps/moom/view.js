@@ -1,7 +1,7 @@
 import {escape,sidebarButton,sidebarHeader,sidebarNavigation} from '../../ui.js';
 import {icon} from '../../icons.js';
 import {drawerHeader} from '../../drawer.js';
-import {SCENE_TONES} from './model.js';
+import {SCENE_TONES,orderedScenes} from './model.js';
 const statusLabel={invited:'待赴约',deferred:'稍后赴约',active:'进行中',paused:'已暂存',ended:'已结束'};
 const action=(name,label,symbol,extra='')=>`<button type="button" data-moom-action="${name}" aria-label="${label}" ${extra}>${icon(symbol)}</button>`;
 const sceneAttrs=scene=>`data-scene="${escape(scene.id)}"`;
@@ -27,8 +27,9 @@ function sceneBody(state,scene,ui){
 }
 export function scenesSidebar(state){
  const now=new Date(),today=d=>new Date(d).toDateString()===now.toDateString();
- const list=state.moom.scenes.slice().sort((a,b)=>b.updated-a.updated),row=scene=>`<button type="button" class="moom-scene-row tone-${scene.tone}" data-moom-action="read" ${sceneAttrs(scene)} ${state.moom.active===scene.id?'aria-current="page"':''}><span class="moom-tone-dot" aria-hidden="true"></span><span><strong>${escape(scene.title)}</strong><small>${statusLabel[scene.status]} · ${new Date(scene.updated).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}</small></span>${icon('chevron')}</button>`;
- return `${sidebarHeader(state,{title:'Moom',subtitle:'',actionAttribute:'data-moom-action'})}${sidebarNavigation([['switch-chat','chat','对话',true],['home','home','主页'],['memory','memory','记忆'],['settings','settings','设置']],{actionAttribute:'data-moom-action'})}<div class="sidebar-conversations moom-scene-list" aria-label="场景记录">${[true,false].map(current=>{const group=list.filter(s=>today(s.updated)===current);return group.length?`<section><h2>${current?'今天':'更早'}</h2>${group.map(row).join('')}</section>`:'';}).join('')||'<p class="sidebar-empty">还没有写下的故事，<br>留给下一次见面。</p>'}</div><footer class="sidebar-footer"><button type="button" class="glass" data-moom-action="new">${icon('plus')} 新的一幕</button></footer>`;
+ const list=orderedScenes(state.moom),row=scene=>`<button type="button" class="moom-scene-row" data-moom-action="read" ${sceneAttrs(scene)} data-sidebar-kind="scene" data-sidebar-id="${escape(scene.id)}" title="长按、右键或 Shift+F10 管理" ${state.moom.active===scene.id?'aria-current="page"':''}><span><strong>${escape(scene.title)}</strong><small>${new Date(scene.updated).toLocaleDateString('zh-CN',{month:'2-digit',day:'2-digit'})}</small></span></button>`;
+ const groups=[['置顶',list.filter(s=>s.pinned)],['今天',list.filter(s=>!s.pinned&&today(s.updated))],['更早',list.filter(s=>!s.pinned&&!today(s.updated))]];
+ return `${sidebarHeader(state,{subtitle:'',actionAttribute:'data-moom-action'})}${sidebarNavigation([['switch-chat','chat','对话',true],['home','home','主页'],['memory','memory','记忆'],['settings','settings','设置']],{actionAttribute:'data-moom-action'})}<div class="sidebar-conversations moom-scene-list" aria-label="场景记录">${groups.map(([title,items])=>items.length?`<section><h2>${title}</h2>${items.map(row).join('')}</section>`:'').join('')||'<p class="sidebar-empty">还没有写下的故事，<br>留给下一次见面。</p>'}</div><footer class="sidebar-footer"><button type="button" class="glass" data-moom-action="new">${icon('plus')} 新的一幕</button></footer>`;
 }
 export function moomSheet(kind,state,scene,{invite=false}={}){
  const head=title=>drawerHeader({title,action:'close-sheet',actionAttribute:'data-moom-action'}),attrs=scene?sceneAttrs(scene):'';

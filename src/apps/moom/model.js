@@ -4,19 +4,20 @@ const date=(value,fallback)=>Number.isFinite(value)&&Math.abs(value)<8.64e15?val
 export const SCENE_TONES=[['sea','海蓝'],['mist','雾白'],['rose','淡粉'],['sage','鼠尾草'],['dusk','暮紫']];
 const statuses=['invited','deferred','active','paused','ended'];
 export const emptyMoom=()=>({active:'',scenes:[]});
+export function orderedScenes(moom){return moom.scenes.slice().sort((a,b)=>Number(!!b.pinned)-Number(!!a.pinned)||b.updated-a.updated);}
 export function normalizeStoryLink(value){return ['invite','record'].includes(value?.kind)&&typeof value.sceneId==='string'?{kind:value.kind,sceneId:text(value.sceneId,100)}:null;}
 export function normalizeMoom(value){
  const seen=new Set(),now=Date.now();
  const scenes=(Array.isArray(value?.scenes)?value.scenes:[]).filter(s=>s&&typeof s.id==='string'&&s.id&&s.id.length<=100&&!seen.has(s.id)&&seen.add(s.id)).map(s=>{
   const entryIds=new Set(),created=date(s.created,now);
-  return {id:text(s.id,100),title:text(s.title,80)||'未命名的一幕',place:text(s.place,100),timeLabel:text(s.timeLabel,80),premise:text(s.premise,2000),tone:SCENE_TONES.some(([id])=>id===s.tone)?s.tone:'sea',sessionId:text(s.sessionId,100),status:statuses.includes(s.status)?s.status:'paused',created,updated:date(s.updated,created),summary:text(s.summary,2000),entries:(Array.isArray(s.entries)?s.entries:[]).filter(e=>e&&typeof e.id==='string'&&e.id&&e.id.length<=100&&!entryIds.has(e.id)&&entryIds.add(e.id)&&typeof e.text==='string'&&['narration','dialogue','say','act'].includes(e.kind)).map(e=>({id:text(e.id,100),kind:e.kind,text:text(e.text),time:date(e.time,created),bookmarked:e.bookmarked===true}))};
+  return {id:text(s.id,100),title:text(s.title,80)||'未命名的一幕',pinned:s.pinned===true,place:text(s.place,100),timeLabel:text(s.timeLabel,80),premise:text(s.premise,2000),tone:SCENE_TONES.some(([id])=>id===s.tone)?s.tone:'sea',sessionId:text(s.sessionId,100),status:statuses.includes(s.status)?s.status:'paused',created,updated:date(s.updated,created),summary:text(s.summary,2000),entries:(Array.isArray(s.entries)?s.entries:[]).filter(e=>e&&typeof e.id==='string'&&e.id&&e.id.length<=100&&!entryIds.has(e.id)&&entryIds.add(e.id)&&typeof e.text==='string'&&['narration','dialogue','say','act'].includes(e.kind)).map(e=>({id:text(e.id,100),kind:e.kind,text:text(e.text),time:date(e.time,created),bookmarked:e.bookmarked===true}))};
  });
  return {active:scenes.some(s=>s.id===value?.active)?value.active:'',scenes};
 }
 export function createScene(state,data,{invite=false,assistant=false}={}){
  const title=text(data.title,80).trim();if(!title)throw new Error('给这一幕起个名字吧。');
  const session=state.sessions.find(s=>s.id===(data.sessionId||state.active));if(!session)throw new Error('找不到这段聊天，请重新选择。');
- const now=Date.now(),scene={id:crypto.randomUUID(),title,place:text(data.place,100).trim(),timeLabel:text(data.timeLabel,80).trim(),premise:text(data.premise,2000).trim(),tone:SCENE_TONES.some(([id])=>id===data.tone)?data.tone:'sea',sessionId:session.id,status:invite?'invited':'active',created:now,updated:now,summary:'',entries:[]};
+ const now=Date.now(),scene={id:crypto.randomUUID(),title,pinned:false,place:text(data.place,100).trim(),timeLabel:text(data.timeLabel,80).trim(),premise:text(data.premise,2000).trim(),tone:SCENE_TONES.some(([id])=>id===data.tone)?data.tone:'sea',sessionId:session.id,status:invite?'invited':'active',created:now,updated:now,summary:'',entries:[]};
  state.moom.scenes.unshift(scene);state.moom.active=scene.id;
  if(invite)session.messages.push({id:crypto.randomUUID(),role:assistant?'assistant':'user',text:'',time:now,status:'local',attachments:[],storyLink:{kind:'invite',sceneId:scene.id}});
  if(!invite)acceptScene(state,scene.id);

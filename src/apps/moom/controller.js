@@ -17,6 +17,7 @@ export function createMoomApp({app,getState,setState,persist,render,notify,navig
  sidebar.addEventListener('close',()=>{const toggle=app.querySelector('[data-moom-action=scenes]');toggle?.setAttribute('aria-expanded','false');toggle?.focus({preventScroll:true});});
  function show(kind,id,options={}){const scene=id?findScene(getState(),id):null;returnFocus=document.activeElement;sidebar.close();revision++;closing=false;sheet.style.transform='';sheet.getAnimations().forEach(a=>a.cancel());sheet.innerHTML=moomSheet(kind,getState(),scene,options);if(!sheet.open)sheet.showModal();sheet.querySelector('input:not([type=hidden]),textarea,.drawer-handle')?.focus({preventScroll:true});}
  function repaint({bottom=false}={}){const reading=app.querySelector('#moom-reading'),scroll=reading?.scrollTop||0;render();const next=app.querySelector('#moom-reading');if(next)next.scrollTop=bottom?next.scrollHeight:scroll;}
+ function refreshSidebar(){if(!sidebar.open)return;const scroll=sidebar.querySelector('.sidebar-conversations')?.scrollTop||0;sidebar.innerHTML=scenesSidebar(getState());sidebar.querySelector('.sidebar-conversations').scrollTop=scroll;}
  function goScene(id,{arrive=false}={}){closeAll();ui.bookmarks=false;ui.arrival=arrive;if(getState().moom.active!==id&&!commit(s=>{findScene(s,id);s.moom.active=id;}))return;navigate('app-moom');}
  function chat(id,{pause=false}={}){
   const scene=findScene(getState(),id),available=getState().sessions.some(s=>s.id===scene.sessionId);
@@ -71,5 +72,5 @@ export function createMoomApp({app,getState,setState,persist,render,notify,navig
  });
  app.addEventListener('keydown',event=>{if(event.target.name==='sceneMessage'&&event.key==='Enter'&&!event.shiftKey&&!event.isComposing&&!event.repeat){event.preventDefault();event.target.form.requestSubmit();}});
  function resize(){const input=app.querySelector('[name=sceneMessage]');if(input){input.style.height='auto';input.style.height=`${Math.min(input.scrollHeight,144)}px`;}}
- return {ui,resize,reset(){closeAll();ui.drafts=Object.create(null);ui.arrival=false;ui.bookmarks=false;}};
+ return {ui,resize,refreshSidebar,forgetScene(id,wasActive=false){delete ui.drafts[id];if(wasActive){ui.bookmarks=false;ui.arrival=false;}},reset(){closeAll();ui.drafts=Object.create(null);ui.arrival=false;ui.bookmarks=false;}};
 }

@@ -1,0 +1,8 @@
+/* One sheet and long-press interaction for both sidebars. */
+dialog.sidebar-item-menu{inset:auto 0 0;margin:auto;max-width:none}
+.sidebar-item-menu .drawer-heading h2{overflow-wrap:anywhere;line-height:1.7}
+.sidebar-item-actions{display:grid;gap:6px;margin-top:4px}.sidebar-item-actions>button{display:flex;align-items:center;gap:14px;width:100%;min-height:52px;padding:12px 14px;text-align:left;border-radius:16px;font-size:14px}.sidebar-item-actions>button:hover{background:rgb(var(--tint) / .08)}.sidebar-item-actions svg{width:18px;height:18px}
+.sidebar-item-buttons{display:flex;gap:12px;margin-top:22px}.sidebar-item-buttons>button{flex:1;min-height:46px;border:1px solid var(--line);border-radius:16px;font-size:14px}.sidebar-item-buttons>.primary{border:0}.sidebar-item-buttons>.danger{color:#a44444;background:rgb(170 70 70 / .07)}
+.sidebar-item-confirm{margin:10px 8px}.sidebar-item-confirm strong{font-size:15px;line-height:1.8;overflow-wrap:anywhere}.sidebar-item-confirm p{font-size:13px;color:var(--muted);line-height:1.9;margin-top:12px}.sidebar-item-error{font-size:13px;line-height:1.8;color:#a44444;margin:8px}
+.app-sidebar .sidebar-nav,.app-sidebar .sidebar-footer{border:0}.app-sidebar [data-sidebar-id]{touch-action:pan-y;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.app-sidebar [data-sidebar-id]:active{background:rgb(var(--tint) / .13)}
+:root[data-theme=dark] .sidebar-item-error,:root[data-theme=dark] .sidebar-item-buttons>.danger{color:#efb6b6}

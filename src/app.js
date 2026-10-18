@@ -1,3 +1,4 @@
+import {createSidebarItemMenu} from './sidebar-menu/controller.js';
 import {createBackupManager} from './backup/controller.js';
 import {memorySnapshots} from './backup/snapshots.js';
 import {musicFile} from './apps/music/files.js';
@@ -48,6 +49,7 @@ const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:val
 const stickerLibrary=createStickerLibrary({app,getState:()=>state,setState:value=>{state=value;},getUI:()=>chatUI,persist,notify,compressImage});
 const chatMedia=createChatMedia({files:isolatedPreview?.files,app,getState:()=>state,getUI:()=>chatUI,isChat:()=>page==='chat',render,notify});
 const backupManager=createBackupManager({app,getState:()=>state,storage,media:{music:isolatedPreview?.files||musicFile,voice:isolatedPreview?.files||voiceFile},snapshots:isolatedPreview?memorySnapshots():undefined,allowAuto:!isolatedPreview,persist,notify,applyRestored,canStart:()=>!musicApp.ui.busy&&!galleryApp.ui.busy&&!chatUI.voiceBusy});
+const sidebarItemMenu=createSidebarItemMenu({getState:()=>state,setState:value=>{state=value;},persist,notify,onChange:({kind,id,operation,previousActive,previousScene})=>{if(operation==='delete'){if(kind==='scene')moomApp.forgetScene(id,previousScene===id);else if(previousActive===id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;composerSession=state.active;}}render();}});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -60,7 +62,7 @@ function render(){
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
- const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}isolatedPreview?.decorate?.({app,state,ui:chatUI,render});updateViewport();syncTray();chatMedia.sync();moomApp.resize();
+ const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}isolatedPreview?.decorate?.({app,state,ui:chatUI,render});updateViewport();syncTray();chatMedia.sync();moomApp.resize();moomApp.refreshSidebar();
 }
 // Keep the wallpaper, dock and scroll container mounted during desktop updates.
 function renderHome(){
@@ -85,7 +87,7 @@ function goto(next){if(next==='app-memory')next='memory';if(next==='chat'&&compo
 function focusSettings(id){if(id==='appearance-settings'){goto('app-appearance');return;}goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
-function applyRestored(next){chatMedia.reset();stickerLibrary.reset();galleryApp.reset();musicApp.reset();moomApp.reset();state=next;composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';opened.add('storage-settings');goto('settings');}
+function applyRestored(next){sidebarItemMenu.reset();chatMedia.reset();stickerLibrary.reset();galleryApp.reset();musicApp.reset();moomApp.reset();state=next;composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';opened.add('storage-settings');goto('settings');}
 
 function validEndpoint(value){if(!value)return true;try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash;}catch{return false;}}
 function handleAction(e){

@@ -172,3 +172,11 @@ Copyright (c) 2023 Arjun Barrett. The full license is in
 Source: https://github.com/101arrowz/fflate/tree/v0.8.2
 Package: https://www.npmjs.com/package/fflate/v/0.8.2
 The npm tarball was verified against its published SHA-512 integrity value.
+
+## Sidebar moon-star icon
+
+The `moon-star` SVG node data in `src/icons.js` is from the official Lucide
+repository, fetched on 2026-10-18. Geometry is unchanged; the app applies its
+shared 1.65px stroke. The Lucide license above applies.
+
+Source: https://github.com/lucide-icons/lucide/blob/main/icons/moon-star.svg
