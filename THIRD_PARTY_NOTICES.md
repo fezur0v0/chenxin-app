@@ -139,10 +139,10 @@ SOFTWARE.
 
 ## Launcher icons — Nucleo Glass
 
-`src/launcher-icons.js` embeds ten SVGs from the official free Nucleo Glass
+`src/launcher-icons.js` embeds eleven SVGs from the official free Nucleo Glass
 collection: feather, headphones, image, slider, book-open, box-archive,
-color-palette, msgs, hearts and gear. They are used for the six desktop
-App entrances and four desktop Dock entrances. Internal UI controls retain
+color-palette, msgs, hearts, gear and star-sparkle. They are used for the seven
+desktop App entrances and four desktop Dock entrances. Internal UI controls retain
 their existing Lucide icons.
 
 Copyright © Nucleo. These icons remain subject to Nucleo's license and are not

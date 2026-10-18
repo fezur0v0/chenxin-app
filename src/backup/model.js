@@ -12,7 +12,7 @@ export async function sha256(bytes){
  return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes)),n=>n.toString(16).padStart(2,'0')).join('');
 }
 export function summarize(state){
- return {sessions:state.sessions.length,messages:state.sessions.reduce((n,s)=>n+s.messages.length,0),photos:state.gallery.photos.length,albums:state.gallery.albums.length,diaries:state.diaryEntries.length,memories:state.memories.length,tracks:state.music.tracks.length,voices:state.sessions.reduce((n,s)=>n+s.messages.reduce((n,m)=>n+(m.attachments||[]).filter(a=>a.kind==='voice').length,0),0),worldbooks:state.worldbooks.length,presets:state.promptPresets.length};
+ return {scenes:state.moom.scenes.length,sceneEntries:state.moom.scenes.reduce((n,s)=>n+s.entries.length,0),sessions:state.sessions.length,messages:state.sessions.reduce((n,s)=>n+s.messages.length,0),photos:state.gallery.photos.length,albums:state.gallery.albums.length,diaries:state.diaryEntries.length,memories:state.memories.length,tracks:state.music.tracks.length,voices:state.sessions.reduce((n,s)=>n+s.messages.reduce((n,m)=>n+(m.attachments||[]).filter(a=>a.kind==='voice').length,0),0),worldbooks:state.worldbooks.length,presets:state.promptPresets.length};
 }
 export function mediaReferences(state){
  const refs=new Map();

@@ -102,7 +102,7 @@ export function createBackupManager({app,getState,storage,media,snapshots=snapsh
  async function maybeAuto(){
   if(!allowAuto||ui.busy||document.visibilityState!=='visible'||!getState().backupSettings.dailyEnabled||!canStart())return;
   const state=getState(),count=summarize(state);
-  if(!count.messages&&!count.photos&&!count.diaries&&!count.memories&&!count.tracks&&!count.worldbooks&&!count.presets&&!state.home.note&&!state.persona.prompt&&!state.appearance.wallpaper&&!state.plugins.length&&!state.provider.model)return;
+  if(!count.scenes&&!count.messages&&!count.photos&&!count.diaries&&!count.memories&&!count.tracks&&!count.worldbooks&&!count.presets&&!state.home.note&&!state.persona.prompt&&!state.appearance.wallpaper&&!state.plugins.length&&!state.provider.model)return;
   await run(async signal=>{ui.snapshots=await snapshots.list();if(await snapshots.autoDay()===localDate()||ui.snapshots.some(item=>item.reason==='auto'&&localDate(new Date(item.createdAt))===localDate()))return;await makeSnapshot('auto',signal);ui.status='今天的本机快照已保存。';},{silent:true});
  }
  let timer=setTimeout(()=>void maybeAuto(),1600);

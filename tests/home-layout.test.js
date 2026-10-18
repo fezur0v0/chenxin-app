@@ -9,8 +9,8 @@ test('old widgets keep their page and hidden state; new apps get their own page'
 });
 test('moving between pages keeps one copy of every widget and round trips empty pages',()=>{
  const state=createState();state.home.pages.push([],[]);moveHomeWidget(state.home.pages,'note',2,0);moveHomeWidget(state.home.pages,'anniversary',2,0);
- const restored=normalizeState(JSON.parse(exportData(state)));assert.deepEqual(restored.home.pages,[['date','mood','memory'],DESKTOP_APP_TYPES,['anniversary','note'],[]]);assert.equal(new Set(restored.home.pages.flat()).size,11);
- const repaired=normalizeHomePages([['note','note','bad'],['note','memory']],state.home.widgets);assert.equal(repaired.flat().filter(x=>x==='note').length,1);assert.equal(repaired.flat().length,11);
+ const restored=normalizeState(JSON.parse(exportData(state)));assert.deepEqual(restored.home.pages,[['date','mood','memory'],DESKTOP_APP_TYPES,['anniversary','note'],[]]);assert.equal(new Set(restored.home.pages.flat()).size,5+DESKTOP_APP_TYPES.length);
+ const repaired=normalizeHomePages([['note','note','bad'],['note','memory']],state.home.widgets);assert.equal(repaired.flat().filter(x=>x==='note').length,1);assert.equal(repaired.flat().length,5+DESKTOP_APP_TYPES.length);
 });
 test('context menu follows each widget and stays inside small or offset viewports',()=>{
  const size={width:220,height:168},viewport={left:0,top:0,width:390,height:844};
@@ -58,7 +58,7 @@ test('overfull imports and twelve-page legacy layouts keep every entrance exactl
  const state=createState();
  for(const pages of [[['anniversary','date','note','mood','memory',...APP_TYPES,...APP_TYPES]],Array.from({length:12},(_,i)=>i?[]:['anniversary','date','note','mood','memory'])]){
   const result=normalizeHomePages(pages,state.home.widgets);
-  const count=pages.flat().includes('app-appearance')?12:11;
+  const count=5+(pages.flat().includes('app-appearance')?APP_TYPES.length:DESKTOP_APP_TYPES.length);
   assert.equal(result.flat().length,count);assert.equal(new Set(result.flat()).size,count);assert(result.length<=12);
   result.forEach(page=>assert(homePageFits(page,type=>homeItemVisible(state.home,type))));
  }

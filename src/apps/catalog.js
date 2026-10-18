@@ -6,6 +6,8 @@ export const APPS = [
  {id:'app-presets',name:'预设',icon:'presets',subtitle:'保存你喜欢的相处方式。'},
  {id:'app-worldbook',name:'世界书',icon:'worldbook',subtitle:'一起构建，属于你们的世界。'},
  {id:'app-archives',name:'档案',icon:'archives',subtitle:'关于你，也关于陪伴你的 TA。'},
+ {id:'app-memory',name:'记忆',icon:'memory',subtitle:'把珍贵的日常，慢慢留下。'},
+ {id:'app-moom',desktop:false,name:'moom',icon:'moom',subtitle:'把相处，写成一幕。'},
  {id:'app-appearance',desktop:false,name:'外观',icon:'appearance',subtitle:'让这个小世界，更像你。'}
 ];
 export const APP_TYPES = APPS.map(app=>app.id);

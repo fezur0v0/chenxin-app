@@ -18,8 +18,9 @@ export function normalizeHomePages(pages,widgets,options={}){
  for(const type of overflow)place(type,result.length-1);
  const missing=DESKTOP_APP_TYPES.filter(type=>!seen.has(type));
  if(missing.length){
-  // Existing widget layouts stay intact. New app entrances get an empty/new page.
-  let preferred=result.findIndex(list=>!list.length);
+  // Keep widget pages intact; use a desktop app page with room before adding a page.
+  let preferred=result.findIndex(list=>list.some(type=>DESKTOP_APP_TYPES.includes(type))&&homePageFits([...list,...missing],visible));
+  if(preferred<0)preferred=result.findIndex(list=>!list.length);
   if(preferred<0&&result.length<12){preferred=result.length;result.push([]);}
   for(const type of missing)place(type,preferred<0?result.length-1:preferred);
  }
