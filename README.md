@@ -180,3 +180,7 @@ AI 消息的「思考摘要」打开底部抽屉，显示服务明确提供的 `
 两边侧栏的记录支持长按（电脑右键或 Shift+F10）置顶、重命名、删除；moom 顶部显示用户昵称，列表仅保留标题和日期。
 
 [moom 长按菜单](docs/preview-moom-menu.webp) · [聊天长按菜单](docs/preview-sidebar-menu.webp)
+
+moom 页头显示当前角色头像与名字，右上角「…」管理场景；正文开头新增可编辑的玻璃状态栏。输入区按「＋／重说／继续」排列，下方统一输入台词或行动；重说和继续待模型接入后启用。
+
+[moom 状态栏编辑](docs/preview-moom-status-editor.webp) · [场景菜单](docs/preview-moom-options.webp)

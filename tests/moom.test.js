@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState,normalizeState,exportData} from '../src/store.js';
-import {createScene,acceptScene,deferScene,addSceneEntry,endScene,normalizeMoom} from '../src/apps/moom/model.js';
+import {createScene,acceptScene,deferScene,addSceneEntry,endScene,normalizeMoom,saveSceneStatus} from '../src/apps/moom/model.js';
 import {createMoomPreview} from '../src/apps/moom/preview.js';
 import {moom,storyCard} from '../src/apps/moom/view.js';
 import {createArchive,inspectArchive,restoreArchive,summarize} from '../src/backup/model.js';
@@ -29,12 +29,12 @@ test('legacy layouts put memory on the existing desktop app page; moom stays doc
 });
 test('scene normalization rejects unsupported entries, deduplicates IDs and rendering escapes imported markup',()=>{
  const normalized=normalizeMoom({active:'bad',scenes:[null,{id:'one',title:'<script>x</script>',tone:'unsafe',status:'wat',entries:[{id:'x',kind:'act',text:'<img onerror="x">'},{id:'x',kind:'say',text:'duplicate'},{id:'y',kind:'tool',text:'no'}]},{id:'one',title:'duplicate'}]});
- assert.equal(normalized.scenes.length,1);assert.equal(normalized.scenes[0].entries.length,1);assert.equal(normalized.scenes[0].tone,'sea');assert.equal(normalized.active,'');
+ assert.equal(normalized.scenes.length,1);assert.equal(normalized.scenes[0].entries.length,1);assert.equal(normalized.scenes[0].tone,'sea');assert.equal(normalized.active,'');assert.deepEqual(normalized.scenes[0].statusPanel,{weather:'',mood:'',condition:''});
  const state=createState();state.moom=normalized;state.moom.active='one';const output=moom(state);assert(!output.includes('<script>'));assert(output.includes('&lt;img'));assert(output.includes('&lt;script&gt;'));
  assert(storyCard(state,{storyLink:{kind:'invite',sceneId:'deleted'}}).includes('已不在'));assert.equal(storyCard(state,{}),'');
 });
 test('complete ZIP and legacy JSON keep scene entries, bookmarks, summary and invitation links',async()=>{
- const state=createState(),scene=createScene(state,{title:'晚间散步'},{invite:true});scene.pinned=true;acceptScene(state,scene.id);const entry=addSceneEntry(state,scene.id,'去看看那边吧。','say');entry.bookmarked=true;endScene(state,scene.id,'一起走了很远。');
+ const state=createState(),scene=createScene(state,{title:'晚间散步'},{invite:true});scene.pinned=true;acceptScene(state,scene.id);saveSceneStatus(state,scene.id,{place:'海边',timeLabel:'夜晚',weather:'微风',mood:'平静',condition:'把外套搭在臂弯里。'});const entry=addSceneEntry(state,scene.id,'去看看那边吧。','say');entry.bookmarked=true;endScene(state,scene.id,'一起走了很远。');
  const files={music:async()=>{},voice:async()=>{}},bundle=await createArchive(state,files),preview=await inspectArchive(new File([bundle.blob],'moom.zip'));
  let json='';const restored=await restoreArchive(preview,{stores:files,storage:{setItem:(_,value)=>{json=value;}}});assert.deepEqual(restored.moom,state.moom);assert.deepEqual(JSON.parse(json).moom,state.moom);assert.equal(summarize(restored).sceneEntries,1);assert.equal(restored.sessions[0].messages[1].storyLink.kind,'record');
  const old=await inspectArchive(new File([exportData(state)],'moom.json'));assert.deepEqual(old.state.moom,state.moom);

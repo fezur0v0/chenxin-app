@@ -9,6 +9,7 @@ export function createMoomPreview(){
   const first=createScene(state,{title:'第一次见面',place:'街角花店',timeLabel:'午后',tone:'sage'});addSceneEntry(state,first.id,'你好呀。','say');endScene(state,first.id,'在花店门口见面，聊起了今天的天气。');first.created=first.updated=Date.now()-86400000*5;
   const second=createScene(state,{title:'雨天的咖啡馆',place:'窗边',timeLabel:'傍晚',tone:'dusk'});addSceneEntry(state,second.id,'我把伞放在门边，走到窗前。','act');endScene(state,second.id,'一起在咖啡馆躲雨，看着窗上的水珠慢慢落下。');second.created=second.updated=Date.now()-86400000;
   const scene=createScene(state,{title:'深夜 · 海边',place:'海边',timeLabel:'深夜',tone:'sea',premise:'想带你去海边走一走，就我们两个人。'},{invite:true,assistant:true});acceptScene(state,scene.id);
+  scene.statusPanel={weather:'海风微凉',mood:'平静',condition:'披着深色外套，停在你身旁。'};
   scene.entries=[
    {kind:'narration',text:'夜里的海很安静。潮水一层一层地退下去，又一层一层地漫上来，像有人在远处轻轻呼吸。'},
    {kind:'narration',text:'尘走在你左边半步的位置，没有说话，只是把外套的一角往你这边拢了拢。'},
