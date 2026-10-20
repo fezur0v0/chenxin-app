@@ -15,14 +15,6 @@
  background:linear-gradient(165deg,rgb(var(--glass-tint) / .38),rgb(var(--scene-rgb) / .07) 60%,rgb(var(--glass-tint) / .25));
 }
 .moom-app .moom-reading{width:min(100%,600px);padding:12px 25px 28px}
-.moom-app .moom-premise{font-size:12px;line-height:1.9;margin:4px 0 24px}
-.moom-app .moom-scene-context{margin:0 0 20px;font:11px/1.6 var(--font-ui);color:var(--moom-meta-color)}
-.moom-app .moom-scene-context>summary{display:flex;align-items:center;gap:10px;min-height:44px;cursor:pointer;list-style:none;padding:3px 1px}
-.moom-app .moom-scene-context>summary::-webkit-details-marker{display:none}
-.moom-app .moom-scene-context>summary>span:nth-child(2){flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
-.moom-app .moom-scene-context>summary>svg{width:13px;height:13px;transition:transform 160ms ease}
-.moom-app .moom-scene-context[open]>summary>svg{transform:rotate(90deg)}
-.moom-app .moom-scene-context .moom-status-panel{margin:6px 0 18px;border:0;border-radius:18px;background-color:rgb(var(--glass-tint) / .22);box-shadow:none}
 .moom-app [data-moom-part="message"]{position:relative;white-space:normal;text-align:left;margin:0 0 var(--moom-message-gap);padding:0 0 6px;color:var(--moom-body-color);font-size:var(--moom-body-size);line-height:var(--moom-body-leading)}
 .moom-app [data-moom-part="message"]+[data-moom-part="message"]{border-top:1px solid var(--moom-message-rule);padding-top:21px}
 .moom-app [data-moom-part="status"]{display:flex;align-items:center;gap:9px;min-height:36px;margin-bottom:12px;font:11px/1.4 var(--font-ui);color:var(--moom-meta-color)}
@@ -41,9 +33,7 @@
 .moom-app [data-moom-role="user"]{font-size:15px}
 .moom-app [data-moom-role="user"] [data-moom-part="name"]{color:var(--muted)}
 .moom-app .moom-thinking-trigger{display:flex;align-items:center;gap:5px;min-height:32px;max-width:100%;padding:4px 9px;margin:0 0 9px 30px;border:0;border-radius:12px;background:rgb(var(--glass-tint) / .16);color:var(--moom-meta-color);font:10px/1.5 var(--font-ui);text-align:left}
-.moom-app .moom-thinking-trigger svg{width:12px;height:12px}
 .moom-app .moom-thinking-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.moom-app .moom-thinking-trigger>svg:last-child{width:10px;height:10px}
 .moom-app .moom-thinking-trigger:hover{background:rgb(var(--tint) / .1)}
 .moom-app .moom-message-footer{display:flex;justify-content:flex-end;min-height:32px;margin-top:6px}
 .moom-app .moom-message-footer .moom-bookmark{position:static;right:auto;bottom:auto;margin:0 -7px 0 0;min-height:36px;min-width:36px;opacity:.65}
@@ -54,6 +44,5 @@
 .moom-sheet [data-moom-part="thinking-content"] .moom-reasoning-text{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.95 var(--font-ui);color:var(--ink);max-height:55dvh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
 :root[data-theme="dark"] .moom-app[data-moom-skin="default"]:before{background:linear-gradient(165deg,rgb(var(--glass-tint) / .55),rgb(var(--scene-rgb) / .045) 60%,rgb(var(--glass-tint) / .45))}
 @media(max-width:350px){.moom-app .moom-reading{padding-inline:18px}.moom-app [data-moom-part="message"]{font-size:15px}.moom-app [data-moom-part="status"]{gap:7px}.moom-app .moom-thinking-trigger{margin-left:23px}}
-@media(prefers-reduced-motion:reduce){.moom-app .moom-scene-context>summary>svg{transition:none}}
 
 .moom-app .moom-thinking-trigger>.moom-thinking-mark{font-size:13px;line-height:1;flex-shrink:0}
