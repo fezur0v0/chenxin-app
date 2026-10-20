@@ -11,8 +11,8 @@ export function createMoomPreview(){
   const scene=createScene(state,{title:'深夜 · 海边',place:'海边',timeLabel:'深夜',tone:'sea',premise:'想带你去海边走一走，就我们两个人。'},{invite:true,assistant:true});acceptScene(state,scene.id);
   scene.statusPanel={weather:'海风微凉',mood:'平静',condition:'披着深色外套，停在你身旁。'};
   scene.entries=[
-   {kind:'narration',text:'夜里的海很安静。潮水一层一层地退下去，又一层一层地漫上来，像有人在远处轻轻呼吸。'},
-   {kind:'narration',text:'尘走在你左边半步的位置，没有说话，只是把外套的一角往你这边拢了拢。'},
+   {kind:'narration',text:'夜里的海很安静。潮水一层一层地退下去，又一层一层地漫上来，像有人在远处轻轻呼吸。',reasoningSummary:'这是用于检查思考抽屉排版的示例文字。正式聊天只显示服务实际提供的思考或摘要。'},
+   {kind:'narration',text:'*他走在你左边半步的位置，把外套的一角往你这边拢了拢。*\n\n“慢慢走，今晚不赶时间。”\n\n风掠过衣角，远处灯塔亮着一束**很温柔的光**。'},
    {kind:'dialogue',text:'冷不冷？要是冷，我们就坐一会儿。'},
    {kind:'act',text:'我停下来，看着远处的灯塔。'},
    {kind:'narration',text:'风吹过衣角，带着一点海水的气息。他也停下来，陪你望着远处。'}

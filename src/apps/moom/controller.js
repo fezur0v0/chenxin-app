@@ -37,6 +37,7 @@ export function createMoomApp({app,getState,setState,persist,render,notify,navig
    if(action==='home'){closeAll();navigate('home');return;}
    if(action==='scenes'){sidebar.innerHTML=scenesSidebar(getState());sidebar.showModal();app.querySelector('[data-moom-action=scenes]')?.setAttribute('aria-expanded','true');return;}
    if(action==='new'){show('new',null,{invite:button.dataset.invite==='true'});return;}
+   if(action==='reasoning'){show('reasoning',id,{entryId:button.dataset.entry});return;}
    if(action==='invitation'){show('invitation',id);return;}
    if(['details','end','options','tools','status'].includes(action)){show(action,id);return;}
    if(action==='regenerate'||action==='continue'){notify(action==='regenerate'?'模型还没有连接，暂时不能重说。':'模型还没有连接，暂时不能继续剧情。');return;}
