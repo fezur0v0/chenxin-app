@@ -24,7 +24,7 @@ function conversationRow(state,s,compact=false){
 }
 export function sidebar(state,page){
  const list=orderedSessions(state),pinned=list.filter(s=>s.pinned),history=list.filter(s=>!s.pinned);
- return `${sidebarHeader(state)}${sidebarNavigation([['app-moom','moon-star','moom',true],['home','home','主页'],['memory','memory','记忆'],['settings','settings','设置']],{current:page})}<div class="sidebar-conversations"><section><h2>置顶聊天</h2>${pinned.length?pinned.map(s=>conversationRow(state,s,true)).join(''):'<p class="sidebar-empty">把想常见的对话留在这里。</p>'}</section><section><h2>历史对话</h2>${history.map(s=>conversationRow(state,s,true)).join('')}</section></div><footer class="sidebar-footer"><a class="chat-preview-entry" href="?preview=chat">聊天样式预览 ${icon('chevron')}</a><button class="glass" data-action="new">${icon('plus')}新建对话</button></footer>`;
+ return `${sidebarHeader(state)}${sidebarNavigation([['app-moom','moon-star','moom'],['home','home','主页'],['memory','memory','记忆'],['settings','settings','设置']],{current:page})}<div class="sidebar-conversations"><section><h2>置顶聊天</h2>${pinned.length?pinned.map(s=>conversationRow(state,s,true)).join(''):'<p class="sidebar-empty">把想常见的对话留在这里。</p>'}</section><section><h2>历史对话</h2>${history.map(s=>conversationRow(state,s,true)).join('')}</section></div><footer class="sidebar-footer"><a class="chat-preview-entry" href="?preview=chat">聊天样式预览 ${icon('chevron')}</a><button class="glass" data-action="new">${icon('plus')}新建对话</button></footer>`;
 }
 export function sessions(state,query='',oldest=false) {
  const list=orderedSessions(state,query,oldest);
