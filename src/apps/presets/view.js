@@ -14,7 +14,7 @@ export function presets(state,ui={}) {
 }
 export function promptEditor(preset,prompt) {
  const order=promptOrder(preset),position=order.findIndex(item=>item.identifier===prompt?.identifier);
- if(prompt?.marker)return `<div class="library-marker-info">${icon('bookmark')}<h3>${escape(prompt.name||CORE_PROMPTS[prompt.identifier])}</h3><p>这是上下文的编排位置。对应内容将在生成请求时填入，可在列表中开关；目前尚未接入请求编排。</p></div>`;
+ if(prompt?.marker)return `<div class="library-marker-info">${icon('file')}<h3>${escape(prompt.name||CORE_PROMPTS[prompt.identifier])}</h3><p>这是上下文的编排位置。对应内容将在生成请求时填入，可在列表中开关；目前尚未接入请求编排。</p></div>`;
  return `${field('提示词名称','name',prompt?.name||'','例如：回复风格')}${selectField('消息身份','role',prompt?.role||'system',[['system','系统 System'],['user','用户 User'],['assistant','助手 Assistant']])}${contentField('提示词正文','content',prompt?.content,'写下希望模型遵循的规则。可保留 {{user}}、{{char}} 等宏。')}${selectField('编排位置','position',position<0?order.length+1:position+1,Array.from({length:order.length+(position<0?1:0)},(_,index)=>[index+1,`第 ${index+1} 个位置`]))}<details class="library-advanced"><summary>聊天内注入 ${icon('chevron')}</summary>${selectField('放置方式','injection_position',prompt?.injection_position??0,[[0,'按列表顺序'],[1,'插入聊天记录']])}<div class="library-field-grid">${numericField('聊天深度','depth',prompt?.injection_depth??4,0,100)}${numericField('同深度顺序','order',prompt?.injection_order??100,0,9999)}</div><p class="library-form-note">同一深度内，顺序值越小越靠前。宏与注入规则将在请求编排阶段执行。</p></details>${checkedField('启用这条配置','enabled',position<0||order[position].enabled!==false)}`;
 }
 export function parameterEditor(preset) {

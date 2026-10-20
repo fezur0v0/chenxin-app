@@ -37,9 +37,9 @@ test('legacy dialogue and action entries retain semantic styling',()=>{
  assert(renderMoomBody('你好。',{kind:'dialogue'}).includes('「你好。」'));
  assert(renderMoomBody('走近一步。',{kind:'act'}).includes('data-moom-part="action"'));
 });
-test('message metadata is local and original floors survive bookmark filtering',()=>{
+test('message metadata remains local and legacy bookmark flags no longer filter messages',()=>{
  const state=fixture(),raw=JSON.stringify(state),output=moom(state,{bookmarks:true});
- assert(output.includes('aria-label="第 2 楼"'));assert(output.includes('aria-label="第 3 楼"'));assert(!output.includes('aria-label="第 1 楼"'));
+ assert(output.includes('aria-label="第 2 楼"'));assert(output.includes('aria-label="第 3 楼"'));assert(output.includes('aria-label="第 1 楼"'));assert(!output.includes('data-moom-action="bookmark"'));assert(!output.includes('filter-bookmarks'));assert(!output.includes('moom-message-footer'));
  for(const part of ['status','name','floor','time','body'])assert(output.includes('data-moom-part="'+part+'"'));
  assert(output.includes('欣欣'));assert(output.includes('凛'));assert.equal(JSON.stringify(state),raw);
 });

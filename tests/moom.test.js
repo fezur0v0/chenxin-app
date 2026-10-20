@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState,normalizeState,exportData} from '../src/store.js';
-import {createScene,acceptScene,deferScene,addSceneEntry,endScene,normalizeMoom,saveSceneStatus} from '../src/apps/moom/model.js';
+import {createScene,acceptScene,deferScene,addSceneEntry,endScene,normalizeMoom,saveSceneStatus,saveStatusText} from '../src/apps/moom/model.js';
 import {createMoomPreview} from '../src/apps/moom/preview.js';
 import {moom,storyCard} from '../src/apps/moom/view.js';
 import {createArchive,inspectArchive,restoreArchive,summarize} from '../src/backup/model.js';
@@ -34,7 +34,7 @@ test('scene normalization rejects unsupported entries, deduplicates IDs and rend
  assert(storyCard(state,{storyLink:{kind:'invite',sceneId:'deleted'}}).includes('已不在'));assert.equal(storyCard(state,{}),'');
 });
 test('complete ZIP and legacy JSON keep scene entries, bookmarks, summary and invitation links',async()=>{
- const state=createState(),scene=createScene(state,{title:'晚间散步'},{invite:true});scene.pinned=true;acceptScene(state,scene.id);saveSceneStatus(state,scene.id,{place:'海边',timeLabel:'夜晚',weather:'微风',mood:'平静',condition:'把外套搭在臂弯里。'});const entry=addSceneEntry(state,scene.id,'去看看那边吧。','say');entry.bookmarked=true;endScene(state,scene.id,'一起走了很远。');
+ const state=createState(),scene=createScene(state,{title:'晚间散步'},{invite:true});scene.pinned=true;saveStatusText(state,scene.id,'assistant','<script>一起走走</script>');saveStatusText(state,scene.id,'user','慢慢来。');acceptScene(state,scene.id);saveSceneStatus(state,scene.id,{place:'海边',timeLabel:'夜晚',weather:'微风',mood:'平静',condition:'把外套搭在臂弯里。'});const entry=addSceneEntry(state,scene.id,'去看看那边吧。','say');entry.bookmarked=true;endScene(state,scene.id,'一起走了很远。');
  const files={music:async()=>{},voice:async()=>{}},bundle=await createArchive(state,files),preview=await inspectArchive(new File([bundle.blob],'moom.zip'));
  let json='';const restored=await restoreArchive(preview,{stores:files,storage:{setItem:(_,value)=>{json=value;}}});assert.deepEqual(restored.moom,state.moom);assert.deepEqual(JSON.parse(json).moom,state.moom);assert.equal(summarize(restored).sceneEntries,1);assert.equal(restored.sessions[0].messages[1].storyLink.kind,'record');
  const old=await inspectArchive(new File([exportData(state)],'moom.json'));assert.deepEqual(old.state.moom,state.moom);
@@ -42,4 +42,14 @@ test('complete ZIP and legacy JSON keep scene entries, bookmarks, summary and in
 test('explicit moom preview uses separate memory storage and starts with readable labelled samples',()=>{
  const a=createMoomPreview(),b=createMoomPreview(),state=createState();a.seed(state);a.storage.setItem('key','sample');assert.equal(b.storage.getItem('key'),null);
  assert.equal(state.moom.scenes.length,3);assert.equal(state.moom.scenes.find(s=>s.id===state.moom.active).entries.length,5);assert(moom(state,{preview:true}).includes('修改不会影响正式记录'));assert.equal(state.backupSettings.dailyEnabled,false);
+});
+
+test('editable status text is role-specific, bounded, escaped, and never rewrites message timestamps',()=>{
+ const state=createState(),scene=createScene(state,{title:'状态文字'}),entry=addSceneEntry(state,scene.id,'你好。','say'),time=entry.time;
+ saveStatusText(state,scene.id,'assistant','<img src=x onerror=alert(1)>');saveStatusText(state,scene.id,'user','我'.repeat(700));
+ assert.equal(scene.statusText.user.length,500);assert.equal(entry.time,time);assert.throws(()=>saveStatusText(state,scene.id,'tool','错误角色'),/有效/);
+ const output=moom(state);assert(!output.includes('<img src=x'));assert(output.includes('data-moom-part="custom-text"'));
+ scene.entries.push({...entry,id:'assistant',kind:'narration'});assert(moom(state).includes('&lt;img src=x'));
+ const restored=normalizeState(JSON.parse(exportData(state)));assert.deepEqual(restored.moom.scenes[0].statusText,scene.statusText);
+ delete scene.statusText;assert.deepEqual(normalizeMoom(state.moom).scenes[0].statusText,{assistant:'',user:''});
 });

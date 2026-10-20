@@ -111,11 +111,10 @@ function handleAction(e){
  if(action==='open-mcp'){focusSettings('plugins-settings');return;}
  if(action==='pick-camera'||action==='pick-image'||action==='pick-file'){app.querySelector(action==='pick-camera'?'#chat-camera':action==='pick-image'?'#chat-images':'#chat-files').click();return;}
  if(action==='remove-attachment'){chatUI.attachments=chatUI.attachments.filter(a=>a.id!==target.dataset.id);render();return;}
- if(action==='add-kaomoji'||action==='edit-kaomoji'){expressionRevision++;expressionClosing=false;expressionDialog.style.transform='';expressionDialog.getAnimations().forEach(a=>a.cancel());const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form">${drawerHeader({title:(item?'编辑':'收藏')+'颜文字',action:'close',actionAttribute:'data-close-expression'})}<p class="sticker-error" role="alert" hidden></p><input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label>${categoryField(state.expressions,item?.category||(!item&&expressionCategories(state.expressions,'kaomoji').some(c=>c.id===chatUI.category)?chatUI.category:''),'kaomoji')}<button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
- if(['use-expression','favorite-expression','delete-expression'].includes(action)){
+ if(action==='add-kaomoji'||action==='edit-kaomoji'){expressionRevision++;expressionClosing=false;expressionDialog.style.transform='';expressionDialog.getAnimations().forEach(a=>a.cancel());const item=state.expressions.kaomoji.find(x=>x.id===target.dataset.id);expressionDialog.innerHTML=`<form id="kaomoji-form">${drawerHeader({title:(item?'编辑':'添加')+'颜文字',action:'close',actionAttribute:'data-close-expression'})}<p class="sticker-error" role="alert" hidden></p><input name="id" type="hidden" value="${escape(item?.id||'')}"><label class="field"><span>颜文字（最多 200 个字符）</span><textarea name="value" required maxlength="200" rows="3">${escape(item?.value||'')}</textarea></label>${categoryField(state.expressions,item?.category||(!item&&expressionCategories(state.expressions,'kaomoji').some(c=>c.id===chatUI.category)?chatUI.category:''),'kaomoji')}<button class="primary" type="submit">保存</button></form>`;expressionDialog.showModal();expressionDialog.querySelector('[name=value]').focus();return;}
+ if(['use-expression','delete-expression'].includes(action)){
  const items=state.expressions[chatUI.tab],item=items.find(x=>x.id===target.dataset.id);if(!item)return;
- if(action==='favorite-expression')item.favorite=!item.favorite;
- if(action==='delete-expression'){if(!confirm('删除这项收藏？'))return;state.expressions[chatUI.tab]=items.filter(x=>x.id!==item.id);}
+ if(action==='delete-expression'){if(!confirm('删除这项颜文字？'))return;state.expressions[chatUI.tab]=items.filter(x=>x.id!==item.id);}
  if(action==='use-expression'){
   if(chatUI.tab==='kaomoji'){const before=composeDraft.slice(0,selection.start),after=composeDraft.slice(selection.end);if(before.length+item.value.length+after.length>12000)return notify('消息太长，先删掉一些文字吧。');composeDraft=before+item.value+after;selection.start=selection.end=before.length+item.value.length;}
   else{if(chatUI.attachments.length>=6)return notify('一次最多添加 6 项附件。');chatUI.attachments.push({id:crypto.randomUUID(),name:item.name,note:item.note||item.name,kind:'sticker',size:0,type:'image/*',data:item.value});}
@@ -144,7 +143,6 @@ function handleAction(e){
  else if(action==='filter-memory'){memoryFilter=target.dataset.filter;render();}
  else if(action==='edit-memory')showMemoryEditor(state.memories.find(m=>m.id===target.dataset.id));
  else if(action==='delete-memory'){if(!confirm('删除这条记忆？删除后无法恢复。'))return;state.memories=state.memories.filter(m=>m.id!==target.dataset.id);persist();render();}
- else if(action==='remember'){const s=state.sessions.find(x=>x.id===state.active),m=s.messages.find(x=>x.id===target.dataset.id);showMemoryEditor({content:m.text||m.attachments?.map(a=>a.name).join('、')||'',title:'',kind:'short'},s.title);}
  else if(action==='export')backupManager.exportJSON();
 }
 app.addEventListener('click',handleAction);

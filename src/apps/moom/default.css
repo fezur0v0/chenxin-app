@@ -9,7 +9,6 @@
  --moom-body-size:16px;
  --moom-body-leading:2.05;
  --moom-message-gap:24px;
- --moom-message-rule:rgb(var(--tint) / .11);
  --moom-status-surface:linear-gradient(125deg,rgb(var(--glass-tint) / .42),rgb(var(--glass-tint) / .13));
  --moom-status-rim:color-mix(in srgb,var(--line) 70%,transparent);
  --moom-status-radius:17px;
@@ -19,37 +18,45 @@
 }
 .moom-app .moom-reading{width:min(100%,600px);padding:12px 25px 28px}
 .moom-app [data-moom-part="message"]{position:relative;white-space:normal;text-align:left;margin:0 0 var(--moom-message-gap);padding:0 0 6px;color:var(--moom-body-color);font-size:var(--moom-body-size);line-height:var(--moom-body-leading)}
-.moom-app [data-moom-part="message"]+[data-moom-part="message"]{border-top:1px solid var(--moom-message-rule);padding-top:21px}
-/* A compact character heading: portrait, name/date stack and quiet floor number.
-   Keep the existing parts and DOM order so alternative skins can replace this layout. */
+.moom-app [data-moom-part="message"]+[data-moom-part="message"]{padding-top:8px}
+/* Two-column character card. The names of the existing styling parts stay stable. */
 .moom-app [data-moom-part="status"]{
- display:grid;grid-template-columns:38px minmax(0,1fr) auto;grid-template-rows:auto auto;
- align-items:center;column-gap:11px;row-gap:3px;min-height:62px;
- padding:10px 13px 10px 11px;margin:0 0 19px;border:1px solid var(--moom-status-rim);
- border-radius:var(--moom-status-radius);background:var(--moom-status-surface);
- box-shadow:inset 0 1px 0 rgb(var(--glass-tint) / .35),0 3px 14px rgb(var(--tint) / .035);
+ display:grid;grid-template-columns:76px minmax(0,1fr);grid-template-rows:auto minmax(44px,auto) auto;
+ align-items:center;column-gap:17px;row-gap:8px;padding:16px;margin:0 0 22px;
+ border:1px solid var(--moom-status-rim);border-radius:var(--moom-status-radius);
+ background:var(--moom-status-surface);box-shadow:inset 0 1px 0 rgb(var(--glass-tint) / .35);
  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
- font:11px/1.4 var(--font-ui);color:var(--moom-meta-color);
+ font:11px/1.5 var(--font-ui);color:var(--moom-meta-color);
 }
 .moom-app .moom-message-avatar{
- grid-column:1;grid-row:1 / 3;width:38px;height:38px;border-radius:13px;
- padding:3px;border:1px solid var(--moom-status-rim);box-shadow:none;
+ grid-column:1;grid-row:1 / 3;align-self:start;width:76px;height:76px;border-radius:19px;
+ padding:4px;border:1px solid var(--moom-status-rim);box-shadow:none;
  background:rgb(var(--glass-tint) / .22);
 }
-.moom-app .moom-message-avatar img{border-radius:9px}
-.moom-app .moom-message-avatar>span{font:16px/1 var(--font-story)}
+.moom-app .moom-message-avatar img{border-radius:14px}
+.moom-app .moom-message-avatar>span{font:28px/1 var(--font-story)}
 .moom-app [data-moom-part="name"]{
- grid-column:2;grid-row:1;align-self:end;min-width:0;overflow:hidden;text-overflow:ellipsis;
- white-space:nowrap;color:var(--ink);font:550 13px/1.5 var(--font-ui);letter-spacing:.05em;
+ grid-column:1;grid-row:3;min-width:0;overflow:hidden;text-overflow:ellipsis;text-align:center;
+ white-space:nowrap;color:var(--ink);font:550 12px/1.7 var(--font-ui);letter-spacing:.04em;
 }
 .moom-app [data-moom-part="floor"]{
- grid-column:3;grid-row:1 / 3;align-self:center;min-width:24px;text-align:right;
- font:italic 20px/1 var(--font-en);font-variant-numeric:lining-nums tabular-nums;
- letter-spacing:.015em;white-space:nowrap;color:var(--moom-meta-color);
+ grid-column:2;grid-row:1;align-self:start;text-align:left;
+ font:italic 20px/1.1 var(--font-en);font-variant-numeric:lining-nums tabular-nums;
+ letter-spacing:.02em;white-space:nowrap;color:var(--moom-meta-color);
 }
+.moom-app [data-moom-part="custom-text"]{
+ grid-column:2;grid-row:2;align-self:start;display:flex;align-items:center;
+ min-width:0;width:100%;min-height:44px;padding:0;text-align:left;border-radius:7px;
+ color:var(--ink);font:12px/1.8 var(--font-story);overflow-wrap:anywhere;
+}
+.moom-app [data-moom-part="custom-text"]>span{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;white-space:pre-wrap;
+}
+.moom-app [data-moom-part="custom-text"]:hover{background:rgb(var(--tint) / .06)}
+.moom-app [data-moom-part="custom-text"]:active{transform:none}
 .moom-app [data-moom-part="time"]{
- grid-column:2;grid-row:2;align-self:start;font:10px/1.5 var(--font-ui);
- font-variant-numeric:tabular-nums;letter-spacing:.09em;white-space:nowrap;
+ grid-column:2;grid-row:3;font:10px/1.7 var(--font-ui);
+ font-variant-numeric:tabular-nums;letter-spacing:.035em;white-space:nowrap;
 }
 .moom-app [data-moom-part="body"]{font-family:var(--moom-body-font);color:var(--moom-body-color);overflow-wrap:anywhere}
 .moom-app .moom-prose{display:block;margin:0;white-space:pre-wrap;font-size:inherit;line-height:inherit}
@@ -58,19 +65,16 @@
 .moom-app [data-moom-part="action"]{color:var(--moom-action-color);font-style:normal;font-weight:400}
 .moom-app [data-moom-part="emphasis"]{color:var(--moom-body-color);font-weight:650}
 .moom-app [data-moom-part="inline-code"]{font:12px/1.7 ui-monospace,monospace;background:rgb(var(--tint) / .1);border-radius:5px;padding:2px 5px}
-.moom-app [data-moom-role="user"]{font-size:15px}
+.moom-app [data-moom-role="user"]{font-size:15px;margin-left:0}
 
 .moom-app .moom-thinking-trigger{display:flex;align-items:center;gap:5px;min-height:32px;max-width:100%;padding:4px 9px;margin:0 0 9px 30px;border:0;border-radius:12px;background:rgb(var(--glass-tint) / .16);color:var(--moom-meta-color);font:10px/1.5 var(--font-ui);text-align:left}
 .moom-app .moom-thinking-trigger span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .moom-app .moom-thinking-trigger:hover{background:rgb(var(--tint) / .1)}
-.moom-app .moom-message-footer{display:flex;justify-content:flex-end;min-height:32px;margin-top:6px}
-.moom-app .moom-message-footer .moom-bookmark{position:static;right:auto;bottom:auto;margin:0 -7px 0 0;min-height:36px;min-width:36px;opacity:.65}
-.moom-app .moom-message-footer .moom-bookmark.is-saved{opacity:1}
 .moom-app .moom-content-empty{font:12px/1.9 var(--font-ui);color:var(--muted)}
 .moom-sheet .moom-reasoning-panel{padding:8px 4px 14px}
 .moom-sheet .moom-reasoning-caption{font:11px/1.8 var(--font-ui);color:var(--muted);margin:0 0 12px}
 .moom-sheet [data-moom-part="thinking-content"] .moom-reasoning-text{white-space:pre-wrap;overflow-wrap:anywhere;font:14px/1.95 var(--font-ui);color:var(--ink);max-height:55dvh;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
 :root[data-theme="dark"] .moom-app[data-moom-skin="default"]:before{background:linear-gradient(165deg,rgb(var(--glass-tint) / .55),rgb(var(--scene-rgb) / .045) 60%,rgb(var(--glass-tint) / .45))}
-@media(max-width:350px){.moom-app .moom-reading{padding-inline:18px}.moom-app [data-moom-part="message"]{font-size:15px}.moom-app [data-moom-part="status"]{column-gap:9px;padding-inline:10px}.moom-app .moom-thinking-trigger{margin-left:23px}}
+@media(max-width:350px){.moom-app .moom-reading{padding-inline:18px}.moom-app [data-moom-part="message"]{font-size:15px}.moom-app [data-moom-part="status"]{grid-template-columns:64px minmax(0,1fr);column-gap:13px;padding:13px}.moom-app .moom-message-avatar{width:64px;height:64px;border-radius:16px}.moom-app .moom-thinking-trigger{margin-left:23px}}
 
 .moom-app .moom-thinking-trigger>.moom-thinking-mark{font-size:13px;line-height:1;flex-shrink:0}
