@@ -1,3 +1,5 @@
+import {createInvitation} from '../../components/invitation/controller.js';
+import {sceneInvitation} from './invitation.js';
 import {moomSheet,scenesSidebar} from './view.js';
 import {createScene,findScene,acceptScene,deferScene,addSceneEntry,endScene,saveSceneStatus,saveStatusText,SCENE_TONES} from './model.js';
 import {bindDrawerDismiss,animateDrawerClose} from '../../drawer.js';
@@ -8,7 +10,21 @@ export function createMoomApp({app,getState,setState,persist,render,notify,navig
  const sidebar=document.createElement('dialog');sidebar.id='moom-sidebar';sidebar.className='moom-sidebar app-sidebar glass';sidebar.setAttribute('aria-label','Moom 侧边栏');document.body.append(sidebar);
  let returnFocus=null,closing=false,revision=0;
  function commit(operation){const before=structuredClone(getState());try{const result=operation(getState());if(!persist()){setState(before);return null;}return result||true;}catch(error){setState(before);throw error;}}
- function closeAll(){revision++;closing=false;sheet.close();sheet.style.transform='';sheet.getAnimations().forEach(a=>a.cancel());sidebar.close();}
+ const invitations=createInvitation({root:app,notify,
+  getInvitation(id,sourceId){
+   const scene=findScene(getState(),id);
+   const source=sourceId?getState().sessions.flatMap(s=>s.messages).find(m=>m.id===sourceId&&m.storyLink?.kind==='invite'&&m.storyLink.sceneId===id):null;
+   if(sourceId&&!source)throw new Error('这份邀请已不在聊天记录中。');
+   return sceneInvitation(getState(),scene,source);
+  },
+  onWait(data){
+   if(data.stage==='invited'&&!commit(s=>deferScene(s,data.id)))return false;
+   repaint();return true;
+  },
+  onAccept(data){if(!commit(s=>acceptScene(s,data.id)))return false;goScene(data.id,{arrive:true});return true;},
+  onRead(data){goScene(data.id);return true;}
+ });
+ function closeAll(){invitations.reset();revision++;closing=false;sheet.close();sheet.style.transform='';sheet.getAnimations().forEach(a=>a.cancel());sidebar.close();}
  async function closeSheet(){if(!sheet.open||closing)return;closing=true;const current=revision;await animateDrawerClose(sheet);if(current!==revision)return;sheet.close();closing=false;}
  bindDrawerDismiss(sheet,{panel:()=>sheet.open&&!closing?sheet:null,close:closeSheet,backdrop:true});
  sheet.addEventListener('cancel',e=>{e.preventDefault();void closeSheet();});
@@ -39,7 +55,7 @@ export function createMoomApp({app,getState,setState,persist,render,notify,navig
    if(action==='new'){show('new',null,{invite:button.dataset.invite==='true'});return;}
    if(action==='status-text'){show('status-text',id,{role:button.dataset.role});return;}
    if(action==='reasoning'){show('reasoning',id,{entryId:button.dataset.entry});return;}
-   if(action==='invitation'){show('invitation',id);return;}
+   if(action==='invitation'){invitations.open(id);return;}
    if(['details','end','options','tools','status'].includes(action)){show(action,id);return;}
    if(action==='regenerate'||action==='continue'){notify(action==='regenerate'?'模型还没有连接，暂时不能重说。':'模型还没有连接，暂时不能继续剧情。');return;}
    if(action==='read'){goScene(id);return;}

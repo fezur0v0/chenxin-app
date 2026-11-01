@@ -189,3 +189,12 @@ moom 页头显示当前角色头像与名字，右上角「…」管理场景；
 ### moom 默认消息样式
 
 默认样式现已拆到 `src/apps/moom/default.css`，包含紧凑消息头（头像、名字、楼层和时间）、思考详情小入口与抽屉、对白/动作/强调样式；整幕状态卡收进可展开的场景设定。区域标识和后续自定义入口见 [moom 样式约定](docs/moom-styling.md)。可在 `?preview=moom` 查看独立示例，不改变正式记录。当前未提供 CSS 编辑器、任意 HTML 模板或真实模型接入。
+
+
+### 纸质邀请函组件
+
+聊天里显示封好的邀请函；点击打开信纸弹窗，展示主题、邀约、人物及时间，纸质的 `wait`／`Readily` 两个选项放在信封下方。不显示拆信提示字。发件人使用真实邀请来源，既有场景和记录继续可用。
+
+`http://127.0.0.1:5173/?preview=invitation` 为隔离的实际组件预览。封面／信纸共用 `src/components/invitation/`，独立 CSS、变量及稳定区域钩子方便后续换皮肤。见 [组件说明与 CSS 约定](docs/invitation-component.md)。
+
+[聊天信封](docs/preview-invitation-chat.webp) · [展开信纸](docs/preview-invitation-letter.webp) · [深色](docs/preview-invitation-letter-dark.webp)

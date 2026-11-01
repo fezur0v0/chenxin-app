@@ -1,3 +1,5 @@
+import {invitationEnvelope} from '../../components/invitation/view.js';
+import {sceneInvitation} from './invitation.js';
 import {splitMoomContent,renderMoomBody} from './message.js';
 import {escape,avatar,sidebarButton,sidebarHeader,sidebarNavigation} from '../../ui.js';
 import {icon} from '../../icons.js';
@@ -10,10 +12,9 @@ export function storyCard(state,message){
  const link=message.storyLink;if(!link)return '';
  const scene=state.moom.scenes.find(s=>s.id===link.sceneId);
  if(!scene)return '<p class="moom-card-unavailable">这一幕已不在本机记录中。</p>';
- const attrs=sceneAttrs(scene),pending=['invited','deferred'].includes(scene.status);
+ const attrs=sceneAttrs(scene);
  if(link.kind==='record')return `<section class="moom-invite moom-record tone-${scene.tone}"><span class="moom-eyebrow">${icon('file')} moom · 剧情小记</span><h3>${escape(scene.title)}</h3><p>${escape(scene.summary||'这一幕的记录，留在 moom 里。')}</p><button type="button" class="moom-card-link" data-moom-action="read" ${attrs}>重读这一幕 ${icon('chevron')}</button></section>`;
- if(scene.status==='deferred')return `<div class="moom-deferred"><span>「${escape(scene.title)}」的邀请，留到你想赴约的时候。</span><button type="button" data-moom-action="invitation" ${attrs}>查看邀请 ${icon('chevron')}</button></div>`;
- return `<section class="moom-invite tone-${scene.tone}"><span class="moom-eyebrow">${icon('file')} <i>Invitation</i><small>moom</small></span><h3>${escape(scene.title)}</h3>${detail(scene)?`<span class="moom-invite-place">${escape(detail(scene))}</span>`:''}<p>${escape(scene.premise||'留一点时间，一起走进新的一幕。')}</p><div class="moom-invite-buttons">${pending?`<button type="button" data-moom-action="accept" ${attrs}>好呀 ${icon('chevron')}</button><button type="button" data-moom-action="defer" ${attrs}>等一下</button>`:`<button type="button" data-moom-action="read" ${attrs}>${scene.status==='ended'?'重读这一幕':'去 moom 看看'} ${icon('chevron')}</button>`}</div></section>`;
+ return invitationEnvelope(sceneInvitation(state,scene,message));
 }
 export function moom(state,ui={}){
  const scene=state.moom.scenes.find(s=>s.id===state.moom.active),sample=ui.preview;
@@ -49,7 +50,7 @@ export function moomSheet(kind,state,scene,{invite=false,preview=false,entryId='
  if(kind==='tools')return `${head('更多剧情操作')}<div class="moom-options"><button type="button" data-moom-action="status" ${attrs}>${icon('edit')} 编辑场景状态</button><button type="button" data-moom-action="details" ${attrs}>${icon('file')} 场景设定</button></div>`;
  if(kind==='new'||kind==='details')return `<form id="moom-scene-form">${head(kind==='new'?'新的一幕':'场景设定')}<div class="moom-form-body"><p class="moom-form-error" role="alert" hidden></p><input type="hidden" name="sceneId" value="${escape(scene?.id||'')}"><label class="field"><span>这一幕的名字</span><input name="title" maxlength="80" required value="${escape(scene?.title||'')}" placeholder="例如：黄昏，去海边走走"></label><div class="moom-form-pair"><label class="field"><span>地点</span><input name="place" maxlength="100" value="${escape(scene?.place||'')}" placeholder="海边"></label><label class="field"><span>场景时间</span><input name="timeLabel" maxlength="80" value="${escape(scene?.timeLabel||'')}" placeholder="此刻 / 傍晚"></label></div><label class="field"><span>一句话开场</span><textarea name="premise" maxlength="2000" rows="3" placeholder="想从怎样的情境开始？">${escape(scene?.premise||'')}</textarea></label><label class="field"><span>氛围色</span><select name="tone">${SCENE_TONES.map(([value,label])=>`<option value="${value}" ${(scene?.tone||'sea')===value?'selected':''}>${label}</option>`).join('')}</select></label>${kind==='new'?`<label class="field"><span>关联的聊天</span><select name="sessionId">${state.sessions.map(s=>`<option value="${escape(s.id)}" ${state.active===s.id?'selected':''}>${escape(s.title)}</option>`).join('')}</select></label><label class="moom-invite-check"><input type="checkbox" name="invite" ${invite?'checked':''}><span>先把邀请函放进聊天<small>这是一份由你发起的邀请。</small></span></label>`:''}</div><button type="submit" class="primary">${kind==='new'?'保存这一幕':'保存设定'}</button></form>`;
  if(kind==='end')return `<form id="moom-end-form" ${attrs}>${head('为这一幕留一句小记')}<div class="moom-form-body"><p class="moom-form-error" role="alert" hidden></p><label class="field"><span>你想记住的事情</span><textarea name="summary" required maxlength="2000" rows="5" placeholder="今天一起去了哪里，发生了什么…">${escape(scene.summary)}</textarea></label><p class="hint">结束后会在关联聊天里留下一张剧情记录卡，正文仍可重读。</p></div><button class="primary" type="submit">结束这一幕</button></form>`;
- if(kind==='invitation')return `${head('一份见面邀请')}<div class="moom-sheet-invitation tone-${scene.tone}"><span class="moom-eyebrow"><i>Invitation</i></span><h3>${escape(scene.title)}</h3><p>${escape(detail(scene))}</p><p>${escape(scene.premise)}</p><button type="button" class="primary" data-moom-action="accept" ${attrs}>好呀，去 moom</button></div>`;
+
  return `${head(scene?'这一幕':'moom')}<div class="moom-options">${scene?`<button type="button" data-moom-action="status" ${attrs}>${icon('edit')} 编辑场景状态</button>${scene.status==='ended'?'':`<button type="button" data-moom-action="details" ${attrs}>${icon('file')} 场景设定</button><button type="button" data-moom-action="pause" ${attrs}>${icon('clock')} 暂存这一幕，回到聊天</button><button type="button" data-moom-action="end" ${attrs}>${icon('check')} 结束这一幕</button>`}<button type="button" data-moom-action="chat" ${attrs}>${icon('chat')} 回到关联聊天</button>`:`<button type="button" data-moom-action="new">${icon('plus')} 新的一幕</button>`}</div>${preview?'<a class="moom-preview-link" href="?">退出预览</a>':''}`;
 }
 

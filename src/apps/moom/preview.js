@@ -1,6 +1,6 @@
 import {createScene,acceptScene,addSceneEntry,endScene} from './model.js';
 // Explicit, isolated design preview; neither localStorage nor audio/snapshot IDB is used.
-export function createMoomPreview(){
+export function createMoomPreview({invitation=false}={}){
  const values=new Map(),media=new Map();
  const storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value))};
  async function files(id,file){if(file===null)media.delete(id);else if(file!==undefined)media.set(id,file);else return media.get(id);}
@@ -17,10 +17,16 @@ export function createMoomPreview(){
    {kind:'act',text:'我停下来，看着远处的灯塔。'},
    {kind:'narration',text:'风吹过衣角，带着一点海水的气息。他也停下来，陪你望着远处。'}
   ].map((e,i)=>({...e,id:crypto.randomUUID(),time:Date.now()-60000+i*1000,bookmarked:false}));
+  if(invitation){
+   state.persona.name='凛';scene.title='今晚，去看海吧。';scene.premise='想和你吹一会儿海风，\n就我们两个人。';scene.timeLabel='20:30';scene.status='invited';
+   const session=state.sessions[0],invite=session.messages.find(m=>m.storyLink?.sceneId===scene.id&&m.storyLink.kind==='invite'),now=Date.now();
+   session.title='邀请函示例';session.messages=[{id:crypto.randomUUID(),role:'assistant',text:'今晚有空吗？',time:now-120000,attachments:[]},{id:crypto.randomUUID(),role:'user',text:'怎么啦？',time:now-60000,attachments:[]},invite];
+  }
+
  }
  function decorate({app}){
   if(!app.querySelector('.chat-view'))return;
-  app.querySelector('.peer-details small').textContent='moom 示例 · 不影响正式聊天';
+  app.querySelector('.peer-details small').textContent=invitation?'邀请函示例 · 不影响正式聊天':'moom 示例 · 不影响正式聊天';
  }
  return {storage,files,seed,decorate};
 }

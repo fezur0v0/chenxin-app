@@ -25,11 +25,12 @@ import { launcherIcon } from './launcher-icons.js';
 import { backButton } from './ui.js';
 import { localDate, loadState, saveState, newSession, addDraftMessage, saveMemory, changeMessage } from './store.js';
 import { home, chat, sessions, settings, memory, memoryEditor, sidebar, escape, button } from './views.js';
-const chatPreview=new URLSearchParams(location.search).get('preview')==='chat'?createChatPreview():null;
-const moomPreview=new URLSearchParams(location.search).get('preview')==='moom'?createMoomPreview():null;
+const previewKind=new URLSearchParams(location.search).get('preview');
+const chatPreview=previewKind==='chat'?createChatPreview():null;
+const moomPreview=['moom','invitation'].includes(previewKind)?createMoomPreview({invitation:previewKind==='invitation'}):null;
 const isolatedPreview=chatPreview||moomPreview;
 let storage;try{storage=isolatedPreview?.storage||localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
-let state=loadState(storage), page=moomPreview?'app-moom':chatPreview?'chat':'home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
+let state=loadState(storage), page=previewKind==='invitation'?'chat':moomPreview?'app-moom':chatPreview?'chat':'home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
 isolatedPreview?.seed(state);
 const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['app-moom','moom','moom'],['app-appearance','appearance','外观'],['settings','settings','设置']];
 const opened=new Set();

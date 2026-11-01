@@ -109,3 +109,8 @@ npm test
 moom 的收藏按钮、菜单和筛选控制器已移除，聊天消息及表情面板的收藏入口也关闭；旧数据未删除。非收藏用途的书签图形改用文件图形。正文分割线与结束页装饰线同时删除。
 
 [当前消息布局](preview-moom.webp) · [自定义文字编辑](preview-moom-status-text.webp) · [深色布局](preview-moom-dark.webp)
+
+
+## 邀请函的独立区域
+
+邀请函使用独立的 `data-invitation-part` 钩子及 `src/components/invitation/style.css`，不占用消息的 `data-moom-part` 名称。封面／打开状态与 CSS 变量约定见 [邀请函组件](invitation-component.md)。
