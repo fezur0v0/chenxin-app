@@ -1,5 +1,8 @@
 # 尘 · Chenxin
 
+[下一工作窗口交接](docs/NEXT_SESSION_HANDOFF.md)
+
+
 手机优先的私人聊天前端。第一版只做界面和本机交互，不启动后端、不调用模型、不执行插件。
 
 [开屏预览](docs/preview-splash.webp) · [浅色主页预览](docs/preview-home.webp) · [夜间主页预览](docs/preview-night.webp) · [App 桌面](docs/preview-apps.webp) · [夜间 App 图标](docs/preview-apps-dark.webp) · [外观 App](docs/preview-app-appearance.webp)
