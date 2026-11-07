@@ -122,7 +122,7 @@ function handleAction(e){
   item.used=Date.now();
  }
  if(action==='use-expression')chatUI.tray='';
- persist();const scroll=app.querySelector('.expression-grid')?.scrollTop||0;render();const grid=app.querySelector('.expression-grid');if(grid)grid.scrollTop=scroll;
+ persist();const scroll=app.querySelector('.expression-tray>.drawer-scroll')?.scrollTop||0;render();const body=app.querySelector('.expression-tray>.drawer-scroll');if(body)body.scrollTop=scroll;
  if(action==='use-expression'&&chatUI.tab==='kaomoji'){const input=app.querySelector('[name=message]');input.focus({preventScroll:true});input.setSelectionRange(selection.start,selection.end);}
  return;
  }

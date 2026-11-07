@@ -10,7 +10,7 @@ export function reasoningTrigger(message){
 }
 export function reasoningSheet(message){
  const summary=message?.reasoningSummary?.trim(),duration=Number.isFinite(message?.reasoningDurationMs)?`${Math.round(message.reasoningDurationMs/100)/10}s`:'';
- return `<section class="chat-tray glass bottom-sheet reasoning-tray" role="dialog" aria-modal="true" tabindex="-1" aria-label="思考摘要">${drawerHeader({title:'思考摘要',heading:'<span class="sr-only">思考摘要</span>'})}<div class="reasoning-intro"><span class="reasoning-mark">${icon('memory')}</span><div><span class="chat-eyebrow">A LITTLE THOUGHT</span><h2>思考摘要${duration?`<time>${duration}</time>`:''}</h2></div>${summary?'<button data-action="copy-reasoning" class="reasoning-copy">复制</button>':''}</div><div class="reasoning-content">${summary?summary.split(/\n\s*\n/).map(p=>`<p>${escape(p)}</p>`).join(''):'<p class="hint">还没有可展示的思考摘要。</p>'}</div><p class="reasoning-footnote">仅展示模型提供的摘要</p></section>`;
+ return `<section class="chat-tray glass bottom-sheet reasoning-tray" role="dialog" aria-modal="true" tabindex="-1" aria-label="思考摘要">${drawerHeader({title:'思考摘要',heading:'<span class="sr-only">思考摘要</span>'})}<div class="drawer-scroll"><div class="reasoning-intro"><span class="reasoning-mark">${icon('memory')}</span><div><span class="chat-eyebrow">A LITTLE THOUGHT</span><h2>思考摘要${duration?`<time>${duration}</time>`:''}</h2></div>${summary?'<button data-action="copy-reasoning" class="reasoning-copy">复制</button>':''}</div><div class="reasoning-content">${summary?summary.split(/\n\s*\n/).map(p=>`<p>${escape(p)}</p>`).join(''):'<p class="hint">还没有可展示的思考摘要。</p>'}</div><p class="reasoning-footnote">仅展示模型提供的摘要</p></div></section>`;
 }
 export function replyPreview(reply,session,{draft=false}={}){
  if(!reply)return '';

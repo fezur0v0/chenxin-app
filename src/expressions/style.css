@@ -1,5 +1,5 @@
 /* Sticker library: shared glass sheet, fixed tools, scrollable collection. */
-.chat-view>.chat-tray.expression-tray{display:flex;flex-direction:column;max-height:min(620px,76dvh);overflow:hidden}
+.chat-view>.chat-tray.expression-tray{display:flex;flex-direction:column;max-height:min(620px,76dvh,var(--drawer-safe-height));overflow:hidden}
 .expression-tray>.drawer-handle,.expression-tray>.drawer-heading,.expression-toolbar,.sticker-category-row,.sticker-selection,.sticker-bulk-actions{flex-shrink:0}
 .expression-tray .expression-toolbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;min-width:0}
 .expression-toolbar-actions{display:flex;gap:4px;flex-shrink:0}.expression-toolbar-actions button{display:flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:8px;border-radius:14px;font-size:12px}.expression-toolbar-actions svg{width:16px;height:16px}
@@ -9,7 +9,7 @@
 .expression-tray .expression-choice{min-height:44px;padding:8px 10px;border:0;border-radius:14px;background:none;font-size:11px;color:var(--muted)}
 .expression-tray .expression-choice.active{background:rgb(var(--glass-tint) / .65);color:var(--ink)}
 .sticker-category-row>button{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;flex-shrink:0}.sticker-category-row>button svg{width:18px;height:18px}
-.expression-tray .expression-grid{flex:0 1 auto;min-height:0;max-height:min(330px,42dvh);padding:3px;scroll-padding:4px}
+.expression-tray .expression-grid{max-height:none;overflow:visible;padding:3px}
 .expression-tray .sticker-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
 .sticker-tile{position:relative;min-width:0;transition:border-color 160ms,box-shadow 160ms}
 .sticker-tile .sticker-use{position:relative;display:grid;place-items:center;width:100%;min-height:72px;aspect-ratio:1;padding:10px}
@@ -33,10 +33,10 @@ dialog.sticker-sheet,dialog.expression-dialog.bottom-sheet{position:fixed;inset:
 .sticker-import-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.sticker-import-actions>button,.sticker-file-choice{display:flex;align-items:center;justify-content:center;gap:7px;position:relative;min-height:48px;padding:12px 8px;border:1px solid var(--hairline);border-radius:16px;font-size:13px;cursor:pointer}
 .sticker-import-actions svg{width:18px;height:18px}.sticker-import-preview:empty{display:none}.sticker-import-preview{border:1px solid var(--hairline);padding:14px;border-radius:18px;margin:14px 0;font-size:13px}.sticker-import-preview ul{list-style:none;margin:8px 0 0;padding:0}.sticker-import-preview li{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--hairline)}.sticker-import-preview li>span{overflow-wrap:anywhere;min-width:0}.sticker-import-preview small{font-size:11px;color:var(--muted);max-width:50%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sticker-form-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.sticker-form-actions .primary{margin:0}.sticker-sheet-summary{font-size:14px;line-height:1.8;padding:8px 0 16px}.sticker-danger{display:block;min-height:48px;padding:12px;width:100%;margin-top:12px;border-radius:15px;border:1px solid var(--hairline);font-size:13px}
-@media(max-height:550px){.chat-view>.chat-tray.expression-tray{max-height:calc(100dvh - 32px)}.expression-tray .expression-grid{max-height:180px}.expression-tray .drawer-heading{margin-bottom:0}.sticker-category-row{padding-bottom:4px;margin-bottom:4px}.sticker-sheet .field{margin:12px 0}}
+@media(max-height:550px){.chat-view>.chat-tray.expression-tray{max-height:var(--drawer-safe-height)}.expression-tray .drawer-heading{margin-bottom:0}.sticker-category-row{padding-bottom:4px;margin-bottom:4px}.sticker-sheet .field{margin:12px 0}}
 @media(prefers-reduced-motion:reduce){.sticker-tile{transition:none}}
 /* On short landscape screens, scroll the whole sheet so cards stay tappable. */
-@media(max-height:550px){.chat-view>.chat-tray.expression-tray{display:block;max-height:calc(100dvh - 16px);overflow:auto}.expression-tray .expression-grid{max-height:none;overflow:visible}.sticker-bulk-actions{margin-bottom:4px}}
+@media(max-height:550px){.sticker-bulk-actions{margin-bottom:4px}}
 
 .sticker-format-help{font-size:12px;color:var(--muted);margin:8px 0}.sticker-format-help summary{min-height:44px;padding:12px 0;cursor:pointer}.sticker-format-help pre{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;padding:12px;border-radius:14px;background:rgb(var(--tint) / .08);font-size:11px}
 

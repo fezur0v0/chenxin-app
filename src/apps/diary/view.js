@@ -32,7 +32,7 @@ export function diaryMoodOptions(state,selected='') {
  }).join('');
 }
 export function diaryEditor(entry,date,state) {
- return `<form id="diary-entry-form">${drawerHeader({title:entry?'这一天的日记':'写一篇日记',action:'close',actionAttribute:'data-diary-close'})}<p class="diary-editor-error" role="alert" hidden></p><input type="hidden" name="id" value="${escape(entry?.id||'')}">
+ return `<form id="diary-entry-form" class="drawer-layout">${drawerHeader({title:entry?'这一天的日记':'写一篇日记',action:'close',actionAttribute:'data-diary-close'})}<div class="drawer-scroll"><p class="diary-editor-error" role="alert" hidden></p><input type="hidden" name="id" value="${escape(entry?.id||'')}">
  ${field('日期','date',entry?.date||date,'','date')}
  <fieldset class="diary-mood-picker"><legend>这一天的心情</legend><div class="diary-mood-options">${diaryMoodOptions(state,entry?.mood)}</div></fieldset>
  <details class="diary-custom-mood">
@@ -45,5 +45,5 @@ export function diaryEditor(entry,date,state) {
  </details>
  ${field('标题（可选）','title',entry?.title||'','给这一天起个名字')}
  <label class="field"><span>日记</span><textarea name="content" rows="8" maxlength="12000" required placeholder="今天，有什么想留下的？">${escape(entry?.content||'')}</textarea></label>
- <footer class="diary-editor-footer">${entry?`<button type="button" class="diary-delete" data-diary-delete>${icon('trash')}<span>删除</span></button>`:'<span class="diary-local-hint">保存在本机</span>'}<button type="button" class="secondary" data-diary-close>取消</button><button type="submit" class="primary">保存</button></footer></form>`;
+ <footer class="diary-editor-footer">${entry?`<button type="button" class="diary-delete" data-diary-delete>${icon('trash')}<span>删除</span></button>`:'<span class="diary-local-hint">保存在本机</span>'}<button type="button" class="secondary" data-diary-close>取消</button><button type="submit" class="primary">保存</button></footer></div></form>`;
 }

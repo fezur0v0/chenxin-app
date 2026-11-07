@@ -49,7 +49,7 @@ export function createPromptLibraries({app,getState,setState,persist,notify}) {
    if(prompt?.marker&&!promptOrder(item).some(value=>value.identifier===id))body+=toolButton('insert-marker','加入编排','plus','class="library-secondary"');
   }else if(type==='parameters') {title='调整生成参数';body=parameterEditor(item);}
   sheet.setAttribute('aria-label',title);
-  sheet.innerHTML=`${drawerHeader({title,action:'close',actionAttribute:'data-tool-action'})}<p class="library-form-error" role="alert" hidden></p><form id="library-editor-form">${body}${save?`<footer class="library-editor-footer">${deletable?toolButton('delete-item','删除','','class="library-destructive"'):'<span></span>'}<button type="submit" class="library-primary">保存</button></footer>`:''}</form>`;
+  sheet.innerHTML=`${drawerHeader({title,action:'close',actionAttribute:'data-tool-action'})}<div class="drawer-scroll"><p class="library-form-error" role="alert" hidden></p><form id="library-editor-form">${body}${save?`<footer class="library-editor-footer">${deletable?toolButton('delete-item','删除','','class="library-destructive"'):'<span></span>'}<button type="submit" class="library-primary">保存</button></footer>`:''}</form></div>`;
   sheet.querySelectorAll('input[name=name]').forEach(input=>{input.required=true;input.maxLength=80;});
   const content=sheet.querySelector('[name=content]');if(content&&isWorld)content.required=true;
   sheet.showModal();sheet.querySelector('.drawer-handle').focus({preventScroll:true});

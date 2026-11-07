@@ -4,13 +4,13 @@
 .message .reasoning-trigger>svg{width:16px;height:16px}.message .reasoning-trigger>svg:last-child{width:12px;height:12px}.reasoning-trigger time{margin-left:3px;font-size:11px;font-variant-numeric:tabular-nums;opacity:.85}
 .message .reasoning-trigger:disabled{opacity:1;cursor:default}.reasoning-trigger.is-thinking>svg:first-child{animation:thought-breathe 1.5s ease-in-out infinite}
 @keyframes thought-breathe{50%{opacity:.4}}
-.chat-view>.reasoning-tray.bottom-sheet{max-height:min(680px,82dvh)}
+.chat-view>.reasoning-tray.bottom-sheet{max-height:min(680px,82dvh,var(--drawer-safe-height))}
 .reasoning-intro{display:flex;align-items:center;gap:13px;padding:10px 5px 22px;border-bottom:1px solid var(--hairline)}
 .reasoning-mark{display:grid;place-items:center;width:43px;height:43px;flex-shrink:0;border:1px solid var(--line);border-radius:16px;background:rgb(var(--glass-tint) / calc(.12 * var(--glass-soften)))}.reasoning-mark svg{width:20px;height:20px;color:var(--muted)}
 .chat-eyebrow{display:block;font:10px/1.6 var(--font-ui);letter-spacing:.18em;color:var(--muted);margin-bottom:6px}
 .reasoning-intro h2{display:flex;align-items:center;gap:14px;font:14px/1.5 var(--font-ui)}.reasoning-intro time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
 .reasoning-copy{margin-left:auto;padding:10px;min-height:44px;font-size:12px;color:var(--muted);border-radius:12px}
-.reasoning-tray .reasoning-content{min-height:80px;max-height:45dvh;margin:0;padding:22px 7px 14px;border:0;border-radius:0;background:none;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.95;font:14px/1.95 var(--font-ui);color:var(--ink);user-select:text}
+.reasoning-tray .reasoning-content{min-height:80px;margin:0;padding:22px 7px 14px;border:0;border-radius:0;background:none;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.95;font:14px/1.95 var(--font-ui);color:var(--ink);user-select:text}
 .reasoning-content p+p{margin-top:16px}.reasoning-footnote{font:11px/1.6 var(--font-ui);color:var(--muted);padding:12px 7px 2px}
 .message-reply,.reply-snippet{position:relative;display:flex;align-items:center;gap:12px;min-width:0;padding:10px 12px;border:0;border-left:2px solid rgb(var(--tint) / .65);border-radius:2px 13px 13px 2px;text-align:left;background:rgb(var(--glass-tint) / calc(.13 * var(--glass-soften)));color:var(--muted);overflow:hidden}
 .message .message-reply{width:100%;min-height:58px;margin:0 0 10px;white-space:normal;font-family:var(--font-ui)}
@@ -31,7 +31,7 @@
 .voice-status{font:11px/1.7 var(--font-ui);color:var(--muted);margin-top:8px}.voice-relink{min-height:44px;font-size:12px;padding:9px 0;color:var(--ink)}
 .voice-import-state{font-size:12px;color:var(--muted);padding:5px 3px 10px}.voice-message.is-loading .voice-play{animation:thought-breathe 1.2s ease-in-out infinite}
 .chat-tray .attachment-options{grid-template-columns:repeat(3,minmax(0,1fr));margin-inline:0;gap:8px}.chat-tray .attachment-options button{min-height:84px;padding:12px 4px;font-size:12px}
-@media(max-height:550px){.chat-view>.reasoning-tray.bottom-sheet{max-height:calc(100dvh - 24px)}.reasoning-intro{padding-bottom:12px}.reasoning-tray .reasoning-content{max-height:37dvh;padding-block:12px}}
+@media(max-height:550px){.chat-view>.reasoning-tray.bottom-sheet{max-height:var(--drawer-safe-height)}.reasoning-intro{padding-bottom:12px}.reasoning-tray .reasoning-content{padding-block:12px}}
 @media(prefers-reduced-motion:reduce){.reasoning-trigger.is-thinking>svg:first-child,.voice-message.is-loading .voice-play{animation:none}.voice-transcript-toggle svg,.message.is-reference-target .bubble{transition:none}}
 @supports not (backdrop-filter:blur(1px)){.voice-message{background:var(--solid)}}
 

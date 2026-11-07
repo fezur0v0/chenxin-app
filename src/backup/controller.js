@@ -12,7 +12,9 @@ export function createBackupManager({app,getState,storage,media,snapshots=snapsh
  function paintSheet(){
   if(!sheet.open||!ui.screen)return;
   const active=sheet.contains(document.activeElement)?document.activeElement:null,action=active?.dataset.backupAction,id=active?.dataset.id;
+  const scroll=sheet.querySelector('.drawer-scroll')?.scrollTop;
   sheet.innerHTML=backupSheet(ui.screen,getState(),ui);
+  const body=sheet.querySelector('.drawer-scroll');if(body&&scroll!==undefined)body.scrollTop=scroll;
   const target=action?sheet.querySelector(`[data-backup-action="${CSS.escape(action)}"]${id?`[data-id="${CSS.escape(id)}"]`:''}`):null;
   (target&&!target.disabled?target:sheet.querySelector('.drawer-handle'))?.focus({preventScroll:true});
  }

@@ -12,8 +12,8 @@ export function createStickerLibrary({app,getState,setState,getUI,persist,notify
  const button=(name,label,extra='')=>`<button type="button" data-sticker-action="${name}" ${extra}>${label}</button>`;
  function refresh(){
   const panel=app.querySelector('.expression-tray');if(!panel)return;
-  const scroll=panel.querySelector('.expression-grid')?.scrollTop||0,categoryScroll=panel.querySelector('.sticker-categories')?.scrollLeft||0;
-  panel.innerHTML=expressionContents(getState(),ui());panel.querySelector('.expression-grid').scrollTop=scroll;const categories=panel.querySelector('.sticker-categories');if(categories)categories.scrollLeft=categoryScroll;
+  const scroll=panel.querySelector('.drawer-scroll')?.scrollTop||0,categoryScroll=panel.querySelector('.sticker-categories')?.scrollLeft||0;
+  panel.innerHTML=expressionContents(getState(),ui());panel.querySelector('.drawer-scroll').scrollTop=scroll;const categories=panel.querySelector('.sticker-categories');if(categories)categories.scrollLeft=categoryScroll;
  }
  // Update results without replacing the search input or interrupting Chinese IME.
  function search(event){

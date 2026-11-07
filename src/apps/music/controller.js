@@ -109,7 +109,7 @@ export function createMusicApp({app,getState,setState,persist,notify,compressIma
  }
  bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closingSheet?dialog:null,close:closeSheet,backdrop:true});
  dialog.addEventListener('cancel',event=>{event.preventDefault();void closeSheet();});
- function updateQueue(){if(dialog.open&&sheetKind==='queue'){const scroll=dialog.scrollTop;dialog.innerHTML=musicSheet('queue',getState(),ui);dialog.scrollTop=scroll;}}
+ function updateQueue(){if(dialog.open&&sheetKind==='queue'){const scroll=dialog.querySelector('.drawer-scroll').scrollTop;dialog.innerHTML=musicSheet('queue',getState(),ui);dialog.querySelector('.drawer-scroll').scrollTop=scroll;}}
  function chooseFiles(replace=false) {
   if(ui.busy)return;
   importTarget=ui.screen==='playlist'?ui.playlistId:'builtin:all';replaceId=replace?(sheetKind==='track'&&dialog.open?sheetItem:data().currentId):'';
