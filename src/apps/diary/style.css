@@ -8,7 +8,7 @@
 .diary-month-count{font-size:10px;color:var(--muted);white-space:nowrap}
 .diary-month-controls{display:flex;flex-shrink:0}.diary-month-controls button{width:36px;height:44px;display:grid;place-items:center;border-radius:14px}.diary-month-controls svg{width:16px;height:16px}
 .diary-weekdays,.diary-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));text-align:center}
-.diary-weekdays{font-size:10px;color:var(--muted);line-height:26px;margin-bottom:2px}
+.diary-weekdays{font-size:11px;font-weight:550;color:var(--muted);line-height:26px;margin-bottom:6px}
 .diary-day{height:52px;padding:3px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:14px;font-variant-numeric:lining-nums tabular-nums;font-size:14px}
 .diary-day-number{width:32px;height:32px;display:grid;place-items:center;border-radius:12px}
 .diary-day.is-today:not(.is-selected) .diary-day-number{background:rgb(var(--tint) / .16);color:var(--ink);font-weight:500}
