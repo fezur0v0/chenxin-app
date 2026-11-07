@@ -3,7 +3,7 @@ import {emptyMoom,normalizeMoom,normalizeStoryLink} from './apps/moom/model.js';
 import {normalizeReply,normalizeVoice} from './chat-content/model.js';
 import {normalizeExpressions,stickerSource} from './expressions/model.js';
 import { emptyMusic, normalizeMusic } from './apps/music/model.js';
-import { normalizeDiaryEntries } from './apps/diary/model.js';
+import { normalizeDiaryEntries, normalizeDiaryMoods, diaryMoods, currentMood } from './apps/diary/model.js';
 import { normalizeWorldbooks } from './apps/worldbook/model.js';
 import { normalizePresets } from './apps/presets/model.js';
 import { normalizeHomePages } from './home-layout.js';
@@ -22,7 +22,7 @@ export function daysTogether(since, now = new Date()) {
  return Math.floor((Date.UTC(now.getFullYear(),now.getMonth(),now.getDate()) - Date.UTC(y,m-1,d))/86400000) + 1;
 }
 function extras() {
- return { moom:emptyMoom(), backupSettings:{dailyEnabled:true,keep:5}, gallery:emptyGallery(), music:emptyMusic(), diaryEntries:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
+ return { moom:emptyMoom(), backupSettings:{dailyEnabled:true,keep:5}, gallery:emptyGallery(), music:emptyMusic(), diaryEntries:[], diaryMoods:[], worldbooks:[], promptPresets:[], activePromptPreset:'', appearance: { accent:'#7a879a', wallpaper:'', userAvatar:'', aiAvatar:'', blur:22, opacity:60 },
  home: { pages:[['anniversary',...WIDGETS],[...DESKTOP_APP_TYPES]], hiddenApps:[], anniversaryVisible:true, dateRevision:1, since:'2026-07-12', title:'在一起的日子', userName:'我', subtitle:'把普通的日子，慢慢收藏。', note:'', mood:'', userBubble:'喵……', aiBubble:'我在。', widgetTitles:{}, showWeekday:true, memoryId:'', widgets:WIDGETS.map(type=>({type,enabled:true})) }, memories:[], expressions:{kaomoji:['❍⩊❍','˶ᵔ ᵕ ᵔ˶','˃ ˄ ˂̥̥','(｡･ω･｡)'].map(value=>({id:crypto.randomUUID(),value,category:'',favorite:true,used:0})),stickers:[],categories:[],kaomojiCategories:[]} };
 }
 export function createState() {
@@ -41,17 +41,18 @@ export function normalizeState(s) {
    }) };
  });
  const defaults = extras(), a = s.appearance || {}, h = s.home || {};
+ const customMoods=normalizeDiaryMoods(s.diaryMoods);
  const widgets = Array.isArray(h.widgets) ? h.widgets.filter(w=>WIDGETS.includes(w?.type)) : defaults.home.widgets;
  const seen = new Set();
  const normalizedWidgets = widgets.filter(w=>!seen.has(w.type) && seen.add(w.type)).map(w=>({type:w.type,enabled:w.enabled !== false}));
  WIDGETS.forEach(type=>{if(!seen.has(type)) normalizedWidgets.push({type,enabled:true});});
  const worldbooks=normalizeWorldbooks(s.worldbooks),promptPresets=normalizePresets(s.promptPresets);
- return {version:2, moom:normalizeMoom(s.moom), backupSettings:{dailyEnabled:s.backupSettings?.dailyEnabled!==false,keep:[3,5,10].includes(s.backupSettings?.keep)?s.backupSettings.keep:5}, gallery:normalizeGallery(s.gallery), worldbooks,promptPresets,activePromptPreset:promptPresets.some(item=>item.id===s.activePromptPreset)?s.activePromptPreset:'',music:normalizeMusic(s.music), diaryEntries:normalizeDiaryEntries(s.diaryEntries), expressions:normalizeExpressions(s.expressions,defaults.expressions), active:ids.has(s.active)?s.active:sessions[0].id, theme:s.theme==='dark'?'dark':'light', sessions,
+ return {version:2, moom:normalizeMoom(s.moom), backupSettings:{dailyEnabled:s.backupSettings?.dailyEnabled!==false,keep:[3,5,10].includes(s.backupSettings?.keep)?s.backupSettings.keep:5}, gallery:normalizeGallery(s.gallery), worldbooks,promptPresets,activePromptPreset:promptPresets.some(item=>item.id===s.activePromptPreset)?s.activePromptPreset:'',music:normalizeMusic(s.music), diaryMoods:customMoods, diaryEntries:normalizeDiaryEntries(s.diaryEntries,diaryMoods({diaryMoods:customMoods})), expressions:normalizeExpressions(s.expressions,defaults.expressions), active:ids.has(s.active)?s.active:sessions[0].id, theme:s.theme==='dark'?'dark':'light', sessions,
  persona:{name:text(s.persona.name,'尘',40)||'尘',prompt:text(s.persona.prompt)},
  provider:{protocol:['openai','anthropic','gemini'].includes(s.provider.protocol)?s.provider.protocol:'openai',baseUrl:text(s.provider.baseUrl,'',2000),model:text(s.provider.model,'',200)},
  plugins:s.plugins.map(p=>{if(typeof p?.id!=='string'||typeof p.name!=='string'||typeof p.url!=='string')throw new Error('插件数据损坏');return {id:p.id,name:text(p.name,'',80),url:text(p.url,'',2000),type:p.type==='plugin'?'plugin':'mcp'};}),
  appearance:{accent:/^#[a-f\d]{6}$/i.test(a.accent)?a.accent:defaults.appearance.accent,wallpaper:image(a.wallpaper),userAvatar:image(a.userAvatar),aiAvatar:image(a.aiAvatar),blur:Number.isFinite(a.blur)?Math.min(40,Math.max(0,a.blur)):22,opacity:Number.isFinite(a.opacity)?Math.min(100,Math.max(30,a.opacity)):60},
- home:{pages:normalizeHomePages(h.pages,normalizedWidgets,{anniversaryVisible:h.anniversaryVisible,hiddenApps:Array.isArray(h.hiddenApps)?h.hiddenApps:[]}),hiddenApps:Array.isArray(h.hiddenApps)?[...new Set(h.hiddenApps.filter(id=>APP_TYPES.includes(id)))]:[],anniversaryVisible:h.anniversaryVisible!==false,userBubble:text(h.userBubble,'喵……',40),aiBubble:text(h.aiBubble,'我在。',40),widgetTitles:Object.fromEntries(WIDGETS.map(type=>[type,text(h.widgetTitles?.[type],'',20)])),showWeekday:h.showWeekday!==false,memoryId:text(h.memoryId,'',100),dateRevision:1,since:h.dateRevision!==1&&h.since==='2026-10-07'?'2026-07-12':daysTogether(h.since)!==null?h.since:defaults.home.since,title:text(h.title,defaults.home.title,40),userName:text(h.userName,'我',40),subtitle:text(h.subtitle,defaults.home.subtitle,200),note:text(h.note,'',500),mood:text(h.mood,'',30),widgets:normalizedWidgets},
+ home:{pages:normalizeHomePages(h.pages,normalizedWidgets,{anniversaryVisible:h.anniversaryVisible,hiddenApps:Array.isArray(h.hiddenApps)?h.hiddenApps:[]}),hiddenApps:Array.isArray(h.hiddenApps)?[...new Set(h.hiddenApps.filter(id=>APP_TYPES.includes(id)))]:[],anniversaryVisible:h.anniversaryVisible!==false,userBubble:text(h.userBubble,'喵……',40),aiBubble:text(h.aiBubble,'我在。',40),widgetTitles:Object.fromEntries(WIDGETS.map(type=>[type,text(h.widgetTitles?.[type],'',20)])),showWeekday:h.showWeekday!==false,memoryId:text(h.memoryId,'',100),dateRevision:1,since:h.dateRevision!==1&&h.since==='2026-10-07'?'2026-07-12':daysTogether(h.since)!==null?h.since:defaults.home.since,title:text(h.title,defaults.home.title,40),userName:text(h.userName,'我',40),subtitle:text(h.subtitle,defaults.home.subtitle,200),note:text(h.note,'',500),mood:currentMood(text(h.mood,'',30)),widgets:normalizedWidgets},
  memories:Array.isArray(s.memories)?s.memories.map(m=>{
    if (typeof m?.id !== 'string'|| typeof m.content !== 'string') throw new Error('记忆数据损坏');
    return {id:m.id,title:text(m.title,'',80),content:text(m.content),kind:m.kind==='permanent'?'permanent':'short',created:Number.isFinite(m.created)?m.created:Date.now(),expires:m.kind==='permanent'?null:Number.isFinite(m.expires)?m.expires:Date.now()+7*86400000,source:text(m.source,'',200)};

@@ -1,5 +1,5 @@
-import { diary, diaryEditor } from './view.js';
-import { diaryDate, validDiaryDate, diaryCalendar, shiftDiaryMonth, saveDiaryEntry } from './model.js';
+import { diary, diaryEditor, diaryMoodOptions } from './view.js';
+import { diaryDate, validDiaryDate, diaryCalendar, shiftDiaryMonth, saveDiaryEntry, saveDiaryMood } from './model.js';
 import { bindDrawerDismiss,animateDrawerClose } from '../../drawer.js';
 export function createDiaryApp({app,getState,setState,persist,notify}) {
  const today=diaryDate(),ui={month:today.slice(0,7),selected:today};
@@ -22,7 +22,8 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
  function open(entry) {
   revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());
   returnFocus=document.activeElement;editingId=entry?.id||'';
-  dialog.innerHTML=diaryEditor(entry,ui.selected);
+  dialog.innerHTML=diaryEditor(entry,ui.selected,getState());
+  bindMoodDrawing(dialog.querySelector('canvas'));
   const date=dialog.querySelector('[name=date]');date.required=true;date.min='0001-01-01';date.max='9999-12-31';
   dialog.querySelector('[name=title]').maxLength=80;
   dialog.showModal();dialog.querySelector('[data-diary-close]').focus({preventScroll:true});
@@ -58,6 +59,23 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   event.preventDefault();date.setDate(date.getDate()+offset);select(diaryDate(date));
  });
  dialog.addEventListener('click',event=>{
+  const form=dialog.querySelector('form');
+  const canvas=form.querySelector('canvas');
+  if(event.target.closest('[data-diary-mood-clear]')){clearMoodDrawing(canvas);return;}
+  if(event.target.closest('[data-diary-mood-save]')){
+   const name=form.elements['mood-name'],color=form.elements['mood-color'];
+   const alert=form.querySelector('[role=alert]');alert.hidden=true;
+   const mood=commit(state=>saveDiaryMood(state,{name:name.value,color:color.value,drawing:canvas.dataset.drawn?canvas.toDataURL('image/png'):''}));
+   if(mood){
+    const options=form.querySelector('.diary-mood-options');options.innerHTML=diaryMoodOptions(getState(),mood.name);
+    name.value='';clearMoodDrawing(canvas);form.querySelector('.diary-custom-mood').open=false;
+    options.querySelector(':checked')?.focus();notify('心情标签已添加。');
+   }else{
+    alert.scrollIntoView({block:'nearest'});
+   }
+   return;
+  }
+
   if(event.target.closest('[data-diary-close]')){void close();return;}
   if(event.target.closest('[data-diary-delete]')&&confirm('删除这篇日记？删除后无法恢复。')) {
    const saved=commit(state=>{state.diaryEntries=state.diaryEntries.filter(e=>e.id!==editingId);return true;});
@@ -72,4 +90,27 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
  dialog.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();dialog.querySelector('form').requestSubmit();}});
  dialog.addEventListener('close',()=>{if(dialog.open)return;revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());const target=returnFocus?.isConnected?returnFocus:app.querySelector(editingId?`[data-diary-edit="${CSS.escape(editingId)}"]`:'.diary-write');target?.focus({preventScroll:true});});
  return {ui};
+}
+
+function clearMoodDrawing(canvas){
+ canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
+ delete canvas.dataset.drawn;
+}
+function bindMoodDrawing(canvas){
+ const ctx=canvas.getContext('2d');
+ if(!ctx)return;
+ ctx.strokeStyle='#354155';ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';
+ let pointerId,last;
+ function draw(event){
+  const box=canvas.getBoundingClientRect();
+  const point=[(event.clientX-box.left)*canvas.width/box.width,(event.clientY-box.top)*canvas.height/box.height];
+  ctx.beginPath();ctx.moveTo(...(last||[point[0]-.1,point[1]]));ctx.lineTo(...point);ctx.stroke();
+  last=point;canvas.dataset.drawn='true';
+ }
+ canvas.addEventListener('pointerdown',event=>{
+  if(pointerId!==undefined||event.button!==0)return;
+  pointerId=event.pointerId;canvas.setPointerCapture(pointerId);draw(event);
+ });
+ canvas.addEventListener('pointermove',event=>{if(event.pointerId===pointerId)draw(event);});
+ canvas.addEventListener('lostpointercapture',()=>{pointerId=undefined;last=undefined;});
 }

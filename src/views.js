@@ -1,3 +1,4 @@
+import { SAD_FACE } from './apps/diary/model.js';
 import {storyCard} from './apps/moom/view.js';
 import {backupPanel} from './backup/view.js';
 import {musicIcon} from './apps/music/icons.js';
@@ -38,7 +39,7 @@ export function home(state,ui={}) {
  const h=state.home,days=daysTogether(h.since),memories=state.memories.filter(m=>!isExpired(m)),editing=!!ui.editing;
  const label=type=>escape(h.widgetTitles?.[type]||widgetLabels[type]);
  const chosen=memories.find(m=>m.id===h.memoryId)||memories[0];
- const moods=[['开心','#f4d66e','<circle cx="22" cy="28" r="2.5" fill="currentColor"/><circle cx="42" cy="28" r="2.5" fill="currentColor"/><path d="M20 38Q32 51 44 38"/>'],['平静','#8ed6c0','<path d="M17 29Q22 33 27 29M37 29Q42 33 47 29M26 43Q32 46 38 43"/>'],['疲惫','#b7a2e2','<path d="M17 29H27M37 29H47M26 44H38"/>'],['想念','#f2a7be','<circle cx="22" cy="29" r="2.5" fill="currentColor"/><circle cx="42" cy="29" r="2.5" fill="currentColor"/><path d="M27 43Q32 39 37 43"/>']];
+ const moods=[['开心','#f4d66e','<circle cx="22" cy="28" r="2.5" fill="currentColor"/><circle cx="42" cy="28" r="2.5" fill="currentColor"/><path d="M20 38Q32 51 44 38"/>'],['平静','#8ed6c0','<path d="M17 29Q22 33 27 29M37 29Q42 33 47 29M26 43Q32 46 38 43"/>'],['疲惫','#b7a2e2','<path d="M17 29H27M37 29H47M26 44H38"/>'],['悲伤','#8eb0d6',SAD_FACE]];
  const selectedMood=moods.find(m=>m[0]===h.mood)||moods[1],today=new Date();
  const widgets={
  date:`<section class="widget glass date-widget" aria-label="${label('date')}，${new Date().toLocaleDateString('zh-CN')}"><span class="sr-only">${label('date')}</span><div class="calendar-head"><time data-home-clock datetime="${new Date().toISOString()}">${new Date().toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false})}</time><span class="calendar-tag">${h.showWeekday!==false?new Date().toLocaleDateString('en-US',{weekday:'short'}).toUpperCase()+' ':''}${new Date().getDate()}</span></div><div class="calendar-divider"></div><div class="calendar-grid">${h.showWeekday!==false?['S','M','T','W','T','F','S'].map((day,i)=>`<span class="calendar-weekday" aria-label="${['星期日','星期一','星期二','星期三','星期四','星期五','星期六'][i]}">${day}</span>`).join(''):''}${calendarWindow().map(day=>`<span class="calendar-day ${day.today?'active':''} ${day.currentMonth?'':'adjacent-month'}" ${day.today?'aria-current="date"':''} aria-label="${day.date}">${day.day}</span>`).join('')}</div></section>`,

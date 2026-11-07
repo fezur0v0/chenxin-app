@@ -53,7 +53,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
    content=kind==='note'?'':field('组件标题','widgetTitle',h.widgetTitles?.[kind]||widgetLabels[kind]);
    if(kind==='note')content+=`<label class="field"><span>便签内容</span><textarea name="note" maxlength="500" rows="5">${escape(h.note)}</textarea></label>`;
    if(kind==='date')content+=`<label class="home-check"><input name="showWeekday" type="checkbox" ${h.showWeekday!==false?'checked':''}>显示星期</label>`;
-   if(kind==='mood')content+=`<label class="field"><span>此刻的心情</span><select name="mood">${['','开心','平静','疲惫','想念'].map(m=>`<option value="${m}" ${h.mood===m?'selected':''}>${m||'还没想好'}</option>`).join('')}</select></label>`;
+   if(kind==='mood')content+=`<label class="field"><span>此刻的心情</span><select name="mood">${['','开心','平静','疲惫','悲伤'].map(m=>`<option value="${m}" ${h.mood===m?'selected':''}>${m||'还没想好'}</option>`).join('')}</select></label>`;
    if(kind==='memory')content+=`<label class="field"><span>主页展示的记忆</span><select name="memoryId"><option value="">自动显示最新记忆</option>${draft.memories.filter(m=>!isExpired(m)).map(m=>`<option value="${escape(m.id)}" ${h.memoryId===m.id?'selected':''}>${escape(m.title)}</option>`).join('')}</select></label>`;
   }
   dialog.innerHTML=kind==='add'?content:`<form id="home-widget-form">${header(kind==='anniversary'?'编辑纪念日':`编辑${widgetLabels[kind]}`)}${content}<div class="home-editor-footer"><button type="button" class="secondary" data-home-close>取消</button><button class="primary" type="submit">保存</button></div></form>`;
