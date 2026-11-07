@@ -52,7 +52,7 @@
 :root {
  --font-display: 'Playfair Display', var(--font-en);
  /* For display numerals sized at 30px or above. */
- --font-display-numerals: 'Imported Display Numerals', 'Dancing Script Numerals', var(--font-display);
+ --font-display-numerals: 'Imported Display Numerals', 'Tangerine Numerals', var(--font-display);
 }
 
 /* Adobe Source Han Sans CN 2.005R; SIL OFL 1.1. */
@@ -64,10 +64,10 @@
  src: url('../assets/fonts/SourceHanSansCN-VF.woff2') format('woff2');
 }
 
-/* Dancing Script from Fontsource 5.3.0; SIL OFL 1.1. Decimal digits only. */
+/* Tangerine from Fontsource 5.3.0; SIL OFL 1.1. Decimal digits only. */
 @font-face {
- font-family: 'Dancing Script Numerals';
- src: url('../assets/fonts/dancing-script-latin-700-normal.woff2') format('woff2');
+ font-family: 'Tangerine Numerals';
+ src: url('../assets/fonts/tangerine-latin-700-normal.woff2') format('woff2');
  font-display: swap;
  font-style: italic;
  font-weight: 700;
