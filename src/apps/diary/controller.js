@@ -17,7 +17,13 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
  function select(date,scroll=false) {
   if(!validDiaryDate(date))return;
   ui.selected=date;ui.month=date.slice(0,7);refresh(`[data-diary-date="${date}"]`);
-  if(scroll)app.querySelector(`[data-entry-date="${date}"]`)?.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+  if(scroll){
+   const reducedMotion=matchMedia('(prefers-reduced-motion: reduce)').matches;
+   if(!reducedMotion)app.querySelector(`[data-diary-date="${date}"] .diary-day-number`)?.animate([
+    {transform:'scale(.93)'},{transform:'scale(1.055)',offset:.64},{transform:'scale(1)'},
+   ],{duration:230,easing:'ease-out'});
+   app.querySelector(`[data-entry-date="${date}"]`)?.scrollIntoView({block:'nearest',behavior:reducedMotion?'auto':'smooth'});
+  }
  }
  function open(entry) {
   revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());
