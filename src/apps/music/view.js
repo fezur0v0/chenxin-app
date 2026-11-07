@@ -24,7 +24,7 @@ function togetherStatus(state,ui) {
  const description=`${hasDistance?'相距'+distance+'公里':'距离暂无数据'}，${hasTime?'一起听了'+minutes+'分钟':'一起听时长暂无数据'}`;
  const cord=['left','right'].map(side=>`<svg class="music-listening-cord ${side}" viewBox="0 0 64 104" fill="none" aria-hidden="true">
   ${side==='left'?'<defs><linearGradient id="music-listening-cord-fade" x1="0" y1="7" x2="0" y2="104" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity=".68"/><stop offset=".56" stop-color="currentColor" stop-opacity=".24"/><stop offset="1" stop-color="currentColor" stop-opacity="0"/></linearGradient></defs>':''}
-  <path d="M14 13.7C10.5 13.7 6.35 13.7 5.94 17.22C4.44 29.88 10.25 49 20 67L34 104"/>
+  <path d="M13 10.5C9.5 10.5 6.35 13.7 5.94 17.22C4.44 29.88 10.25 49 20 67L34 104"/>
   <rect x="8.6" y="0" width="2.8" height="7" rx="1.4" transform="translate(3 7) rotate(-20 10 3.5)"/>
  </svg>`).join('');
  return `<div class="music-listening-status"><div class="music-listening-portraits">${cord}<div class="music-listening-avatars">${avatar(state,'user')}${avatar(state,'ai')}</div></div><p class="music-listening-meta" aria-label="${escape(description)}"><span>相距<span data-music-together-distance>${distance}</span>公里，</span><span>一起听了<span data-music-together-duration>${minutes}</span>分钟</span></p></div>`;
