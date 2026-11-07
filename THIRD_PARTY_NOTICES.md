@@ -180,3 +180,11 @@ repository, fetched on 2026-10-18. Geometry is unchanged; the app applies its
 shared 1.65px stroke. The Lucide license above applies.
 
 Source: https://github.com/lucide-icons/lucide/blob/main/icons/moon-star.svg
+
+## Source Han Sans CN 2.005R
+
+`assets/fonts/SourceHanSansCN-VF.woff2` is the Simplified Chinese variable
+webfont distributed by Adobe under the SIL Open Font License 1.1.
+The license is bundled in `assets/fonts/SourceHanSans-OFL.txt`.
+
+Source: https://github.com/adobe-fonts/source-han-sans/releases/tag/2.005R
