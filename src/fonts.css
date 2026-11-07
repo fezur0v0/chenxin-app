@@ -52,7 +52,7 @@
 :root {
  --font-display: 'Playfair Display', var(--font-en);
  /* For display numerals sized at 30px or above. */
- --font-display-numerals: 'Imported Display Numerals', var(--font-display);
+ --font-display-numerals: 'Pinyon Script Numerals', var(--font-display);
 }
 
 /* Adobe Source Han Sans CN 2.005R; SIL OFL 1.1. */
@@ -62,4 +62,14 @@
  font-weight: 250 900;
  font-display: swap;
  src: url('../assets/fonts/SourceHanSansCN-VF.woff2') format('woff2');
+}
+
+/* Pinyon Script from Fontsource 5.3.0; SIL OFL 1.1. Digits and clock colon. */
+@font-face {
+ font-family: 'Pinyon Script Numerals';
+ src: url('../assets/fonts/pinyon-script-latin-400-normal.woff2') format('woff2');
+ font-display: swap;
+ font-style: italic;
+ font-weight: 700;
+ unicode-range: U+0030-003A;
 }
