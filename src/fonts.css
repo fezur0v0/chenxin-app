@@ -59,3 +59,12 @@
  font-display: swap;
  src: url('../assets/fonts/SourceHanSansCN-VF.woff2') format('woff2');
 }
+
+/* Use the device's installed copy for decimal digits only. */
+@font-face {
+ font-family: 'Madison Sauvage Numerals';
+ src: local('MadisonSauvage-Script');
+ font-style: italic;
+ font-weight: 700;
+ unicode-range: U+0030-0039;
+}
