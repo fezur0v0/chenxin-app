@@ -10,8 +10,8 @@
 .music-together .music-listening-status{min-height:136px}
 .music-listening-portraits{position:relative;width:calc(var(--listening-avatar-size) * 2 + 44px);height:var(--listening-avatar-size);margin:auto;isolation:isolate}
 /* The outer edge of each portrait is 25px from the group edge. */
-.music-listening-cord{position:absolute;top:calc(50% + 2px);left:14px;width:64px;height:auto;color:var(--muted);pointer-events:none;z-index:1}
-.music-listening-cord.right{left:auto;right:14px;transform:scaleX(-1)}
+.music-listening-cord{position:absolute;top:calc(50% + 1px);left:13.35px;width:64px;height:auto;color:var(--muted);pointer-events:none;z-index:1}
+.music-listening-cord.right{left:auto;right:13.35px;transform:scaleX(-1)}
 .music-listening-cord rect{fill:currentColor;opacity:.76}
 .music-listening-cord path{stroke:url(#music-listening-cord-fade);stroke-width:1.5;stroke-linecap:round;vector-effect:non-scaling-stroke}
 .music-listening-avatars{display:flex;align-items:center;justify-content:center}
