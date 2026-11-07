@@ -52,7 +52,7 @@
 :root {
  --font-display: 'Playfair Display', var(--font-en);
  /* For display numerals sized at 30px or above. */
- --font-display-numerals: 'Madison Sauvage Numerals', var(--font-display);
+ --font-display-numerals: 'Imported Display Numerals', 'Madison Sauvage Numerals', var(--font-display);
 }
 
 /* Adobe Source Han Sans CN 2.005R; SIL OFL 1.1. */

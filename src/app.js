@@ -19,6 +19,7 @@ import { createDiaryApp } from './apps/diary/controller.js';
 import { createPromptLibraries } from './apps/prompt-library/controller.js';
 import { createHomeEditor } from './home-editor.js';
 import { appView, findApp } from './apps/index.js';
+import { restoreNumeralFont, importNumeralFont, clearNumeralFont } from './apps/appearance/numeral-font.js';
 import { finishSplash } from './splash.js';
 import { icon } from './icons.js';
 import { launcherIcon } from './launcher-icons.js';
@@ -32,6 +33,7 @@ const isolatedPreview=chatPreview||moomPreview;
 let storage;try{storage=isolatedPreview?.storage||localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
 let state=loadState(storage), page=previewKind==='invitation'?'chat':moomPreview?'app-moom':chatPreview?'chat':'home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
 isolatedPreview?.seed(state);
+if(!isolatedPreview)void restoreNumeralFont(storage);
 const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['app-moom','moom','moom'],['app-appearance','appearance','外观'],['settings','settings','设置']];
 const opened=new Set();
 let sessionSearch='',oldestFirst=false,composerSession=state.active;
@@ -134,6 +136,9 @@ function handleAction(e){
  else if(action==='persona')focusSettings('persona-settings');
  else if(action==='theme'){state.theme=state.theme==='dark'?'light':'dark';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='accent'){state.appearance.accent=target.dataset.color;persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
+ else if(action==='clear-numeral-font'){
+  try{clearNumeralFont(storage);notify('已清除导入的数字字体。');}catch(error){notify(error.message);}
+ }
  else if(action==='clear-image'){const key=target.dataset.key;if(!['wallpaper','userAvatar','aiAvatar'].includes(key))return;state.appearance[key]='';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='mood'){state.home.mood=target.dataset.mood;persist();render();}
  else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;persist();goto('chat');app.querySelector('[name=message]').focus();}
@@ -177,6 +182,13 @@ app.addEventListener('change',async e=>{
   return;
  }
  if(['accent','blur','opacity'].includes(t.name)&&t.closest('#appearance-settings'))persist();
+ if(t.id==='numeral-font-file'&&t.files?.length){
+  t.disabled=true;
+  try{await importNumeralFont(storage,t.files[0]);notify('大数字字体已保存到当前浏览器。');}
+  catch(error){notify(error.message);}
+  finally{t.disabled=false;t.value='';}
+  return;
+ }
  if(t.dataset.image && t.files[0]){
    const key=t.dataset.image,previous=state.appearance[key];
    try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
