@@ -1,4 +1,4 @@
-import {avatar,escape} from '../ui.js';
+import {escape} from '../ui.js';
 import {icon} from '../icons.js';
 import {musicIcon} from '../apps/music/icons.js';
 import {drawerHeader} from '../drawer.js';
@@ -45,7 +45,7 @@ export function renderLiveRow(part,state){
   :part.kind==='quote'?`<div class="bubble live-quote" data-live-part="quote"><span class="quote-box"><span class="quote-name">${escape(quotedName(state,part.role))}</span><span class="quote-src">${escape(part.quote)}</span></span>${part.text?`<div class="quote-body">${escape(part.text)}</div>`:''}</div>`
   :part.kind==='blocked'?`<div class="block-row"><span class="block-mark" role="img" aria-label="拉黑">!</span><div class="bubble" data-live-part="blocked">${escape(part.text)}</div></div><p class="block-hint">消息已发出，但被对方拉黑了</p>`
   :`<div class="bubble" data-live-part="bubble">${escape(part.text)}</div>`;
- return `<div class="conversation-live-row ${user?'is-user':''}">${avatar(state,user?'user':'ai','conversation-live-avatar')}<div class="live-stack">${body}${read}</div></div>`;
+ return `<div class="conversation-live-row ${user?'is-user':''}"><div class="live-stack">${body}${read}</div></div>`;
 }
 export function voiceMessage(attachment,message){
  const voice=attachment.voice;if(!voice)return '';

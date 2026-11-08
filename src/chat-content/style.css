@@ -235,12 +235,10 @@
 .conversation-prose h2{font:600 16px/1.6 var(--font-story);margin-bottom:6px}
 .conversation-prose .moom-prose+.moom-prose{margin-top:12px}
 .conversation-prose [data-moom-part=action]{color:var(--muted)}
-.conversation-live-row{display:flex;align-items:flex-end;gap:10px;margin:var(--row-gap) 0}
+.conversation-live-row{display:flex;align-items:flex-end;margin:var(--row-gap) 0}
 .conversation-live-row.is-user{flex-direction:row-reverse}
-.conversation-live-row .live-stack{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;max-width:min(78%,calc(100% - 46px))}
+.conversation-live-row .live-stack{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;max-width:78%}
 .conversation-live-row.is-user .live-stack{align-items:flex-end}
-.conversation-live-row .conversation-live-avatar{width:30px;height:30px;flex-shrink:0}
-.conversation-live-avatar>span{font-size:14px}
 .conversation-live-row .bubble{max-width:100%;text-align:left}
 .conversation-live-center{text-align:center;margin:12px 0;color:var(--muted);font-size:11px;line-height:1.5}
 .conversation-story-meta{color:var(--muted);font:11px/1.7 var(--font-ui);margin-top:6px}
