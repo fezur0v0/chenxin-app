@@ -55,3 +55,21 @@
 .chat-preview-note{display:flex;align-items:center;justify-content:center;gap:14px;margin:0 0 12px;font:11px/1.8 var(--font-ui);color:var(--muted)}
 .chat-preview-note button{min-height:44px;padding:8px 0;color:var(--ink);font-size:12px;text-decoration:underline;text-underline-offset:4px}
 .chat-header-actions .preview-exit{display:grid;place-items:center;width:44px;height:44px;color:var(--ink);border-radius:50%}
+
+:root{--font-story:"Noto Serif SC","Songti SC",SimSun,serif}
+.message .conversation-reply.bubble{width:100%;max-width:none;padding:0;border:0;background:none;backdrop-filter:none;box-shadow:none}
+.message .conversation-reply.bubble::after{display:none}
+.conversation-prose{width:100%;padding:5px 2px;color:var(--ink);font:400 15px/2 var(--font-story);white-space:pre-wrap;overflow-wrap:anywhere}
+.conversation-prose h2{font:600 16px/1.6 var(--font-story);margin-bottom:6px}
+.conversation-prose .moom-prose+.moom-prose{margin-top:12px}
+.conversation-prose [data-moom-part=action]{color:var(--muted)}
+.conversation-live-row{display:flex;align-items:flex-start;gap:8px;margin:9px 0}
+.conversation-live-row.is-user{flex-direction:row-reverse;text-align:right}
+.conversation-live-row>div{min-width:0;max-width:calc(100% - 46px)}
+.conversation-live-row .conversation-live-avatar{width:30px;height:30px;flex-shrink:0}
+.conversation-live-avatar>span{font-size:14px}
+.conversation-live-row .conversation-live-bubble{max-width:100%;white-space:pre-wrap;text-align:left}
+.conversation-live-row.is-user .conversation-live-bubble{border-radius:18px 18px 4px 18px;background:color-mix(in srgb,rgb(var(--tint) / .18),transparent)}
+.conversation-live-row small,.conversation-live-center{color:var(--muted);font-size:11px}
+.conversation-live-center{text-align:center;margin:12px 0}
+.conversation-story-meta{color:var(--muted);font:11px/1.7 var(--font-ui);margin-top:6px}

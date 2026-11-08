@@ -5,7 +5,6 @@ import {createScene,orderedScenes} from '../src/apps/moom/model.js';
 import {manageSidebarItem} from '../src/sidebar-menu/model.js';
 import {sidebarItemMenu} from '../src/sidebar-menu/view.js';
 import {sidebar} from '../src/views.js';
-import {storyCard} from '../src/apps/moom/view.js';
 
 test('scene pin and rename preserve activity date and persist through normalization and JSON',()=>{
  const state=createState(),first=createScene(state,{title:'海边'}),second=createScene(state,{title:'窗边'});first.updated=1000;second.updated=2000;
@@ -16,7 +15,7 @@ test('scene pin and rename preserve activity date and persist through normalizat
 });
 test('deleting a scene preserves chat and links, chooses an existing scene and handles the final scene',()=>{
  const state=createState(),first=createScene(state,{title:'邀请'},{invite:true}),second=createScene(state,{title:'正在进行'});state.moom.active=first.id;
- const messages=structuredClone(state.sessions[0].messages);manageSidebarItem(state,'scene',first.id,'delete');assert.equal(state.moom.active,second.id);assert.deepEqual(state.sessions[0].messages,messages);assert(storyCard(state,messages[0]).includes('已不在'));
+ const messages=structuredClone(state.sessions[0].messages);manageSidebarItem(state,'scene',first.id,'delete');assert.equal(state.moom.active,second.id);assert.deepEqual(state.sessions[0].messages,messages);
  manageSidebarItem(state,'scene',second.id,'delete');assert.deepEqual(state.moom,{active:'',scenes:[]});
 });
 test('session pin rename and delete keep scenes and memories, repair active session and retain a last empty chat',()=>{
@@ -28,5 +27,5 @@ test('shared sidebar menu escapes names, rejects empty renames and exposes long-
  const state=createState(),scene=createScene(state,{title:'<script>test</script>'});state.home.userName='欣欣';
  const before=structuredClone(state);assert.throws(()=>manageSidebarItem(state,'scene',scene.id,'rename','  '),/不能为空/);assert.deepEqual(state,before);assert.throws(()=>manageSidebarItem(state,'scene','missing','pin'),/不存在/);
  const sheet=sidebarItemMenu('scene',scene);assert(sheet.includes('&lt;script&gt;'));assert(!sheet.includes('<script>'));assert(sheet.includes('data-item-menu-action="pin"'));assert(sheet.includes('data-item-menu-action="rename"'));assert(sheet.includes('data-item-menu-action="delete"'));
- const chat=sidebar(state,'chat');assert(chat.includes('<strong>欣欣</strong>'));assert(chat.includes('data-sidebar-kind="scene"'));assert(chat.includes('data-story-action="read"'));assert(!chat.includes('data-action="app-moom"'));assert(chat.includes('data-sidebar-kind="session"'));assert(!chat.includes('conversation-actions'));assert(!chat.includes('data-action="pin-session"'));assert(!chat.includes('data-action="delete-session"'));
+ const chat=sidebar(state,'chat');assert(chat.includes('<strong>欣欣</strong>'));assert(!chat.includes('data-sidebar-kind="scene"'));assert(!chat.includes('data-story-action="read"'));assert(!chat.includes('data-action="app-moom"'));assert(chat.includes('data-sidebar-kind="session"'));assert(!chat.includes('conversation-actions'));assert(!chat.includes('data-action="pin-session"'));assert(!chat.includes('data-action="delete-session"'));
 });
