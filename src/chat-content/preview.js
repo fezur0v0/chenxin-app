@@ -28,7 +28,7 @@ export function createChatPreview(){
   const session=state.sessions.find(s=>s.id===state.active),now=Date.now();
   session.title='聊天样式预览';
   const user={id:'style-preview-user',role:'user',text:'今天想慢一点，什么也不着急。',time:now-120000,attachments:[]};
-  const assistant={id:'style-preview-assistant',role:'assistant',text:'雨落在窗台上，你把杯子往里推了推。\n\n<live>\nchar：那就慢一点吧。\nchar：你到家了吗？\nuser：到啦。\nuser：陪我坐一会儿。\n[已读]\nchar：我在。\n</live>\n\n屋里安静下来，只剩窗外的雨声。',time:now-90000,attachments:[],reasoningSummary:'这是一段用于查看排版的示例摘要。\n\n回应此刻的感受，保持语气温和、简短，给对方留一点空间。',reasoningDurationMs:1800};
+  const assistant={id:'style-preview-assistant',role:'assistant',text:'雨落在窗台上，你把杯子往里推了推。\n\n<live>\nchar：那就慢一点吧。\nuser：好，陪我坐一会儿。\nchar：我在。\n</live>\n\n屋里安静下来，只剩窗外的雨声。',time:now-90000,attachments:[],reasoningSummary:'这是一段用于查看排版的示例摘要。\n\n回应此刻的感受，保持语气温和、简短，给对方留一点空间。',reasoningDurationMs:1800};
   session.messages=[user,assistant,{id:'style-preview-voice',role:'assistant',text:'',time:now-60000,attachments:[{id:'style-preview-attachment',kind:'voice',name:file.name,type:file.type,size:file.size,voice:{fileId:'style-preview-audio',duration,peaks:audioPeaks({numberOfChannels:1,length:samples.length,getChannelData:()=>samples}),transcript:'这是一段 6 秒测试音，用来体验播放、暂停和进度拖动。'}}]},
    {id:'style-preview-reply',role:'user',text:'嗯，就这样陪我待一小会儿。',time:now,attachments:[],replyTo:makeReply(state,assistant)}];
  }

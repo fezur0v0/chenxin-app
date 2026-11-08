@@ -28,13 +28,11 @@ function timelineMessage(state,session,message){
    '<p class="conversation-story-meta">'+escape([time,message.statusText].filter(Boolean).join(' · '))+'</p></div></article>';
  }
  const assistant=message.role==='assistant',formatted=assistant&&Boolean(message.text);
- const body=formatted?splitLiveReply(message.text).map((part,index,parts)=>{
+ const body=formatted?splitLiveReply(message.text).map(part=>{
   if(part.kind==='offline')return `<div class="conversation-prose">${renderMoomBody(part.text)}</div>`;
   if(part.kind==='center')return `<p class="conversation-live-center">${escape(part.text.replace(/\b(char|user)\b/gi,(_,name)=>name.toLowerCase()==='char'?state.persona.name:state.home.userName))}</p>`;
   const user=part.role==='user';
-  const sameSide=neighbor=>neighbor?.kind==='bubble'&&neighbor.role===part.role;
-  const group=[user?'is-user':'',sameSide(parts[index-1])?'is-continuation':'',sameSide(parts[index+1])?'':'is-last'].filter(Boolean).join(' ');
-  return `<div class="conversation-live-row ${group}"><div class="conversation-live-stack"><div class="conversation-live-bubble" data-live-part="bubble">${escape(part.text)}</div>${part.read?'<small data-live-part="read">已读</small>':''}</div></div>`;
+  return `<div class="conversation-live-row ${user?'is-user':''}">${avatar(state,user?'user':'ai','conversation-live-avatar')}<div><div class="bubble conversation-live-bubble">${escape(part.text)}</div>${part.read?'<small>已读</small>':''}</div></div>`;
  }).join(''):message.text?`<div class="message-text">${escape(message.text)}</div>`:'';
  const voiceOnly=!message.text&&!message.replyTo&&message.attachments?.length===1&&message.attachments[0].kind==='voice';
  return `<article class="message ${message.role}">${reasoningTrigger(message)}<div class="bubble ${formatted?'conversation-reply':''} ${voiceOnly?'voice-only':''}" tabindex="0" data-message-id="${escape(message.id)}" aria-label="${assistant?'AI 消息':'我的消息'}，长按或右键打开操作">${replyPreview(message.replyTo,session)}${body}${messageAttachments(message.attachments,message)}</div><div class="message-meta">${new Date(message.time).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} · 仅保存本机</div></article>`;
