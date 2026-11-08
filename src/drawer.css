@@ -1,6 +1,6 @@
 /* Shared material and spacing for bottom sheets. */
 .bottom-sheet{--drawer-safe-height:calc(100dvh - env(safe-area-inset-top) - 12px);--drawer-inline:18px}
-.chat-view>.chat-tray.bottom-sheet,dialog:is(.music-sheet,.app-sheet).bottom-sheet{border-radius:30px 30px 0 0;padding:0 calc(var(--drawer-inline) + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(var(--drawer-inline) + env(safe-area-inset-left));max-height:calc(100dvh - 64px - env(safe-area-inset-top));overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;border:1px solid var(--line);border-bottom:0;background:color-mix(in srgb,rgb(var(--glass-tint) / calc(.9 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));background-image:linear-gradient(145deg,rgb(255 255 255 / .1),transparent 45%,rgb(255 255 255 / .025));box-shadow:0 -12px 65px rgb(16 22 34 / .16),inset 0 1px 1px var(--glass-glint);backdrop-filter:blur(var(--glass-blur)) saturate(135%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(135%);color:var(--ink);font-family:var(--font-ui)}
+.chat-view>.chat-tray.bottom-sheet,dialog:is(.music-sheet,.app-sheet).bottom-sheet{border-radius:30px 30px 0 0;padding:0 calc(var(--drawer-inline) + env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) calc(var(--drawer-inline) + env(safe-area-inset-left));max-height:calc(100dvh - 64px - env(safe-area-inset-top));overflow:auto;overscroll-behavior:contain;border:1px solid var(--line);border-bottom:0;background:color-mix(in srgb,rgb(var(--glass-tint) / calc(.9 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));background-image:linear-gradient(145deg,rgb(255 255 255 / .1),transparent 45%,rgb(255 255 255 / .025));box-shadow:0 -12px 65px rgb(16 22 34 / .16),inset 0 1px 1px var(--glass-glint);backdrop-filter:blur(var(--glass-blur)) saturate(135%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(135%);color:var(--ink);font-family:var(--font-ui)}
 dialog:is(.music-sheet,.app-sheet).bottom-sheet{width:min(560px,100%);max-height:min(80dvh,var(--drawer-safe-height))}
 .chat-view>.tray-backdrop,dialog:is(.music-sheet,.app-sheet).bottom-sheet::backdrop{background:rgb(20 27 40 / .12);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur))}
 :root[data-theme=dark] .chat-view>.tray-backdrop,:root[data-theme=dark] dialog:is(.music-sheet,.app-sheet).bottom-sheet::backdrop{background:rgb(0 0 0 / .5)}
@@ -25,3 +25,29 @@ dialog:is(.music-sheet,.app-sheet).bottom-sheet[open]:has(>.drawer-scroll,>.draw
 .bottom-sheet>.drawer-layout{display:flex;flex-direction:column;min-height:0}
 .bottom-sheet>.drawer-heading,.drawer-layout>.drawer-heading{flex-shrink:0}
 .drawer-scroll{min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scroll-padding-block:6px;padding-inline:2px}
+
+/* Extend the scrollport to the edge while keeping content inside the safe area. */
+.bottom-sheet :is(.drawer-scroll,.moom-form-body){
+ --drawer-scroll-inset:calc(var(--drawer-inline) + env(safe-area-inset-right));
+ overflow-x:hidden;
+ margin-right:calc(0px - var(--drawer-scroll-inset));
+ padding-right:calc(2px + var(--drawer-scroll-inset));
+}
+.bottom-sheet,
+.bottom-sheet :is(.drawer-scroll,.moom-form-body){--drawer-scroll-thumb:transparent}
+.bottom-sheet.is-scrolling,
+.bottom-sheet .is-scrolling{--drawer-scroll-thumb:rgb(var(--tint) / .58)}
+@supports selector(::-webkit-scrollbar){
+ .bottom-sheet:is(.chat-tray,.app-sheet,.music-sheet),
+ .bottom-sheet :is(.drawer-scroll,.moom-form-body){scrollbar-width:auto}
+ .bottom-sheet::-webkit-scrollbar,
+ .bottom-sheet :is(.drawer-scroll,.moom-form-body)::-webkit-scrollbar{width:3px}
+ .bottom-sheet::-webkit-scrollbar-thumb,
+ .bottom-sheet :is(.drawer-scroll,.moom-form-body)::-webkit-scrollbar-thumb{
+  background:var(--drawer-scroll-thumb);border-radius:3px;
+ }
+}
+@supports not selector(::-webkit-scrollbar){
+ .bottom-sheet,
+ .bottom-sheet :is(.drawer-scroll,.moom-form-body){scrollbar-width:thin;scrollbar-color:var(--drawer-scroll-thumb) transparent}
+}

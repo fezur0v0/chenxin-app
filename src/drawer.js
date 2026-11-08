@@ -13,7 +13,19 @@ export async function animateDrawerClose(panel) {
  await panel.animate([{transform:from==='none'?'translateY(0)':from},{transform:'translateY(100%)'}],{duration:200,easing:'ease-in',fill:'forwards'}).finished.catch(()=>{});
 }
 export function bindDrawerDismiss(root,{panel,close,backdrop=false}) {
- let drag=null,suppressClick=false;
+ let drag=null,suppressClick=false,scroller,scrollTimer;
+ function hideScrollbar(){
+  scroller?.classList.remove('is-scrolling');scroller=null;
+  clearTimeout(scrollTimer);
+ }
+ root.addEventListener('scroll',event=>{
+  const sheet=panel(),target=event.target;
+  if(!sheet||!(target===sheet||sheet.contains(target)&&target.matches('.drawer-scroll,.moom-form-body')))return;
+  if(target!==scroller){hideScrollbar();scroller=target;}
+  clearTimeout(scrollTimer);scroller.classList.add('is-scrolling');
+  scrollTimer=setTimeout(hideScrollbar,650);
+ },true);
+ root.addEventListener('close',hideScrollbar);
  function reset(target) {
   if(!target)return;
   const from=target.style.transform;target.style.transform='';

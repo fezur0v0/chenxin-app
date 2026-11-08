@@ -1,14 +1,25 @@
 import { diary, diaryEditor, diaryMoodOptions, moodEditor } from './view.js';
 import { diaryDate, validDiaryDate, diaryCalendar, shiftDiaryMonth, saveDiaryEntry, saveDiaryMood, updateDiaryMood, deleteDiaryMood, MOOD_POINT_LIMIT, MOOD_STROKE_LIMIT } from './model.js';
 import { bindDrawerDismiss, animateDrawerClose } from '../../drawer.js';
+import { bindTouchRipple, touchRippleFinished } from '../../components/touch-ripple.js';
 const motionOk=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
 const EASE='cubic-bezier(.22,.8,.2,1)';
 export function createDiaryApp({app,getState,setState,persist,notify}) {
  const today=diaryDate(),ui={month:today.slice(0,7),selected:today};
  const dialog=document.createElement('dialog');dialog.className='diary-editor glass app-sheet bottom-sheet';dialog.setAttribute('aria-label','日记编辑');document.body.append(dialog);
  let editingId='',returnFocus,closing=false,revision=0;
- let moodPane,moodState,moodReturn,writingScroll=0;
- async function close(){if(moodState){closeMood();return;}if(!dialog.open||closing)return;closing=true;const current=revision;await animateDrawerClose(dialog);if(current!==revision)return;dialog.close();closing=false;}
+ let moodPane,moodState,moodReturn,writingScroll=0,waitingForRipple=false;
+ bindTouchRipple(dialog);
+ function afterRipple(button,action){
+  const finished=touchRippleFinished(button);
+  if(!finished){action();return;}
+  const current=revision;waitingForRipple=true;
+  void finished.then(()=>{
+   if(current!==revision)return;
+   waitingForRipple=false;if(dialog.open)action();
+  });
+ }
+ async function close(){if(waitingForRipple)return;if(moodState){closeMood();return;}if(!dialog.open||closing)return;closing=true;const current=revision;await animateDrawerClose(dialog);if(current!==revision)return;dialog.close();closing=false;}
  bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closing?dialog:null,close,backdrop:true});
  dialog.addEventListener('cancel',event=>{event.preventDefault();void close();});
  function refresh(focusSelector) {
@@ -130,6 +141,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   event.preventDefault();date.setDate(date.getDate()+offset);select(diaryDate(date));
  });
  dialog.addEventListener('click',event=>{
+  if(waitingForRipple)return;
   if(suppressChip&&event.target.closest('[data-mood-custom]')){
    event.preventDefault();event.stopPropagation();
    const previous=dialog.querySelector(`.diary-mood-options input[value="${CSS.escape(press?.checked||'')}"]`);
@@ -138,7 +150,8 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   }
   if(moodState&&moodPane.contains(event.target)){handleMoodClick(event);return;}
   if(event.target.closest('[data-diary-mood-add]')){openMood();return;}
-  if(event.target.closest('[data-diary-close]')){void close();return;}
+  const cancel=event.target.closest('[data-diary-close]');
+  if(cancel){afterRipple(cancel,()=>void close());return;}
   if(event.target.closest('[data-diary-delete]')&&confirm('删除这篇日记？删除后无法恢复。')) {
    const saved=commit(state=>{state.diaryEntries=state.diaryEntries.filter(entry=>entry.id!==editingId);return true;});
    if(saved){dialog.close();refresh('[data-diary-action=write]');notify('日记已删除。');}
@@ -146,16 +159,20 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
  },true);
  dialog.addEventListener('submit',event=>{
   event.preventDefault();
-  if(event.target.id==='diary-mood-form'){saveMood();return;}
+  if(waitingForRipple||closing)return;
+  if(event.target.id==='diary-mood-form'){saveMood(event.submitter);return;}
   if(moodState)return;
   const entry=commit(state=>saveDiaryEntry(state,Object.fromEntries(new FormData(event.target))));
   if(!entry)return;
-  ui.month=entry.date.slice(0,7);ui.selected=entry.date;dialog.close();refresh(`[data-diary-edit="${CSS.escape(entry.id)}"]`);notify('日记已保存。');
+  afterRipple(event.submitter,()=>{
+   ui.month=entry.date.slice(0,7);ui.selected=entry.date;dialog.close();refresh(`[data-diary-edit="${CSS.escape(entry.id)}"]`);notify('日记已保存。');
+  });
  });
  dialog.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();dialog.querySelector(moodState?'#diary-mood-form':'#diary-entry-form').requestSubmit();}});
- dialog.addEventListener('close',()=>{if(dialog.open)return;cancelPress();suppressChip=false;moodState?.destroy();moodState=null;moodReturn=null;revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());const target=returnFocus?.isConnected?returnFocus:app.querySelector(editingId?`[data-diary-edit="${CSS.escape(editingId)}"]`:'.diary-write');target?.focus({preventScroll:true});});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;cancelPress();suppressChip=false;waitingForRipple=false;moodState?.destroy();moodState=null;moodReturn=null;revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());const target=returnFocus?.isConnected?returnFocus:app.querySelector(editingId?`[data-diary-edit="${CSS.escape(editingId)}"]`:'.diary-write');target?.focus({preventScroll:true});});
  function handleMoodClick(event){
-  if(event.target.closest('[data-mood-close]')){void closeMood();return;}
+  const cancel=event.target.closest('[data-mood-close]');
+  if(cancel){afterRipple(cancel,()=>closeMood());return;}
   const swatch=event.target.closest('[data-mood-color]');
   if(swatch&&!moodState?.draggingColor()){moodState?.setColor(swatch.dataset.moodColor);moodState?.resetDelete();return;}
   if(event.target.closest('[data-mood-tool="pen"]')){moodState?.setTool('pen');return;}
@@ -170,7 +187,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   if(event.target.name==='mood-name')moodState?.syncSave();
   if(event.target.type==='range')moodState?.setBrush(event.target.value);
  });
- function saveMood(){
+ function saveMood(button){
   if(!moodState)return;
   const alert=moodPane.querySelector('[role=alert]');alert.hidden=true;
   const draft=moodState?.draft();if(!draft){alert.hidden=false;alert.textContent=moodState?.editing?'先画一笔，或撤销到原来的表情。':'先画一张脸吧。';return;}
@@ -181,8 +198,10 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   const next=!previousName||selected===previousName?saved.name:selected;
   replaceMoodOptions(next);
   refresh();
-  closeMood(dialog.querySelector('.diary-mood-options input:checked'));
-  notify(previousName?'心情已修改。':'心情已保存。');
+  afterRipple(button,()=>{
+   closeMood(dialog.querySelector('.diary-mood-options input:checked'));
+   notify(previousName?'心情已修改。':'心情已保存。');
+  });
  }
  function removeMood(){
   const alert=moodPane.querySelector('[role=alert]');alert.hidden=true;
