@@ -6,7 +6,7 @@ button.nav-back{display:grid;place-items:center;flex-shrink:0;width:44px;height:
 .nav-back.is-collapsed>svg{transform:rotate(-90deg)}
 @media(prefers-reduced-motion:reduce){.nav-back>svg{transition:none}}
 
-/* Pin headers consistently; keep the wallpaper visible without a glass mask. */
+/* Shared sticky navigation and a softly fading top edge. */
 .app-topbar{
  --app-topbar-width:min(480px,calc(100vw - 32px - env(safe-area-inset-left) - env(safe-area-inset-right)));
  position:sticky;top:0;z-index:8;display:grid;grid-template-columns:44px minmax(0,1fr) 44px;column-gap:12px;align-items:center;
@@ -15,4 +15,26 @@ button.nav-back{display:grid;place-items:center;flex-shrink:0;width:44px;height:
 }
 .app-topbar>h1{min-width:0;margin:0;font:550 18px/1.3 var(--font-ui);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .app-topbar>span{display:grid;place-items:center;width:44px;height:44px}
-.page-content.desktop-app-page{scroll-padding-top:calc(76px + env(safe-area-inset-top))}
+.page-content.desktop-app-page{overflow-x:hidden;scroll-padding-top:calc(76px + env(safe-area-inset-top))}
+
+.chat-header{position:relative;z-index:1}
+.app-topbar::before,.chat-header::before{
+ content:"";position:absolute;inset:0 0 -18px;z-index:-1;pointer-events:none;
+ background:linear-gradient(to bottom,rgb(var(--glass-tint) / .44),rgb(var(--glass-tint) / .26) 46%,transparent);
+}
+.app-topbar::before{left:50%;right:auto;width:min(100vw,660px);transform:translateX(-50%)}
+@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) and ((mask-image:linear-gradient(#000,transparent)) or (-webkit-mask-image:linear-gradient(#000,transparent))){
+ .app-topbar::before,.chat-header::before{
+  background:rgb(var(--glass-tint) / .44);
+  -webkit-backdrop-filter:blur(min(var(--glass-blur),14px));
+  backdrop-filter:blur(min(var(--glass-blur),14px));
+  -webkit-mask-image:linear-gradient(to bottom,#000 38%,transparent);
+  mask-image:linear-gradient(to bottom,#000 38%,transparent);
+ }
+ @media(min-width:661px){
+  .app-topbar::before{
+   mask-image:linear-gradient(to bottom,#000 38%,transparent),linear-gradient(to right,transparent,#000 9%,#000 91%,transparent);
+   mask-composite:intersect;
+  }
+ }
+}
