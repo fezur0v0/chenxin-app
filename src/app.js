@@ -16,6 +16,7 @@ import {createStickerLibrary} from './expressions/controller.js';
 import { drawerHeader, animateDrawerClose, bindDrawerDismiss } from './drawer.js';
 import { createMusicApp } from './apps/music/controller.js';
 import { createDiaryApp } from './apps/diary/controller.js';
+import { acceptedHomeMood, diaryMoods } from './apps/diary/model.js';
 import { createPromptLibraries } from './apps/prompt-library/controller.js';
 import { createHomeEditor } from './home-editor.js';
 import { appView, findApp } from './apps/index.js';
@@ -135,7 +136,7 @@ function handleAction(e){
  else if(action==='theme'){state.theme=state.theme==='dark'?'light':'dark';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='accent'){state.appearance.accent=target.dataset.color;persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='clear-image'){const key=target.dataset.key;if(!['wallpaper','userAvatar','aiAvatar'].includes(key))return;state.appearance[key]='';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
- else if(action==='mood'){state.home.mood=target.dataset.mood;persist();render();}
+ else if(action==='mood'){const name=acceptedHomeMood(target.dataset.mood,diaryMoods(state));if(!name)return;state.home.mood=name;persist();render();}
  else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;persist();goto('chat');app.querySelector('[name=message]').focus();}
  else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;if(state.active===target.dataset.id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
  else if(action==='delete-plugin'){if(!confirm('删除这项插件配置？'))return;state.plugins=state.plugins.filter(p=>p.id!==target.dataset.id);persist();render();}

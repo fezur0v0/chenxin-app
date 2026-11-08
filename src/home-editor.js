@@ -5,6 +5,7 @@ import { launcherIcon } from './launcher-icons.js';
 import { avatar, escape, field, widgetLabels } from './views.js';
 import { icon } from './icons.js';
 import { daysTogether, isExpired, localDate } from './store.js';
+import { acceptedHomeMood, diaryMoods } from './apps/diary/model.js';
 import { drawerHeader, bindDrawerDismiss, animateDrawerClose } from './drawer.js';
 
 export function createHomeEditor({app,getState,setState,persist,renderHome,notify,compressImage,openApp}) {
@@ -53,7 +54,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
    content=kind==='note'?'':field('组件标题','widgetTitle',h.widgetTitles?.[kind]||widgetLabels[kind]);
    if(kind==='note')content+=`<label class="field"><span>便签内容</span><textarea name="note" maxlength="500" rows="5">${escape(h.note)}</textarea></label>`;
    if(kind==='date')content+=`<label class="home-check"><input name="showWeekday" type="checkbox" ${h.showWeekday!==false?'checked':''}>显示星期</label>`;
-   if(kind==='mood')content+=`<label class="field"><span>此刻的心情</span><select name="mood">${['','开心','平静','疲惫','悲伤'].map(m=>`<option value="${m}" ${h.mood===m?'selected':''}>${m||'还没想好'}</option>`).join('')}</select></label>`;
+   if(kind==='mood'){const options=[{value:'',label:'还没想好'},...diaryMoods(draft).map(m=>({value:m.name,label:m.name}))];content+=`<label class="field"><span>此刻的心情</span><select name="mood">${options.map(m=>`<option value="${escape(m.value)}" ${h.mood===m.value?'selected':''}>${escape(m.label)}</option>`).join('')}</select></label>`;}
    if(kind==='memory')content+=`<label class="field"><span>主页展示的记忆</span><select name="memoryId"><option value="">自动显示最新记忆</option>${draft.memories.filter(m=>!isExpired(m)).map(m=>`<option value="${escape(m.id)}" ${h.memoryId===m.id?'selected':''}>${escape(m.title)}</option>`).join('')}</select></label>`;
   }
   dialog.innerHTML=kind==='add'?content:`<form id="home-widget-form">${header(kind==='anniversary'?'编辑纪念日':`编辑${widgetLabels[kind]}`)}${content}<div class="home-editor-footer"><button type="button" class="secondary" data-home-close>取消</button><button class="primary" type="submit">保存</button></div></form>`;
@@ -137,7 +138,7 @@ export function createHomeEditor({app,getState,setState,persist,renderHome,notif
  });
  dialog.addEventListener('submit',e=>{e.preventDefault();const data=Object.fromEntries(new FormData(e.target));if(type==='anniversary'&&daysTogether(data.since)===null){notify('请选择有效的日期。');return;}
   if(commit(s=>{if(type==='anniversary'){Object.assign(s.home,{since:data.since,userName:data.userName.trim().slice(0,40)||'我',userBubble:data.userBubble.trim().slice(0,40),aiBubble:data.aiBubble.trim().slice(0,40)});s.persona.name=data.aiName.trim().slice(0,40)||s.persona.name;s.appearance.userAvatar=draft.appearance.userAvatar;s.appearance.aiAvatar=draft.appearance.aiAvatar;}
-   else{if(typeof data.widgetTitle==='string')s.home.widgetTitles={...s.home.widgetTitles,[type]:data.widgetTitle.trim().slice(0,20)};if(type==='note')s.home.note=data.note.slice(0,500);if(type==='date')s.home.showWeekday=data.showWeekday==='on';if(type==='mood')s.home.mood=data.mood;if(type==='memory')s.home.memoryId=data.memoryId;}
+   else{if(typeof data.widgetTitle==='string')s.home.widgetTitles={...s.home.widgetTitles,[type]:data.widgetTitle.trim().slice(0,20)};if(type==='note')s.home.note=data.note.slice(0,500);if(type==='date')s.home.showWeekday=data.showWeekday==='on';if(type==='mood')s.home.mood=acceptedHomeMood(data.mood,diaryMoods(s));if(type==='memory')s.home.memoryId=data.memoryId;}
   })){dialog.close();refresh();notify('小组件已保存。');}
  });
  dialog.addEventListener('close',()=>{if(dialog.open)return;dialogRevision++;closingDialog=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());draft=null;const target=app.querySelector(type==='add'?'[data-home-action=add]':`[data-home-widget="${type}"]`);(target||(returnFocus?.isConnected?returnFocus:null))?.focus({preventScroll:true});});
