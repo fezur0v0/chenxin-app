@@ -4,9 +4,9 @@ import {memorySnapshots} from './backup/snapshots.js';
 import {musicFile} from './apps/music/files.js';
 import {voiceFile} from './chat-content/voice-files.js';
 import {createGalleryApp} from './apps/gallery/controller.js';
-import {createMoomApp} from './apps/moom/controller.js';
-import {moom} from './apps/moom/view.js';
-import {createMoomPreview} from './apps/moom/preview.js';
+import {createLegacyStoryReader} from './apps/moom/controller.js';
+import {legacyStory} from './apps/moom/view.js';
+import {createInvitationPreview} from './apps/moom/preview.js';
 import {createChatPreview} from './chat-content/preview.js';
 import {createChatMedia} from './chat-content/controller.js';
 import {makeReply} from './chat-content/model.js';
@@ -28,12 +28,12 @@ import { localDate, loadState, saveState, newSession, addDraftMessage, saveMemor
 import { home, chat, sessions, settings, memory, memoryEditor, sidebar, escape, button } from './views.js';
 const previewKind=new URLSearchParams(location.search).get('preview');
 const chatPreview=previewKind==='chat'?createChatPreview():null;
-const moomPreview=['moom','invitation'].includes(previewKind)?createMoomPreview({invitation:previewKind==='invitation'}):null;
-const isolatedPreview=chatPreview||moomPreview;
+const invitationPreview=previewKind==='invitation'?createInvitationPreview():null;
+const isolatedPreview=chatPreview||invitationPreview;
 let storage;try{storage=isolatedPreview?.storage||localStorage;}catch{storage={getItem:()=>null,setItem:()=>{throw new Error('本机存储不可用');}};}
-let state=loadState(storage), page=previewKind==='invitation'?'chat':moomPreview?'app-moom':chatPreview?'chat':'home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
+let state=loadState(storage), page=isolatedPreview?'chat':'home', memoryFilter='all', memorySearch='', toastTimer, composeDraft='';
 isolatedPreview?.seed(state);
-const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['app-moom','moom','moom'],['app-appearance','appearance','外观'],['settings','settings','设置']];
+const app=document.querySelector('#app'), nav=[['home','home','主页'],['chat','chat','对话'],['memory','memory','记忆'],['app-appearance','appearance','外观'],['settings','settings','设置']];
 const opened=new Set();
 let sessionSearch='',oldestFirst=false,composerSession=state.active;
 let visibleTray='',closingTray=false;
@@ -44,14 +44,14 @@ let expressionClosing=false,expressionRevision=0;
 const dialog=document.createElement('dialog');dialog.id='memory-dialog';dialog.className='glass';document.body.append(dialog);
 const homeEditor=createHomeEditor({app,getState:()=>state,setState:value=>{state=value;},persist,renderHome,notify,compressImage,openApp:goto});
 const galleryApp=createGalleryApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
-const moomApp=createMoomApp({app,getState:()=>state,setState:value=>{state=value;},persist,render,notify,navigate:goto,preview:!!moomPreview});
+const legacyStories=createLegacyStoryReader({app,sidebar:sidebarDialog,getState:()=>state,setState:value=>{state=value;},persist,render,notify,navigate:goto,getPage:()=>page});
 const diaryApp=createDiaryApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=value;},persist,notify,compressImage});
 const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const stickerLibrary=createStickerLibrary({app,getState:()=>state,setState:value=>{state=value;},getUI:()=>chatUI,persist,notify,compressImage});
 const chatMedia=createChatMedia({files:isolatedPreview?.files,app,getState:()=>state,getUI:()=>chatUI,isChat:()=>page==='chat',render,notify});
 const backupManager=createBackupManager({app,getState:()=>state,storage,media:{music:isolatedPreview?.files||musicFile,voice:isolatedPreview?.files||voiceFile},snapshots:isolatedPreview?memorySnapshots():undefined,allowAuto:!isolatedPreview,persist,notify,applyRestored,canStart:()=>!musicApp.ui.busy&&!galleryApp.ui.busy&&!chatUI.voiceBusy});
-const sidebarItemMenu=createSidebarItemMenu({getState:()=>state,setState:value=>{state=value;},persist,notify,onChange:({kind,id,operation,previousActive,previousScene})=>{if(operation==='delete'){if(kind==='scene')moomApp.forgetScene(id,previousScene===id);else if(previousActive===id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;composerSession=state.active;}}render();}});
+const sidebarItemMenu=createSidebarItemMenu({getState:()=>state,setState:value=>{state=value;},persist,notify,onChange:({kind,id,operation,previousActive})=>{if(kind==='session'&&operation==='delete'&&previousActive===id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;composerSession=state.active;}render();}});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
@@ -60,11 +60,11 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const desktopApp=findApp(page),utilityPage=['memory','settings'].includes(page),immersive=page!=='home';
- app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='app-moom'?moom(state,moomApp.ui):page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp||utilityPage?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:page==='app-gallery'?galleryApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state,backupManager.ui):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav" aria-label="桌面快捷栏">${nav.filter(([p])=>p!=='home').map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="dock-launch"><span class="launcher-tile">${launcherIcon(i)}</span></button>`).join('')}</nav></div>`}</div>`;
+ app.innerHTML=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='legacy-story'?legacyStory(state,legacyStories.ui.sceneId):page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp||utilityPage?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:page==='app-gallery'?galleryApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state,backupManager.ui):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav" aria-label="桌面快捷栏">${nav.filter(([p])=>p!=='home').map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="dock-launch"><span class="launcher-tile">${launcherIcon(i)}</span></button>`).join('')}</nav></div>`}</div>`;
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
- const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}isolatedPreview?.decorate?.({app,state,ui:chatUI,render});updateViewport();syncTray();chatMedia.sync();moomApp.resize();moomApp.refreshSidebar();
+ const input=app.querySelector('[name=message]');if(input){input.value=composeDraft;input.setSelectionRange(selection.start,selection.end);resizeComposer();}isolatedPreview?.decorate?.({app,state,ui:chatUI,render});updateViewport();syncTray();chatMedia.sync();
 }
 // Keep the wallpaper, dock and scroll container mounted during desktop updates.
 function renderHome(){
@@ -85,11 +85,11 @@ function renderHome(){
  }
  if(focusedDot!==undefined)dots.querySelector(`[data-page="${focusedDot}"]`)?.focus({preventScroll:true});
 }
-function goto(next){if(next==='app-memory')next='memory';if(next==='chat'&&composerSession!==state.active){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}composerSession=state.active;homeEditor.exit();if(next==='app-gallery')galleryApp.openHome();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next)||['memory','settings'].includes(next))app.querySelector('.desktop-app-header h1,.music-header h1,.moom-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
+function goto(next){if(next==='app-memory')next='memory';if(next==='chat'&&composerSession!==state.active){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}composerSession=state.active;homeEditor.exit();if(next==='app-gallery')galleryApp.openHome();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next)||['memory','settings','legacy-story'].includes(next))app.querySelector('.desktop-app-header h1,.music-header h1,.moom-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('main')?.animate([{opacity:0,transform:'translateY(6px)'},{opacity:1,transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
 function focusSettings(id){if(id==='appearance-settings'){goto('app-appearance');return;}goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
-function applyRestored(next){sidebarItemMenu.reset();chatMedia.reset();stickerLibrary.reset();galleryApp.reset();musicApp.reset();moomApp.reset();state=next;composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';opened.add('storage-settings');goto('settings');}
+function applyRestored(next){sidebarItemMenu.reset();chatMedia.reset();stickerLibrary.reset();galleryApp.reset();musicApp.reset();legacyStories.reset();state=next;composeDraft='';chatUI={tray:'',tab:'stickers',attachments:[]};memorySearch='';memoryFilter='all';opened.add('storage-settings');goto('settings');}
 
 function validEndpoint(value){if(!value)return true;try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password&&!u.search&&!u.hash;}catch{return false;}}
 function handleAction(e){

@@ -1,32 +1,23 @@
-import {createScene,acceptScene,addSceneEntry,endScene} from './model.js';
-// Explicit, isolated design preview; neither localStorage nor audio/snapshot IDB is used.
-export function createMoomPreview({invitation=false}={}){
+import {createScene} from './model.js';
+
+// The invitation preview is isolated from saved conversations and files.
+export function createInvitationPreview(){
  const values=new Map(),media=new Map();
  const storage={getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,String(value))};
  async function files(id,file){if(file===null)media.delete(id);else if(file!==undefined)media.set(id,file);else return media.get(id);}
  function seed(state){
-  state.sessions[0].title='moom 场景示例';state.backupSettings.dailyEnabled=false;
-  const first=createScene(state,{title:'第一次见面',place:'街角花店',timeLabel:'午后',tone:'sage'});addSceneEntry(state,first.id,'你好呀。','say');endScene(state,first.id,'在花店门口见面，聊起了今天的天气。');first.created=first.updated=Date.now()-86400000*5;
-  const second=createScene(state,{title:'雨天的咖啡馆',place:'窗边',timeLabel:'傍晚',tone:'dusk'});addSceneEntry(state,second.id,'我把伞放在门边，走到窗前。','act');endScene(state,second.id,'一起在咖啡馆躲雨，看着窗上的水珠慢慢落下。');second.created=second.updated=Date.now()-86400000;
-  const scene=createScene(state,{title:'深夜 · 海边',place:'海边',timeLabel:'深夜',tone:'sea',premise:'想带你去海边走一走，就我们两个人。'},{invite:true,assistant:true});acceptScene(state,scene.id);
-  scene.statusPanel={weather:'海风微凉',mood:'平静',condition:'披着深色外套，停在你身旁。'};
-  scene.entries=[
-   {kind:'narration',text:'夜里的海很安静。潮水一层一层地退下去，又一层一层地漫上来，像有人在远处轻轻呼吸。',reasoningSummary:'这是用于检查思考抽屉排版的示例文字。正式聊天只显示服务实际提供的思考或摘要。'},
-   {kind:'narration',text:'*他走在你左边半步的位置，把外套的一角往你这边拢了拢。*\n\n“慢慢走，今晚不赶时间。”\n\n风掠过衣角，远处灯塔亮着一束**很温柔的光**。'},
-   {kind:'dialogue',text:'冷不冷？要是冷，我们就坐一会儿。'},
-   {kind:'act',text:'我停下来，看着远处的灯塔。'},
-   {kind:'narration',text:'风吹过衣角，带着一点海水的气息。他也停下来，陪你望着远处。'}
-  ].map((e,i)=>({...e,id:crypto.randomUUID(),time:Date.now()-60000+i*1000,bookmarked:false}));
-  if(invitation){
-   state.persona.name='凛';scene.title='今晚，去看海吧。';scene.premise='想和你吹一会儿海风，\n就我们两个人。';scene.timeLabel='20:30';scene.status='invited';
-   const session=state.sessions[0],invite=session.messages.find(m=>m.storyLink?.sceneId===scene.id&&m.storyLink.kind==='invite'),now=Date.now();
-   session.title='邀请函示例';session.messages=[{id:crypto.randomUUID(),role:'assistant',text:'今晚有空吗？',time:now-120000,attachments:[]},{id:crypto.randomUUID(),role:'user',text:'怎么啦？',time:now-60000,attachments:[]},invite];
-  }
-
+  state.persona.name='凛';state.backupSettings.dailyEnabled=false;
+  const scene=createScene(state,{title:'今晚，去看海吧。',place:'海边',timeLabel:'20:30',premise:'想和你吹一会儿海风，\n就我们两个人。'},{invite:true,assistant:true});
+  const session=state.sessions[0],invite=session.messages.find(message=>message.storyLink?.sceneId===scene.id),now=Date.now();
+  session.title='邀请函示例';
+  session.messages=[
+   {id:crypto.randomUUID(),role:'assistant',text:'今晚有空吗？',time:now-120000,attachments:[]},
+   {id:crypto.randomUUID(),role:'user',text:'怎么啦？',time:now-60000,attachments:[]},
+   invite,
+  ];
  }
  function decorate({app}){
-  if(!app.querySelector('.chat-view'))return;
-  app.querySelector('.peer-details small').textContent=invitation?'邀请函示例 · 不影响正式聊天':'moom 示例 · 不影响正式聊天';
+  const label=app.querySelector('.peer-details small');if(label)label.textContent='邀请函示例 · 不影响正式聊天';
  }
  return {storage,files,seed,decorate};
 }

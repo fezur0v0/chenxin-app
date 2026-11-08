@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createState,normalizeState,exportData} from '../src/store.js';
 import {createScene,acceptScene,deferScene,addSceneEntry,endScene,normalizeMoom,saveSceneStatus,saveStatusText} from '../src/apps/moom/model.js';
-import {createMoomPreview} from '../src/apps/moom/preview.js';
-import {moom,storyCard} from '../src/apps/moom/view.js';
+import {createInvitationPreview} from '../src/apps/moom/preview.js';
+import {legacyStory,storyCard} from '../src/apps/moom/view.js';
 import {sceneInvitation} from '../src/apps/moom/invitation.js';
 import {invitationEnvelope,invitationLetter} from '../src/components/invitation/view.js';
 import {createArchive,inspectArchive,restoreArchive,summarize} from '../src/backup/model.js';
@@ -28,14 +28,18 @@ test('accepting another invitation pauses the previous active scene and preserve
  const second=createScene(state,{title:'第二幕'},{invite:true});acceptScene(state,second.id);assert.equal(first.status,'paused');assert.equal(first.entries[0].text,'你好');assert.equal(second.status,'active');
  assert.throws(()=>createScene(state,{title:'',sessionId:state.active}),/名字/);assert.throws(()=>createScene(state,{title:'失效',sessionId:'deleted'}),/找不到/);
 });
-test('legacy layouts put memory on the existing desktop app page; moom stays dock-only',()=>{
- const state=createState();delete state.moom;state.home.pages[1]=state.home.pages[1].filter(id=>id!=='app-memory');
- const restored=normalizeState(state);assert.deepEqual(restored.moom,{active:'',scenes:[]});assert.equal(restored.home.pages.length,2);assert(restored.home.pages[1].includes('app-memory'));assert.equal(homeItemVisible(restored.home,'app-moom'),false);assert.equal(homeItemVisible(restored.home,'app-memory'),true);
+test('old desktop layouts preserve memory data and hide its former desktop shortcut',()=>{
+ const state=createState(),original=state.home.pages[1].slice();
+ state.home.pages[1].splice(2,0,'app-moom','app-memory');
+ const restored=normalizeState(state);
+ assert.deepEqual(restored.home.pages[1],[...original.slice(0,2),'app-memory',...original.slice(2)]);
+ assert.equal(homeItemVisible(restored.home,'app-moom'),false);
+ assert.equal(homeItemVisible(restored.home,'app-memory'),false);
 });
 test('scene normalization rejects unsupported entries, deduplicates IDs and rendering escapes imported markup',()=>{
  const normalized=normalizeMoom({active:'bad',scenes:[null,{id:'one',title:'<script>x</script>',tone:'unsafe',status:'wat',entries:[{id:'x',kind:'act',text:'<img onerror="x">'},{id:'x',kind:'say',text:'duplicate'},{id:'y',kind:'tool',text:'no'}]},{id:'one',title:'duplicate'}]});
  assert.equal(normalized.scenes.length,1);assert.equal(normalized.scenes[0].entries.length,1);assert.equal(normalized.scenes[0].tone,'sea');assert.equal(normalized.active,'');assert.deepEqual(normalized.scenes[0].statusPanel,{weather:'',mood:'',condition:''});
- const state=createState();state.moom=normalized;state.moom.active='one';const output=moom(state);assert(!output.includes('<script>'));assert(output.includes('&lt;img'));assert(output.includes('&lt;script&gt;'));
+ const state=createState();state.moom=normalized;state.moom.active='one';const output=legacyStory(state,state.moom.active);assert(!output.includes('<script>'));assert(output.includes('&lt;img'));assert(output.includes('&lt;script&gt;'));
  assert(storyCard(state,{storyLink:{kind:'invite',sceneId:'deleted'}}).includes('已不在'));assert.equal(storyCard(state,{}),'');
 });
 test('complete ZIP and legacy JSON keep scene entries, bookmarks, summary and invitation links',async()=>{
@@ -44,17 +48,20 @@ test('complete ZIP and legacy JSON keep scene entries, bookmarks, summary and in
  let json='';const restored=await restoreArchive(preview,{stores:files,storage:{setItem:(_,value)=>{json=value;}}});assert.deepEqual(restored.moom,state.moom);assert.deepEqual(JSON.parse(json).moom,state.moom);assert.equal(summarize(restored).sceneEntries,1);assert.equal(restored.sessions[0].messages[1].storyLink.kind,'record');
  const old=await inspectArchive(new File([exportData(state)],'moom.json'));assert.deepEqual(old.state.moom,state.moom);
 });
-test('explicit moom preview uses separate memory storage and starts with readable labelled samples',()=>{
- const a=createMoomPreview(),b=createMoomPreview(),state=createState();a.seed(state);a.storage.setItem('key','sample');assert.equal(b.storage.getItem('key'),null);
- assert.equal(state.moom.scenes.length,3);assert.equal(state.moom.scenes.find(s=>s.id===state.moom.active).entries.length,5);assert(moom(state,{preview:true}).includes('修改不会影响正式记录'));assert.equal(state.backupSettings.dailyEnabled,false);
+test('the invitation preview uses isolated storage and opens an old story',()=>{
+ const a=createInvitationPreview(),b=createInvitationPreview(),state=createState();
+ a.seed(state);a.storage.setItem('key','sample');assert.equal(b.storage.getItem('key'),null);
+ const scene=state.moom.scenes[0];
+ assert(legacyStory(state,scene.id).includes('今晚，去看海吧。'));
+ assert(!legacyStory(state,scene.id).includes('moom-compose'));
+ assert.equal(state.backupSettings.dailyEnabled,false);
 });
-
 test('editable status text is role-specific, bounded, escaped, and never rewrites message timestamps',()=>{
  const state=createState(),scene=createScene(state,{title:'状态文字'}),entry=addSceneEntry(state,scene.id,'你好。','say'),time=entry.time;
  saveStatusText(state,scene.id,'assistant','<img src=x onerror=alert(1)>');saveStatusText(state,scene.id,'user','我'.repeat(700));
  assert.equal(scene.statusText.user.length,500);assert.equal(entry.time,time);assert.throws(()=>saveStatusText(state,scene.id,'tool','错误角色'),/有效/);
- const output=moom(state);assert(!output.includes('<img src=x'));assert(output.includes('data-moom-part="custom-text"'));
- scene.entries.push({...entry,id:'assistant',kind:'narration'});assert(moom(state).includes('&lt;img src=x'));
+ const output=legacyStory(state,state.moom.active);assert(!output.includes('<img src=x'));assert(output.includes('data-moom-part="custom-text"'));
+ scene.entries.push({...entry,id:'assistant',kind:'narration'});assert(legacyStory(state,state.moom.active).includes('&lt;img src=x'));
  const restored=normalizeState(JSON.parse(exportData(state)));assert.deepEqual(restored.moom.scenes[0].statusText,scene.statusText);
  delete scene.statusText;assert.deepEqual(normalizeMoom(state.moom).scenes[0].statusText,{assistant:'',user:''});
 });
@@ -66,5 +73,5 @@ test('invitation presentation escapes imported content, rejects nonlocal avatar 
  for(const output of [invitationEnvelope(data),invitationLetter(data)]){assert(!output.includes('<script>'));assert(!output.includes('<svg>'));assert(!output.includes('javascript:'));}
  assert(invitationLetter(data).includes('&lt;img onerror=x&gt;'));assert.equal(scene.premise,'<img onerror=x>');
  scene.status='ended';assert(invitationLetter(sceneInvitation(state,scene)).includes('重读这一幕'));
- const preview=createMoomPreview({invitation:true}),sample=createState();preview.seed(sample);assert.equal(sample.moom.scenes.find(s=>s.id===sample.moom.active).status,'invited');assert.equal(sample.sessions[0].messages.length,3);
+ const preview=createInvitationPreview(),sample=createState();preview.seed(sample);assert.equal(sample.moom.scenes.find(s=>s.id===sample.moom.active).status,'invited');assert.equal(sample.sessions[0].messages.length,3);
 });
