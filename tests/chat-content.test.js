@@ -39,3 +39,17 @@ test('voice and image quotations render safely without image captions or invente
  assert.equal(quote.kind,'image');assert.equal(messageExcerpt(image),'[图片]');assert(chat(s).includes('alt="引用图片"'));assert(!chat(s).includes('<span>照片名称'));
  addDraftMessage(s,'',[{id:'voice',name:'voice.wav',kind:'voice',voice:{fileId:'v',duration:5,peaks:[0,.5,1],transcript:''}}]);const html=chat(s);assert(html.includes('data-voice-key='));assert(html.includes('aria-label="语音进度"'));assert(!html.includes('voice-transcript-toggle'));
 });
+test('live rows omit side avatars while the header keeps a saved portrait',()=>{
+ const s=createState(),jpeg='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2w==',png='data:image/png;base64,iVBORw0KGgo=';
+ s.appearance.aiAvatar=jpeg;s.appearance.userAvatar=png;
+ s.sessions[0].messages=[{id:'live',role:'assistant',text:'<live>\nchar：那就慢一点吧。\nuser：好，陪我坐一会儿。\n</live>',time:1,attachments:[]}];
+ const n=normalizeState(JSON.parse(exportData(s))),html=chat(n);
+ assert.equal(n.appearance.aiAvatar,jpeg);assert.equal(n.appearance.userAvatar,png);
+ assert(!html.includes('conversation-live-avatar'));
+ assert(html.includes('那就慢一点吧'));assert(html.includes('好，陪我坐一会儿'));
+ assert(html.includes(`class="avatar peer-avatar"><img src="${jpeg}" alt="AI头像">`));
+ n.appearance.aiAvatar='';n.appearance.userAvatar='';
+ const empty=chat(n);
+ assert(empty.includes('class="avatar peer-avatar"><span>尘</span>'));
+ assert(!empty.includes('conversation-live-avatar'));
+});
