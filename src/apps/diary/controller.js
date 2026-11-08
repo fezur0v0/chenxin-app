@@ -1,4 +1,4 @@
-import { diary, diaryEditor, diaryMoodOptions, moodEditorSheet } from './view.js';
+import { diary, diaryEditor, diaryMoodOptions, moodEditor } from './view.js';
 import { diaryDate, validDiaryDate, diaryCalendar, shiftDiaryMonth, saveDiaryEntry, saveDiaryMood, updateDiaryMood, deleteDiaryMood, MOOD_POINT_LIMIT, MOOD_STROKE_LIMIT } from './model.js';
 import { bindDrawerDismiss, animateDrawerClose } from '../../drawer.js';
 const motionOk=()=>!matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -6,15 +6,11 @@ const EASE='cubic-bezier(.22,.8,.2,1)';
 export function createDiaryApp({app,getState,setState,persist,notify}) {
  const today=diaryDate(),ui={month:today.slice(0,7),selected:today};
  const dialog=document.createElement('dialog');dialog.className='diary-editor glass app-sheet bottom-sheet';dialog.setAttribute('aria-label','日记编辑');document.body.append(dialog);
- const moodDialog=document.createElement('dialog');moodDialog.className='diary-mood-sheet glass bottom-sheet';moodDialog.setAttribute('aria-label','心情');document.body.append(moodDialog);
  let editingId='',returnFocus,closing=false,revision=0;
- let moodReturn=null,moodClosing=false,moodRevision=0,moodState=null;
- const moodMotion=bindMoodMotion(moodDialog,{closed:()=>moodClosing,close:()=>finishMoodClose()});
- async function close(){if(!dialog.open||closing)return;closing=true;const current=revision;await animateDrawerClose(dialog);if(current!==revision)return;dialog.close();closing=false;}
+ let moodPane,moodState,moodReturn,writingScroll=0;
+ async function close(){if(moodState){closeMood();return;}if(!dialog.open||closing)return;closing=true;const current=revision;await animateDrawerClose(dialog);if(current!==revision)return;dialog.close();closing=false;}
  bindDrawerDismiss(dialog,{panel:()=>dialog.open&&!closing?dialog:null,close,backdrop:true});
  dialog.addEventListener('cancel',event=>{event.preventDefault();void close();});
- moodDialog.addEventListener('cancel',event=>{event.preventDefault();void closeMood();});
- moodDialog.addEventListener('close',()=>{moodRevision++;moodClosing=false;moodState=null;moodDialog.style.transform='';moodDialog.classList.remove('is-full');const target=moodReturn?.isConnected?moodReturn:dialog.querySelector('[data-diary-mood-add]');target?.focus({preventScroll:true});});
  function refresh(focusSelector) {
   const body=app.querySelector('.diary-app .desktop-app-body');if(!body)return;
   const scroller=app.querySelector('.page-content'),top=scroller.scrollTop;
@@ -36,6 +32,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());
   returnFocus=document.activeElement;editingId=entry?.id||'';
   dialog.innerHTML=diaryEditor(entry,ui.selected,getState());
+  moodPane=dialog.querySelector('.diary-mood-editor');
   const date=dialog.querySelector('[name=date]');date.required=true;date.min='0001-01-01';date.max='9999-12-31';
   dialog.querySelector('[name=title]').maxLength=80;
   dialog.showModal();dialog.querySelector('[data-diary-close]').focus({preventScroll:true});
@@ -55,42 +52,62 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   const options=dialog.querySelector('.diary-mood-options');if(!options)return;
   const left=options.scrollLeft;options.innerHTML=diaryMoodOptions(getState(),selected);options.scrollLeft=left;
  }
- function closeMood(){
-  if(!moodDialog.open||moodClosing)return;
-  moodClosing=true;const current=moodRevision;
-  moodMotion.snap('closed',()=>{if(current!==moodRevision)return;finishMoodClose();});
+ function switchMoodPane(opening,focus){
+  const scroll=dialog.querySelector('.drawer-scroll'),writing=dialog.querySelector('.diary-writing');
+  const height=scroll.getBoundingClientRect().height;
+  scroll.getAnimations().forEach(animation=>animation.cancel());
+  if(opening)writingScroll=scroll.scrollTop;
+  writing.hidden=opening;moodPane.hidden=!opening;
+  const incoming=opening?moodPane:writing;
+  const scrollRect=scroll.getBoundingClientRect();
+  const nextHeight=scrollRect.height;
+  const offsetTop=incoming.getBoundingClientRect().top-scrollRect.top+scroll.scrollTop;
+  if(motionOk()){
+   const offset=opening?'8px':'-5px';
+   incoming.animate([{opacity:.15,transform:'translateY('+offset+')'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:EASE});
+   if(Math.abs(height-nextHeight)>1)scroll.animate([{height:height+'px'},{height:nextHeight+'px'}],{duration:220,easing:EASE});
+  }
+  focus?.focus({preventScroll:true});
+  if(opening){
+   if(offsetTop<scroll.scrollTop||offsetTop>scroll.scrollTop+scroll.clientHeight-60)scroll.scrollTop=offsetTop;
+  }else scroll.scrollTop=writingScroll;
  }
- function finishMoodClose(){if(moodDialog.open)moodDialog.close();moodClosing=false;}
+ function closeMood(focus){
+  if(!moodState)return;
+  moodState.destroy();moodState=null;
+  const dragOffset=dialog.style.transform;dialog.style.transform='';
+  if(dragOffset&&motionOk())dialog.animate([{transform:dragOffset},{transform:'translateY(0)'}],{duration:220,easing:EASE});
+  const target=focus||(moodReturn?.isConnected?moodReturn:dialog.querySelector('[data-diary-mood-add]'));
+  switchMoodPane(false,target);moodPane.replaceChildren();moodReturn=null;
+ }
  function openMood(name){
+  if(moodState||closing)return false;
   const state=getState();
   const existing=name?(state.diaryMoods||[]).find(mood=>mood.name===name):null;
-  if(name&&!existing)return;
-  if(!existing&&(state.diaryMoods||[]).length>=12){notify('最多添加 12 个自定义心情。');return;}
-  moodRevision++;moodClosing=false;moodReturn=document.activeElement;
+  if(name&&!existing)return false;
+  if(!existing&&(state.diaryMoods||[]).length>=12){notify('最多添加 12 个自定义心情。');return false;}
+  moodReturn=document.activeElement;
   const color=existing?.color||'#f6a5b8';
   const legacy=existing&&!existing.strokes?.length?existing.drawing:'';
-  moodDialog.innerHTML=moodEditorSheet({title:existing?'修改心情':'新的心情',name:existing?.name||'',color,legacy,editing:!!existing});
-  moodDialog.setAttribute('aria-label',existing?'修改心情':'新的心情');
-  moodState=createMoodCanvas(moodDialog,{strokes:existing?.strokes||[],legacy:!!legacy,editing:!!existing,notify});
-  moodDialog.showModal();
-  moodMotion.open();
-  moodState.resize();
-  moodDialog.querySelector('[name=mood-name]')?.focus({preventScroll:true});
+  moodPane.innerHTML=moodEditor({title:existing?'修改心情':'新的心情',name:existing?.name||'',color,legacy,editing:!!existing});
+  moodState=createMoodCanvas(moodPane.querySelector('form'),{strokes:existing?.strokes||[],editing:!!existing,notify});
+  switchMoodPane(true,moodPane.querySelector('h2'));
+  moodState.resize();return true;
  }
  let press=null,suppressChip=false;
  function cancelPress(){if(press)clearTimeout(press.timer);press=null;}
  dialog.addEventListener('pointerdown',event=>{
   const chip=event.target.closest('[data-mood-custom]');if(!chip||event.button!==0)return;
-  cancelPress();
+  cancelPress();suppressChip=false;
   const checked=selectedMood();
-  press={name:chip.dataset.moodCustom,x:event.clientX,y:event.clientY,checked,fired:false,timer:setTimeout(()=>{if(!press)return;press.fired=true;suppressChip=true;moodDialog.dataset.ignoreClick='1';openMood(press.name);setTimeout(()=>delete moodDialog.dataset.ignoreClick,600);},500)};
+  press={name:chip.dataset.moodCustom,x:event.clientX,y:event.clientY,checked,fired:false,timer:setTimeout(()=>{if(!press)return;press.fired=openMood(press.name);suppressChip=press.fired;},500)};
  });
  dialog.addEventListener('pointermove',event=>{if(press&&Math.hypot(event.clientX-press.x,event.clientY-press.y)>8)cancelPress();});
  dialog.addEventListener('pointerup',()=>{if(press&&!press.fired)cancelPress();});
  dialog.addEventListener('pointercancel',cancelPress);
  dialog.addEventListener('contextmenu',event=>{
   const chip=event.target.closest('[data-mood-custom]');if(!chip)return;
-  event.preventDefault();const checked=selectedMood();cancelPress();suppressChip=true;press={checked,fired:true};moodDialog.dataset.ignoreClick='1';openMood(chip.dataset.moodCustom);setTimeout(()=>delete moodDialog.dataset.ignoreClick,600);
+  event.preventDefault();const checked=selectedMood();cancelPress();suppressChip=openMood(chip.dataset.moodCustom);if(suppressChip)press={checked,fired:true};
  });
  app.addEventListener('click',event=>{
   const button=event.target.closest('.diary-app button');if(!button)return;
@@ -119,6 +136,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
    if(previous)previous.checked=true;
    suppressChip=false;press=null;return;
   }
+  if(moodState&&moodPane.contains(event.target)){handleMoodClick(event);return;}
   if(event.target.closest('[data-diary-mood-add]')){openMood();return;}
   if(event.target.closest('[data-diary-close]')){void close();return;}
   if(event.target.closest('[data-diary-delete]')&&confirm('删除这篇日记？删除后无法恢复。')) {
@@ -127,15 +145,16 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   }
  },true);
  dialog.addEventListener('submit',event=>{
-  event.preventDefault();const entry=commit(state=>saveDiaryEntry(state,Object.fromEntries(new FormData(event.target))));
+  event.preventDefault();
+  if(event.target.id==='diary-mood-form'){saveMood();return;}
+  if(moodState)return;
+  const entry=commit(state=>saveDiaryEntry(state,Object.fromEntries(new FormData(event.target))));
   if(!entry)return;
   ui.month=entry.date.slice(0,7);ui.selected=entry.date;dialog.close();refresh(`[data-diary-edit="${CSS.escape(entry.id)}"]`);notify('日记已保存。');
  });
- dialog.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();dialog.querySelector('form').requestSubmit();}});
- dialog.addEventListener('close',()=>{if(dialog.open)return;revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());const target=returnFocus?.isConnected?returnFocus:app.querySelector(editingId?`[data-diary-edit="${CSS.escape(editingId)}"]`:'.diary-write');target?.focus({preventScroll:true});});
- moodDialog.addEventListener('click',event=>{
-  if(moodDialog.dataset.ignoreClick){delete moodDialog.dataset.ignoreClick;event.preventDefault();event.stopPropagation();return;}
-  if(event.target===moodDialog){const rect=moodDialog.getBoundingClientRect();if(event.clientY<rect.top||event.clientX<rect.left||event.clientX>rect.right)void closeMood();return;}
+ dialog.addEventListener('keydown',event=>{if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){event.preventDefault();dialog.querySelector(moodState?'#diary-mood-form':'#diary-entry-form').requestSubmit();}});
+ dialog.addEventListener('close',()=>{if(dialog.open)return;cancelPress();suppressChip=false;moodState?.destroy();moodState=null;moodReturn=null;revision++;closing=false;dialog.style.transform='';dialog.getAnimations().forEach(animation=>animation.cancel());const target=returnFocus?.isConnected?returnFocus:app.querySelector(editingId?`[data-diary-edit="${CSS.escape(editingId)}"]`:'.diary-write');target?.focus({preventScroll:true});});
+ function handleMoodClick(event){
   if(event.target.closest('[data-mood-close]')){void closeMood();return;}
   const swatch=event.target.closest('[data-mood-color]');
   if(swatch&&!moodState?.draggingColor()){moodState?.setColor(swatch.dataset.moodColor);moodState?.resetDelete();return;}
@@ -145,14 +164,15 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   if(event.target.closest('[data-mood-undo]')){moodState?.undo();return;}
   if(event.target.closest('[data-mood-clear]')){moodState?.clear();return;}
   if(event.target.closest('[data-mood-delete]')){moodState?.confirmDelete(removeMood);return;}
- });
- moodDialog.addEventListener('input',event=>{
+ }
+ dialog.addEventListener('input',event=>{
+  if(!moodState||!moodPane.contains(event.target))return;
   if(event.target.name==='mood-name')moodState?.syncSave();
   if(event.target.type==='range')moodState?.setBrush(event.target.value);
  });
- moodDialog.addEventListener('submit',event=>{
-  event.preventDefault();
-  const alert=moodDialog.querySelector('[role=alert]');alert.hidden=true;
+ function saveMood(){
+  if(!moodState)return;
+  const alert=moodPane.querySelector('[role=alert]');alert.hidden=true;
   const draft=moodState?.draft();if(!draft){alert.hidden=false;alert.textContent=moodState?.editing?'先画一笔，或撤销到原来的表情。':'先画一张脸吧。';return;}
   const previousName=moodState.previousName;
   const saved=commit(state=>previousName?updateDiaryMood(state,previousName,draft):saveDiaryMood(state,draft),alert);
@@ -161,22 +181,21 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   const next=!previousName||selected===previousName?saved.name:selected;
   replaceMoodOptions(next);
   refresh();
-  finishMoodClose();
+  closeMood(dialog.querySelector('.diary-mood-options input:checked'));
   notify(previousName?'心情已修改。':'心情已保存。');
-  dialog.querySelector('.diary-mood-options input:checked')?.focus();
- });
+ }
  function removeMood(){
-  const alert=moodDialog.querySelector('[role=alert]');alert.hidden=true;
+  const alert=moodPane.querySelector('[role=alert]');alert.hidden=true;
   const name=moodState?.previousName;if(!name)return;
   const saved=commit(state=>{deleteDiaryMood(state,name);return true;},alert);
   if(!saved)return;
   const selected=selectedMood()===name?'':selectedMood();
-  replaceMoodOptions(selected);refresh();finishMoodClose();notify('心情已删除。相关日记改为不标记，主页心情回到平静。');
+  replaceMoodOptions(selected);refresh();closeMood();notify('心情已删除。相关日记改为不标记，主页心情回到平静。');
  }
  return {ui};
 }
 
-function createMoodCanvas(dialog,{strokes,legacy,editing,notify}) {
+function createMoodCanvas(dialog,{strokes,editing,notify}) {
  const canvas=dialog.querySelector('canvas'),pad=dialog.querySelector('.diary-mood-pad'),ctx=canvas.getContext('2d');
  const name=dialog.querySelector('[name=mood-name]'),save=dialog.querySelector('.diary-mood-save');
  const undo=dialog.querySelector('[data-mood-undo]'),clearButton=dialog.querySelector('[data-mood-clear]');
@@ -215,9 +234,8 @@ function createMoodCanvas(dialog,{strokes,legacy,editing,notify}) {
   draw();
  }
  const observer=new ResizeObserver(()=>resize());observer.observe(pad);
- const theme=new MutationObserver(()=>{if(dialog.open)draw();});
+ const theme=new MutationObserver(draw);
  theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','style']});
- dialog.addEventListener('close',()=>{observer.disconnect();theme.disconnect();},{once:true});
  function point(event){
   const rect=canvas.getBoundingClientRect();
   const x=Math.max(0,Math.min(64,(event.clientX-rect.left)/rect.width*64));
@@ -254,6 +272,7 @@ function createMoodCanvas(dialog,{strokes,legacy,editing,notify}) {
  return {
   editing,previousName:editing?name.defaultValue:'',
   resize,resetDelete,syncSave:syncButtons,
+  destroy(){observer.disconnect();theme.disconnect();},
   draggingColor:()=>colorMoved,
   setColor(next){
    color=next;pad.style.setProperty('--mood',next);
@@ -280,83 +299,4 @@ function createMoodCanvas(dialog,{strokes,legacy,editing,notify}) {
    remove();
   },
  };
-}
-
-function bindMoodMotion(dialog,{closed,close}) {
- let mode='default',offset=0,defaultOffset=0,drag=null,suppressClick=false,settling=false;
- const apply=(y,animate)=>{
-  offset=Math.max(0,y);
-  dialog.classList.toggle('is-full',mode==='full'&&offset<=.5);
-  dialog.style.transition=animate&&motionOk()?`transform 300ms ${EASE},border-radius 300ms ${EASE}`:'none';
-  dialog.style.transform=`translate3d(0,${offset}px,0)`;
- };
- const place=()=>{
-  const previous={height:dialog.style.height,transform:dialog.style.transform,padding:dialog.style.paddingBottom,transition:dialog.style.transition};
-  dialog.style.transition='none';dialog.style.height='auto';dialog.style.paddingBottom='0px';
-  const natural=dialog.offsetHeight;
-  const visible=Math.min(natural,Math.round(window.innerHeight*.86));
-  defaultOffset=Math.max(0,window.innerHeight-visible);
-  dialog.style.height='100dvh';
-  dialog.style.paddingBottom=mode==='full'?'0px':`${defaultOffset}px`;
-  dialog.style.transform=previous.transform||`translate3d(0,${window.innerHeight}px,0)`;
-  dialog.style.transition=previous.transition;
-  if(!previous.height)dialog.style.transform=`translate3d(0,${window.innerHeight}px,0)`;
- };
- function snap(next,done){
-  if(next==='closed')settling=true;
-  mode=next==='closed'?mode:next;
-  dialog.style.paddingBottom=next==='full'?'0px':`${defaultOffset}px`;
-  dialog.style.transition='none';
-  dialog.style.transform=`translate3d(0,${offset}px,0)`;
-  dialog.offsetHeight;
-  const target=next==='closed'?window.innerHeight:next==='full'?0:defaultOffset;
-  dialog.classList.toggle('is-full',next==='full');
-  if(motionOk())dialog.style.transition=`transform 300ms ${EASE},border-radius 300ms ${EASE}`;
-  offset=target;dialog.style.transform=`translate3d(0,${target}px,0)`;
-  if(next!=='closed')return;
-  if(!motionOk()){done?.();return;}
-  const timer=setTimeout(()=>done?.(),340);
-  dialog.addEventListener('transitionend',event=>{if(event.propertyName!=='transform')return;clearTimeout(timer);done?.();},{once:true});
- }
- function track(event){
-  if(!drag||drag.id!==event.pointerId)return;
-  const dy=event.clientY-drag.y;
-  if(Math.abs(dy)>5)drag.moved=true;
-  const dt=event.timeStamp-drag.lastT;
-  if(dt>0)drag.vy=(event.clientY-drag.lastY)/dt;
-  drag.lastY=event.clientY;drag.lastT=event.timeStamp;
-  apply(Math.min(window.innerHeight,Math.max(0,drag.start+dy)),false);
- }
- function release(event){
-  if(!drag||(event&&drag.id!==event.pointerId))return;
-  document.removeEventListener('pointermove',track);
-  document.removeEventListener('pointerup',release);
-  document.removeEventListener('pointercancel',release);
-  const active=drag;drag=null;suppressClick=active.moved;
-  const dy=(event?.clientY??active.lastY)-active.y;
-  if(!active.moved){if(active.handle)snap(mode==='full'?'default':'full');return;}
-  if(!active.wasFull&&dy>0&&offset>=defaultOffset-1){snap(dy>90||active.vy>.5?'closed':'default',close);return;}
-  const visible=window.innerHeight-offset,full=window.innerHeight,rest=window.innerHeight-defaultOffset,mid=(rest+full)/2;
-  const goFull=active.vy<-.4?true:active.vy>.4?false:visible>mid;
-  snap(goFull?'full':'default');
- }
- dialog.addEventListener('pointerdown',event=>{
-  if(event.button!==0||closed()||settling||drag)return;
-  if(event.target.closest('[data-mood-close]'))return;
-  const handle=event.target.closest('[data-mood-handle]'),heading=event.target.closest('[data-mood-drag]');
-  if(!handle&&!heading)return;
-  if(event.target.closest('canvas,.diary-mood-colors,.diary-mood-pad'))return;
-  try{dialog.setPointerCapture(event.pointerId);}catch{}
-  dialog.style.transition='none';
-  drag={id:event.pointerId,y:event.clientY,start:offset,moved:false,handle:!!handle,wasFull:mode==='full',lastY:event.clientY,lastT:event.timeStamp,vy:0};
-  suppressClick=false;
-  document.addEventListener('pointermove',track);
-  document.addEventListener('pointerup',release);
-  document.addEventListener('pointercancel',release);
- });
- dialog.addEventListener('click',event=>{
-  if(event.target.closest('[data-mood-handle]')&&suppressClick){event.preventDefault();event.stopPropagation();suppressClick=false;}
- },true);
- window.addEventListener('resize',()=>{if(!dialog.open||closed())return;const next=mode;place();snap(next);});
- return {open(){settling=false;mode='default';place();offset=window.innerHeight;dialog.style.transition='none';dialog.style.transform=`translate3d(0,${offset}px,0)`;requestAnimationFrame(()=>requestAnimationFrame(()=>snap('default')));},snap,consumed:()=>suppressClick};
 }
