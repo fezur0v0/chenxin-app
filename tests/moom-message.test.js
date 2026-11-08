@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {splitMoomContent,renderMoomBody} from '../src/apps/moom/message.js';
 import {normalizeMoom} from '../src/apps/moom/model.js';
-import {splitLiveReply,conversationTimeline} from '../src/chat-content/live.js';
+import {splitLiveReply,conversationTimeline,estimateVoiceSeconds} from '../src/chat-content/live.js';
 import {chat,sessions} from '../src/views.js';
 import {createState} from '../src/store.js';
 
@@ -68,4 +69,63 @@ test('old stories appear inline, invitations are hidden, and the list still has 
  assert(!page.includes('data-invitation-action')&&!page.includes('data-story-action'));
  assert.equal((sessions(state,'窗边的旧记录').match(/data-open=/g)||[]).length,1);
  assert.equal(JSON.stringify(state),before);
+});
+
+test('special live messages keep field splits, and block chrome only appears on the user side',()=>{
+ const raw=`<live>
+char：[语音] 外面好冷|8秒
+user：[语音] 一二三四五六
+char：[图片] 路灯 &lt; 原样
+user：[图片] <img src=x>
+char：[转账] 52|奶茶|和蛋糕钱
+user：[转账] 52|奶茶钱|已收款
+char：[引用] 到家了吗|快到了|你呢
+user：[引用] 不想去|少糊弄我
+user：[拉黑] 你到底怎么了
+char：[拉黑] 你怎么不回消息
+user：[拒收] 旧写法也算拉黑
+[已读]
+</live>`;
+ const parts=splitLiveReply(raw);
+ const voice=parts.find(part=>part.kind==='voice'&&part.role==='assistant');
+ assert.equal(voice.text,'外面好冷');assert.equal(voice.seconds,8);
+ assert.equal(parts.find(part=>part.kind==='voice'&&part.role==='user').seconds,estimateVoiceSeconds('一二三四五六'));
+ const pending=parts.find(part=>part.kind==='transfer'&&part.role==='assistant');
+ assert.equal(pending.amount,'52');assert.equal(pending.note,'奶茶|和蛋糕钱');assert.equal(pending.status,'pending');
+ const done=parts.find(part=>part.kind==='transfer'&&part.role==='user');
+ assert.equal(done.note,'奶茶钱');assert.equal(done.status,'done');assert.equal(done.read,undefined);
+ assert.equal(parts.filter(part=>part.kind==='blocked').at(-1).read,true);
+ const quote=parts.find(part=>part.kind==='quote');
+ assert.equal(quote.quote,'到家了吗');assert.equal(quote.text,'快到了|你呢');
+ assert.equal(parts.filter(part=>part.kind==='blocked').length,2);
+ assert.equal(parts.find(part=>part.text==='你怎么不回消息').kind,'bubble');
+ const state=createState();state.persona.name='尘';state.home.userName='欣欣';
+ state.sessions[0].messages=[{id:'a',role:'assistant',time:1,text:raw,attachments:[]}];
+ const html=chat(state);
+ assert(html.includes('data-live-part="voice"'));
+ assert(html.includes('data-live-part="image"'));
+ assert(html.includes('data-live-part="transfer"'));
+ assert(html.includes('data-live-part="quote"'));
+ assert(html.includes('data-live-part="blocked"'));
+ assert(html.includes('¥52.00'));
+ assert(html.includes('奶茶|和蛋糕钱'));
+ assert(html.includes('已收款'));
+ assert(html.includes('查看语音内容'));
+ assert(html.includes('消息已发出，但被对方拉黑了'));
+ assert(html.includes('data-live-part="bubble">你怎么不回消息'));
+ assert(!html.includes('data-live-part="blocked">你怎么不回消息'));
+ assert.equal((html.match(/class="block-mark"/g)||[]).length,2);
+ assert(html.includes('&lt;img'));assert(!html.includes('<img src=x>'));
+ assert(html.includes('class="quote-name">欣欣</span>'));assert(html.includes('class="quote-name">尘</span>'));
+ assert(!html.includes('[拉黑]')&&!html.includes('[拒收]')&&!html.includes('[红包]'));
+});
+
+test('chat chrome css stays split by component and does not hard-code a candy color',()=>{
+ const css=readFileSync(new URL('../src/chat-content/style.css',import.meta.url),'utf8');
+ for(const title of ['文字气泡','语音条','引用框','图片描述','转账卡片','拉黑'])assert(css.includes(title),title);
+ for(const token of ['--bubble-other-fill','--bubble-user-fill','--accent','--tint','--warning','--live-voice-progress'])assert(css.includes(token),token);
+ assert(!/#[0-9a-f]{3,8}\b/i.test(css));
+ assert(css.includes('--voice-hit:44px'));
+ assert(css.includes('prefers-reduced-motion'));
+ assert(!css.includes('border-left:2px solid'));
 });

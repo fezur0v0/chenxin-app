@@ -12,28 +12,201 @@
 .reasoning-copy{margin-left:auto;padding:10px;min-height:44px;font-size:12px;color:var(--muted);border-radius:12px}
 .reasoning-tray .reasoning-content{min-height:80px;margin:0;padding:22px 7px 14px;border:0;border-radius:0;background:none;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.95;font:14px/1.95 var(--font-ui);color:var(--ink);user-select:text}
 .reasoning-content p+p{margin-top:16px}.reasoning-footnote{font:11px/1.6 var(--font-ui);color:var(--muted);padding:12px 7px 2px}
-.message-reply,.reply-snippet{position:relative;display:flex;align-items:center;gap:12px;min-width:0;padding:10px 12px;border:0;border-left:2px solid rgb(var(--tint) / .65);border-radius:2px 13px 13px 2px;text-align:left;background:rgb(var(--glass-tint) / calc(.13 * var(--glass-soften)));color:var(--muted);overflow:hidden}
-.message .message-reply{width:100%;min-height:58px;margin:0 0 10px;white-space:normal;font-family:var(--font-ui)}
-.reply-body{display:grid;gap:5px;min-width:0;flex:1}.reply-body strong{font-size:11px;line-height:1.5;font-weight:550;color:var(--ink)}.reply-body>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;font-size:12px;line-height:1.6}.reply-body small{font-size:10px;line-height:1.5;color:var(--muted)}
-.message-reply>img,.reply-snippet>img{width:40px;height:40px;object-fit:cover;border-radius:9px;flex-shrink:0}.message .message-reply.is-unavailable{opacity:.7}
-.reply-compose{display:flex;align-items:center;gap:6px;margin:0 0 13px;padding:0 0 12px;border-bottom:1px solid var(--hairline)}.reply-compose .reply-snippet{flex:1;background:none;padding:2px 10px}
+/* ===== 聊天卡片用色 =====
+   对方是冷灰玻璃，自己走 accent。改浓度和透度即可。
+   小字用 --quiet，比 --muted 更靠近正文色，夜间也读得清。
+   拉黑的颜色在全站主题里的 --warning，这里不要写色值。 */
+:root{
+  --quiet:color-mix(in srgb,var(--ink) 70%,var(--muted));
+  --bubble-other-ink:12%;
+  --bubble-other-alpha:.48;
+  --bubble-user-ink:32%;
+  --bubble-user-alpha:.84;
+  --bubble-radius:22px;
+  --bubble-tail:8px;
+  --bubble-pad-y:13px;
+  --bubble-pad-x:16px;
+  --row-gap:14px;
+  --bubble-other-fill:color-mix(in srgb,color-mix(in srgb,var(--muted) var(--bubble-other-ink),rgb(var(--glass-tint) / calc(var(--bubble-other-alpha) * var(--glass-soften)))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));
+  --bubble-user-fill:color-mix(in srgb,color-mix(in srgb,var(--accent) var(--bubble-user-ink),rgb(var(--glass-tint) / calc(var(--bubble-user-alpha) * var(--glass-soften)))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));
+  --bubble-other-rim:color-mix(in srgb,var(--muted) 18%,transparent);
+  --bubble-user-rim:color-mix(in srgb,var(--accent) 28%,transparent);
+}
+:root[data-theme=dark]{
+  --bubble-other-ink:8%;
+  --bubble-other-alpha:.86;
+  --bubble-user-ink:36%;
+  --bubble-user-alpha:.92;
+  --bubble-other-rim:rgb(255 255 255 / .12);
+  --bubble-user-rim:rgb(255 255 255 / .1);
+}
+
+/* ===== 文字气泡 =====
+   圆角、内边距、玻璃厚度都在上面的变量里。自己 / 对方只换填充和描边。 */
+.bubble{
+  padding:var(--bubble-pad-y) var(--bubble-pad-x);
+  border-radius:var(--bubble-radius);
+  border-bottom-left-radius:var(--bubble-tail);
+  background:var(--bubble-other-fill);
+  border:1px solid var(--bubble-other-rim);
+  box-shadow:inset 0 1px 0 var(--glass-glint),0 4px 16px rgb(var(--tint) / .06);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  font-size:14px;
+  line-height:1.65;
+}
+.user .bubble,
+.conversation-live-row.is-user .bubble{
+  background:var(--bubble-user-fill);
+  border-color:var(--bubble-user-rim);
+  border-bottom-left-radius:var(--bubble-radius);
+  border-bottom-right-radius:var(--bubble-tail);
+}
+.message .conversation-reply.bubble{
+  width:100%;
+  max-width:none;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:none;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+}
+.message .bubble.voice-only{
+  padding:0;
+  background:none;
+  border:0;
+  box-shadow:none;
+  backdrop-filter:none;
+  -webkit-backdrop-filter:none;
+  max-width:100%;
+}
+.message.is-reference-target .bubble{outline:2px solid rgb(var(--tint) / .65);outline-offset:5px;transition:outline-color 250ms}
+.message.is-reference-target{scroll-margin-block:40px}
+@supports not (backdrop-filter:blur(1px)){
+  .bubble{background:var(--solid);box-shadow:none}
+  .user .bubble,.conversation-live-row.is-user .bubble{background:var(--bubble-user-fill)}
+  .message .conversation-reply.bubble,.message .bubble.voice-only{background:none}
+}
+
+/* ===== 引用框 =====
+   嵌在主气泡里：上是名字和原文，下面才是回复。输入栏里的待发送引用用同一套。 */
+.quote-box{
+  --quote-radius:12px;
+  --quote-pad-y:9px;
+  --quote-pad-x:11px;
+  --quote-gap:10px;
+  --quote-fill:color-mix(in srgb,var(--ink) 8%,transparent);
+  display:block;
+  min-width:0;
+  margin:0 0 var(--quote-gap);
+  padding:var(--quote-pad-y) var(--quote-pad-x);
+  border:0;
+  border-radius:var(--quote-radius);
+  background:var(--quote-fill);
+  color:var(--quiet);
+  text-align:left;
+  overflow:hidden;
+}
+.user .quote-box,
+.conversation-live-row.is-user .quote-box{--quote-fill:color-mix(in srgb,var(--ink) 12%,transparent)}
+.quote-name,.reply-body strong{display:block;margin-bottom:3px;font-size:11px;line-height:1.5;font-weight:600;color:var(--ink)}
+.quote-src,.reply-body>span,.reply-body small{color:var(--quiet)}
+.quote-src{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:12px;line-height:1.5}
+.quote-body{font-size:14px;line-height:1.65;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+.message-reply,.reply-snippet{position:relative;display:flex;align-items:center;gap:12px;white-space:normal;font-family:var(--font-ui)}
+.message .message-reply{width:100%}
+.reply-body{display:grid;gap:5px;min-width:0;flex:1}
+.reply-body>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;font-size:12px;line-height:1.6}
+.reply-body small{font-size:11px;line-height:1.5}
+.message-reply>img,.reply-snippet>img{width:40px;height:40px;object-fit:cover;border-radius:9px;flex-shrink:0}
+.message .message-reply.is-unavailable{opacity:.7}
+.reply-compose{display:flex;align-items:center;gap:6px;margin:0 0 13px;padding:0 0 12px;border-bottom:1px solid var(--hairline)}
+.reply-compose .reply-snippet{flex:1}
 .reply-compose>button{flex-shrink:0;min-width:44px;min-height:44px;font-size:12px;color:var(--muted);border-radius:12px;padding:7px}
-.message.is-reference-target .bubble{outline:2px solid rgb(var(--tint) / .65);outline-offset:5px;transition:outline-color 250ms}.message.is-reference-target{scroll-margin-block:40px}
-.message .bubble.voice-only{padding:0;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;max-width:100%}
-.voice-message{--voice-progress:0%;width:min(var(--voice-width),calc(100vw - 94px));max-width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:23px;background:color-mix(in srgb,rgb(var(--glass-tint) / calc(.23 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));background-image:linear-gradient(145deg,rgb(255 255 255 / .09),transparent 65%);box-shadow:inset 0 1px 0 var(--glass-glint),0 5px 20px rgb(var(--tint) / .04);backdrop-filter:blur(var(--glass-blur)) saturate(135%);-webkit-backdrop-filter:blur(var(--glass-blur)) saturate(135%);white-space:normal;font-family:var(--font-ui)}
-.bubble>.voice-message:not(:first-child){margin-top:10px}.voice-player{display:flex;align-items:center;gap:9px;min-width:0}
-.voice-play{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;padding:0;border-radius:50%;color:var(--ink);background:rgb(var(--glass-tint) / calc(.13 * var(--glass-soften)));border:1px solid var(--hairline)}.voice-play svg{width:16px;height:16px;fill:currentColor;stroke-width:1.4}.voice-play[aria-pressed=true]{background:rgb(var(--tint) / .14)}
-.voice-seek{position:relative;display:flex;align-items:center;flex:1;min-width:34px;height:44px;border-radius:8px}.voice-wave{position:relative;display:block;width:100%;height:32px;overflow:hidden;color:var(--muted);opacity:.6}.voice-wave>svg,.voice-wave-fill>svg{display:block;width:100%;height:32px;fill:currentColor}.voice-wave-fill{position:absolute;inset:0;color:var(--accent);clip-path:inset(0 calc(100% - var(--voice-progress)) 0 0)}
-.voice-seek input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:44px;margin:0;touch-action:pan-y}.voice-seek:focus-within{outline:2px solid var(--accent);outline-offset:3px}.voice-seek:has(input:disabled){opacity:.75}
-.voice-time{flex-shrink:0;min-width:31px;font:12px/1.4 var(--font-ui);font-variant-numeric:tabular-nums;color:var(--ink);text-align:right}
-.voice-transcript-toggle{display:flex;align-items:center;gap:5px;min-height:44px;margin:1px 0 -3px;padding:8px 4px;font-size:11px;color:var(--muted)}.voice-transcript-toggle svg{width:12px;height:12px;transition:transform 180ms}.voice-transcript-toggle[aria-expanded=true] svg{transform:rotate(180deg)}
-.voice-transcript{white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;font:13px/1.8 var(--font-ui);padding:9px 3px 3px;border-top:1px solid var(--hairline)}
-.voice-status{font:11px/1.7 var(--font-ui);color:var(--muted);margin-top:8px}.voice-relink{min-height:44px;font-size:12px;padding:9px 0;color:var(--ink)}
-.voice-import-state{font-size:12px;color:var(--muted);padding:5px 3px 10px}.voice-message.is-loading .voice-play{animation:thought-breathe 1.2s ease-in-out infinite}
-.chat-tray .attachment-options{grid-template-columns:repeat(3,minmax(0,1fr));margin-inline:0;gap:8px}.chat-tray .attachment-options button{min-height:84px;padding:12px 4px;font-size:12px}
+
+/* ===== 语音条 =====
+   播放圆钮 + 竖条波形 + 秒数。已播用 --accent，未播用淡 tint。
+   线上文字语音没有真实进度，用 --live-voice-progress 让两种颜色同时看得见。 */
+.voice-message,.live-voice{
+  --voice-progress:0%;
+  --voice-hit:44px;
+  --voice-disc:32px;
+  --voice-bar-w:3px;
+  --voice-bar-gap:2.5px;
+  --voice-heard:var(--accent);
+  --voice-rest:color-mix(in srgb,var(--accent) 34%,var(--quiet));
+  --voice-play-ink:var(--accent-ink);
+}
+.live-voice{--live-voice-progress:46%;--voice-progress:var(--live-voice-progress)}
+.voice-message{
+  width:min(var(--voice-width),calc(100vw - 94px));
+  max-width:100%;
+  padding:var(--bubble-pad-y) var(--bubble-pad-x);
+  border:1px solid var(--bubble-other-rim);
+  border-radius:var(--bubble-radius);
+  background:var(--bubble-other-fill);
+  box-shadow:inset 0 1px 0 var(--glass-glint),0 4px 16px rgb(var(--tint) / .06);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+  white-space:normal;
+  font-family:var(--font-ui);
+}
+.message.user .voice-message{background:var(--bubble-user-fill);border-color:var(--bubble-user-rim)}
+.live-voice{display:flex;flex-direction:column;align-items:stretch;gap:10px;min-width:min(196px,100%);padding:12px 14px;text-align:left}
+.bubble>.voice-message:not(:first-child){margin-top:10px}
+.voice-player,.voice-row{display:flex;align-items:center;gap:10px;min-width:0}
+.voice-play{
+  position:relative;
+  display:grid;
+  place-items:center;
+  flex-shrink:0;
+  width:var(--voice-hit);
+  height:var(--voice-hit);
+  padding:0;
+  border:0;
+  border-radius:50%;
+  color:var(--voice-play-ink);
+  background:transparent;
+  box-shadow:none;
+}
+.voice-play::before{
+  content:"";
+  grid-area:1/1;
+  width:var(--voice-disc);
+  height:var(--voice-disc);
+  border-radius:50%;
+  background:var(--accent);
+}
+.voice-play svg{grid-area:1/1;position:relative;z-index:1;width:12px;height:12px;margin-left:1px;fill:currentColor;stroke:none}
+.voice-play[aria-pressed=true]::before,.voice-play:active::before{background:color-mix(in srgb,var(--accent) 68%,var(--ink))}
+.voice-seek{position:relative;display:flex;align-items:center;flex:1;min-width:72px;height:var(--voice-hit)}
+.voice-wave{position:relative;display:flex;align-items:center;gap:var(--voice-bar-gap);flex:1;height:22px;min-width:72px}
+.voice-wave>i,.voice-wave-fill>i{display:block;flex:0 0 auto;width:var(--voice-bar-w);height:var(--h,8px);border-radius:99px;background:var(--voice-rest)}
+.voice-wave-fill{position:absolute;inset:0;display:flex;align-items:center;gap:var(--voice-bar-gap);overflow:hidden;pointer-events:none;clip-path:inset(0 calc(100% - var(--voice-progress)) 0 0)}
+.voice-wave-fill>i{background:var(--voice-heard)}
+.voice-seek input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;margin:0;touch-action:pan-y}
+.voice-seek:focus-within{outline:2px solid var(--accent);outline-offset:3px}
+.voice-seek:has(input:disabled){opacity:.75}
+.voice-time,.voice-sec{flex-shrink:0;min-width:32px;font:12px/1.4 var(--font-ui);font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;opacity:.85}
+.voice-action,.voice-transcript-toggle{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;min-height:44px;padding:8px 10px;border:0;border-radius:12px;background:none;font-size:12px;color:var(--quiet)}
+.voice-transcript-toggle{margin:2px 0 0}
+.voice-action svg,.voice-transcript-toggle svg{width:12px;height:12px;color:var(--accent)}
+.live-voice[aria-expanded=true] .voice-action,.voice-transcript-toggle[aria-expanded=true]{color:var(--ink);background:rgb(var(--tint) / .16)}
+.voice-transcript,.live-voice-text{white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;width:100%;margin-top:2px;padding:10px 12px;border:1px solid var(--hairline);border-radius:14px;background:rgb(var(--glass-tint) / .5);font:13px/1.7 var(--font-ui);color:var(--quiet)}
+.voice-status{font:11px/1.7 var(--font-ui);color:var(--muted);margin-top:8px}
+.voice-relink{min-height:44px;font-size:12px;padding:9px 0;color:var(--ink)}
+.voice-import-state{font-size:12px;color:var(--muted);padding:5px 3px 10px}
+.voice-message.is-loading .voice-play{animation:thought-breathe 1.2s ease-in-out infinite}
+.chat-tray .attachment-options{grid-template-columns:repeat(3,minmax(0,1fr));margin-inline:0;gap:8px}
+.chat-tray .attachment-options button{min-height:84px;padding:12px 4px;font-size:12px}
 @media(max-height:550px){.chat-view>.reasoning-tray.bottom-sheet{max-height:var(--drawer-safe-height)}.reasoning-intro{padding-bottom:12px}.reasoning-tray .reasoning-content{padding-block:12px}}
-@media(prefers-reduced-motion:reduce){.reasoning-trigger.is-thinking>svg:first-child,.voice-message.is-loading .voice-play{animation:none}.voice-transcript-toggle svg,.message.is-reference-target .bubble{transition:none}}
-@supports not (backdrop-filter:blur(1px)){.voice-message{background:var(--solid)}}
+@media(prefers-reduced-motion:reduce){.reasoning-trigger.is-thinking>svg:first-child,.voice-message.is-loading .voice-play,.voice-play::before{animation:none}.message.is-reference-target .bubble,.voice-play::before{transition:none}}
+@supports not (backdrop-filter:blur(1px)){
+  .voice-message{background:var(--solid)}
+  .message.user .voice-message{background:var(--bubble-user-fill)}
+}
 
 .reasoning-tray>.drawer-heading{display:none}
 .message .bubble:empty{display:none}.message:has(.bubble:empty)>.message-meta{display:none}
@@ -57,19 +230,104 @@
 .chat-header-actions .preview-exit{display:grid;place-items:center;width:44px;height:44px;color:var(--ink);border-radius:50%}
 
 :root{--font-story:"Noto Serif SC","Songti SC",SimSun,serif}
-.message .conversation-reply.bubble{width:100%;max-width:none;padding:0;border:0;background:none;backdrop-filter:none;box-shadow:none}
 .message .conversation-reply.bubble::after{display:none}
 .conversation-prose{width:100%;padding:5px 2px;color:var(--ink);font:400 15px/2 var(--font-story);white-space:pre-wrap;overflow-wrap:anywhere}
 .conversation-prose h2{font:600 16px/1.6 var(--font-story);margin-bottom:6px}
 .conversation-prose .moom-prose+.moom-prose{margin-top:12px}
 .conversation-prose [data-moom-part=action]{color:var(--muted)}
-.conversation-live-row{display:flex;align-items:flex-start;gap:8px;margin:9px 0}
-.conversation-live-row.is-user{flex-direction:row-reverse;text-align:right}
-.conversation-live-row>div{min-width:0;max-width:calc(100% - 46px)}
+.conversation-live-row{display:flex;align-items:flex-end;gap:10px;margin:var(--row-gap) 0}
+.conversation-live-row.is-user{flex-direction:row-reverse}
+.conversation-live-row .live-stack{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0;max-width:min(78%,calc(100% - 46px))}
+.conversation-live-row.is-user .live-stack{align-items:flex-end}
 .conversation-live-row .conversation-live-avatar{width:30px;height:30px;flex-shrink:0}
 .conversation-live-avatar>span{font-size:14px}
-.conversation-live-row .conversation-live-bubble{max-width:100%;white-space:pre-wrap;text-align:left}
-.conversation-live-row.is-user .conversation-live-bubble{border-radius:18px 18px 4px 18px;background:color-mix(in srgb,rgb(var(--tint) / .18),transparent)}
-.conversation-live-row small,.conversation-live-center{color:var(--muted);font-size:11px}
-.conversation-live-center{text-align:center;margin:12px 0}
+.conversation-live-row .bubble{max-width:100%;text-align:left}
+.conversation-live-center{text-align:center;margin:12px 0;color:var(--muted);font-size:11px;line-height:1.5}
 .conversation-story-meta{color:var(--muted);font:11px/1.7 var(--font-ui);margin-top:6px}
+
+/* ===== 图片描述 =====
+   虚线框里直接放文字，不用再点开。自己和对方只差一层淡淡的 accent。 */
+.bubble.live-image{
+  --image-radius:18px;
+  min-width:148px;
+  max-width:220px;
+  padding:12px 14px;
+  border-width:1.5px;
+  border-style:dashed;
+  border-color:color-mix(in srgb,var(--accent) 55%,var(--muted));
+  border-radius:var(--image-radius);
+  background:rgb(var(--tint) / .08);
+  box-shadow:none;
+  font-size:13px;
+  line-height:1.65;
+  color:var(--ink);
+}
+.user .bubble.live-image,
+.conversation-live-row.is-user .bubble.live-image{
+  background:color-mix(in srgb,var(--accent) 12%,transparent);
+  border-color:color-mix(in srgb,var(--accent) 55%,transparent);
+}
+
+/* ===== 转账卡片 =====
+   顶栏、金额、备注、底部分隔后的状态。待收款是「收款 / 拒收」，备注末段写「已收款」才换成已收款。 */
+.live-transfer{
+  --transfer-width:206px;
+  --transfer-radius:20px;
+  --transfer-mark:40px;
+  width:min(var(--transfer-width),100%);
+  overflow:hidden;
+  border:1px solid var(--bubble-other-rim);
+  border-radius:var(--transfer-radius);
+  background:var(--bubble-other-fill);
+  box-shadow:inset 0 1px 0 var(--glass-glint),0 4px 16px rgb(var(--tint) / .06);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.conversation-live-row.is-user .live-transfer{background:var(--bubble-user-fill);border-color:var(--bubble-user-rim)}
+.transfer-head{padding:12px 14px 0;text-align:center;font-size:12px;letter-spacing:.04em;color:var(--quiet)}
+.transfer-body{display:flex;align-items:center;gap:12px;padding:10px 16px 14px}
+.transfer-mark{
+  display:grid;
+  place-items:center;
+  flex-shrink:0;
+  width:var(--transfer-mark);
+  height:var(--transfer-mark);
+  border:1px solid var(--hairline);
+  border-radius:50%;
+  background:rgb(var(--tint) / .18);
+  color:var(--muted);
+  font-size:18px;
+  font-weight:500;
+}
+.live-transfer.is-done .transfer-mark{background:rgb(var(--tint) / .1);opacity:.7}
+.transfer-copy{min-width:0}
+.transfer-amount{font-size:22px;font-weight:550;line-height:1.2;letter-spacing:-.02em;font-variant-numeric:tabular-nums;color:var(--ink)}
+.transfer-note{margin-top:4px;font-size:12px;line-height:1.45;color:var(--quiet);overflow-wrap:anywhere}
+.transfer-foot{display:flex;min-height:44px;border-top:1px solid var(--hairline);font-size:13px}
+.transfer-receive,.transfer-refuse,.transfer-done{flex:1;display:grid;place-items:center;padding:8px;text-align:center;font-weight:500}
+.transfer-receive{color:color-mix(in srgb,var(--accent) 58%,var(--ink))}
+.transfer-refuse{border-left:1px solid var(--hairline);color:var(--quiet)}
+.transfer-done{color:var(--quiet)}
+
+/* ===== 拉黑 =====
+   只出现在自己发出、被对方拦住的气泡上。感叹号在气泡左边，颜色只用 --warning。 */
+.block-row{display:flex;align-items:flex-end;gap:7px;max-width:100%}
+.block-mark{
+  --block-size:18px;
+  display:grid;
+  place-items:center;
+  flex-shrink:0;
+  width:var(--block-size);
+  height:var(--block-size);
+  margin-bottom:8px;
+  border-radius:50%;
+  background:var(--warning);
+  color:var(--warning-ink);
+  font-size:12px;
+  font-weight:700;
+  line-height:1;
+  box-shadow:0 2px 6px color-mix(in srgb,var(--warning) 40%,transparent);
+}
+.block-hint{margin:0;padding:0 2px;font-size:12px;line-height:1.45;color:var(--quiet);text-align:right}
+.live-read{margin:0;padding:0 4px;font-size:12px;line-height:1.4;color:var(--quiet)}
+.chat-preview-note{flex-wrap:wrap;padding:0 12px;text-align:center}

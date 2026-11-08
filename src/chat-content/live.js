@@ -1,6 +1,57 @@
 const liveTag=/<(\/?live)\s*>/gi;
 const rolePrefix=/^(char|user)\s*[:：]\s*/i;
 const centerPrefix=/^\[(时间|系统|拍一拍|撤回)\]\s*/;
+const specialPrefix=/^\[(语音|图片|转账|引用|拉黑|拒收)\]\s*/;
+
+function fields(value,count){
+ const parts=String(value||'').trim().split(/\s*[|｜]\s*/);
+ if(parts.length<=count)return parts.concat(Array(Math.max(0,count-parts.length)).fill(''));
+ return [...parts.slice(0,count-1),parts.slice(count-1).join('|')];
+}
+
+// 模型没写秒数时按字数估：大约四个字一秒，最短一秒。
+export function estimateVoiceSeconds(text){
+ const count=[...String(text||'').replace(/\s/g,'')].length;
+ return Math.max(1,Math.round(count/4)||1);
+}
+
+function voiceSeconds(raw,transcript){
+ const value=String(raw||'').trim();
+ const clock=/^(\d{1,3}):(\d{2})$/.exec(value);
+ if(clock)return Math.min(600,Number(clock[1])*60+Number(clock[2]));
+ const num=/^(\d+(?:\.\d+)?)\s*秒?$/.exec(value);
+ if(num)return Math.min(600,Math.max(1,Math.round(Number(num[1]))));
+ return estimateVoiceSeconds(transcript);
+}
+
+function parseBubble(role,body){
+ const special=specialPrefix.exec(body);
+ if(!special)return {kind:'bubble',role,text:body};
+ const type=special[1],rest=body.slice(special[0].length).trim();
+ if(type==='语音'){
+  const [words,seconds]=fields(rest,2);
+  return {kind:'voice',role,text:words,seconds:voiceSeconds(seconds,words)};
+ }
+ if(type==='图片')return {kind:'image',role,text:rest};
+ if(type==='转账'){
+  const [amount,noteRaw]=fields(rest,2);
+  const pieces=noteRaw?noteRaw.split(/\s*[|｜]\s*/):[];
+  const done=pieces.length>1&&pieces.at(-1)==='已收款';
+  return {kind:'transfer',role,amount,note:done?pieces.slice(0,-1).join('|'):noteRaw,status:done?'done':'pending',text:amount?`转账 ${amount}`:'转账'};
+ }
+ if(type==='引用'){
+  const [quote,reply]=fields(rest,2);
+  return {kind:'quote',role,quote,text:reply};
+ }
+ // 拉黑只画在自己发出去被拦的那一侧。写在角色身上时，只留正文。
+ if(role==='user')return {kind:'blocked',role,text:rest};
+ return {kind:'bubble',role,text:rest};
+}
+
+function appendLine(current,line){
+ const key=current.kind==='transfer'?'note':'text';
+ current[key]=current[key]?`${current[key]}\n${line}`:line;
+}
 
 function onlineRows(body){
  const rows=[];
@@ -11,12 +62,13 @@ function onlineRows(body){
   const prefix=rolePrefix.exec(line),center=centerPrefix.exec(line);
   if(center){rows.push({kind:'center',text:line.slice(center[0].length)});current=null;continue;}
   if(prefix||!current){
-   current={kind:'bubble',role:prefix?.[1].toLowerCase()==='user'?'user':'assistant',text:prefix?line.slice(prefix[0].length):line};
+   const role=prefix?.[1].toLowerCase()==='user'?'user':'assistant';
+   current=parseBubble(role,prefix?line.slice(prefix[0].length):line);
    rows.push(current);
    if(current.role==='user')lastUser=current;
-  }else current.text+=(current.text?'\n':'')+line;
+  }else appendLine(current,line);
  }
- return rows.filter(row=>row.text);
+ return rows.filter(row=>row.text||row.quote||row.kind==='voice'||row.kind==='transfer');
 }
 
 export function splitLiveReply(text){

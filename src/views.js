@@ -4,7 +4,7 @@ import {renderMoomBody,splitMoomContent} from './apps/moom/message.js';
 import {conversationTimeline,savedStoryScenes,splitLiveReply} from './chat-content/live.js';
 import {backupPanel} from './backup/view.js';
 import {musicIcon} from './apps/music/icons.js';
-import {reasoningTrigger,reasoningSheet,replyPreview,messageAttachments} from './chat-content/view.js';
+import {reasoningTrigger,reasoningSheet,replyPreview,messageAttachments,renderLiveRow} from './chat-content/view.js';
 import {formatVoiceTime} from './chat-content/model.js';
 import {expressionContents} from './expressions/view.js';
 import { drawerHeader } from './drawer.js';
@@ -30,9 +30,8 @@ function timelineMessage(state,session,message){
  const assistant=message.role==='assistant',formatted=assistant&&Boolean(message.text);
  const body=formatted?splitLiveReply(message.text).map(part=>{
   if(part.kind==='offline')return `<div class="conversation-prose">${renderMoomBody(part.text)}</div>`;
-  if(part.kind==='center')return `<p class="conversation-live-center">${escape(part.text.replace(/\b(char|user)\b/gi,(_,name)=>name.toLowerCase()==='char'?state.persona.name:state.home.userName))}</p>`;
-  const user=part.role==='user';
-  return `<div class="conversation-live-row ${user?'is-user':''}">${avatar(state,user?'user':'ai','conversation-live-avatar')}<div><div class="bubble conversation-live-bubble">${escape(part.text)}</div>${part.read?'<small>已读</small>':''}</div></div>`;
+  if(part.kind==='center')return `<p class="conversation-live-center" data-live-part="center">${escape(part.text.replace(/\b(char|user)\b/gi,(_,name)=>name.toLowerCase()==='char'?state.persona.name:state.home.userName))}</p>`;
+  return renderLiveRow(part,state);
  }).join(''):message.text?`<div class="message-text">${escape(message.text)}</div>`:'';
  const voiceOnly=!message.text&&!message.replyTo&&message.attachments?.length===1&&message.attachments[0].kind==='voice';
  return `<article class="message ${message.role}">${reasoningTrigger(message)}<div class="bubble ${formatted?'conversation-reply':''} ${voiceOnly?'voice-only':''}" tabindex="0" data-message-id="${escape(message.id)}" aria-label="${assistant?'AI 消息':'我的消息'}，长按或右键打开操作">${replyPreview(message.replyTo,session)}${body}${messageAttachments(message.attachments,message)}</div><div class="message-meta">${new Date(message.time).toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'})} · 仅保存本机</div></article>`;

@@ -19,7 +19,7 @@ test('chat preview backups preserve usable quotes and playable audio metadata',a
 
 test('preview changes and file removals stay isolated across preview instances',async()=>{
  const first=createChatPreview(),second=createChatPreview(),state=createState();first.seed(state);
- saveState(first.storage,state);assert.equal(loadState(first.storage).sessions[0].messages.length,4);
+ saveState(first.storage,state);assert.equal(loadState(first.storage).sessions[0].messages.length,5);
  assert.equal(loadState(second.storage).sessions[0].messages.length,0);
  const fileId=state.sessions[0].messages.flatMap(m=>m.attachments).find(a=>a.voice).voice.fileId;
  assert(await first.files(fileId));assert.equal(await second.files(fileId),undefined);

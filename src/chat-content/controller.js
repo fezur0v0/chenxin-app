@@ -50,6 +50,14 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
   }catch(e){if(ticket!==revision)return;loading=false;error=e.message?.includes('此浏览器')?e.message:'这段语音暂时无法播放，请重试或补回原音频。';paint();}
  }
  app.addEventListener('click',event=>{
+  const live=event.target.closest('[data-live-voice]');
+  if(live){
+   const text=live.parentElement?.querySelector('[data-live-voice-text]');
+   const open=live.getAttribute('aria-expanded')==='true';
+   live.setAttribute('aria-expanded',String(!open));
+   if(text)text.hidden=open;
+   return;
+  }
   const button=event.target.closest('[data-voice-action]');if(!button)return;
   const action=button.dataset.voiceAction,card=button.closest('[data-voice-key]');
   if(action==='import'){if(busy)return;relink=null;picker.value='';picker.click();return;}
