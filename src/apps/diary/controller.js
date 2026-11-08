@@ -238,30 +238,35 @@ function createMoodCanvas(dialog,{strokes,editing,notify}) {
  theme.observe(document.documentElement,{attributes:true,attributeFilter:['data-theme','style']});
  function point(event){
   const rect=canvas.getBoundingClientRect();
-  const x=Math.max(0,Math.min(64,(event.clientX-rect.left)/rect.width*64));
-  const y=Math.max(0,Math.min(64,(event.clientY-rect.top)/rect.height*64));
-  return [Math.round(x*10)/10,Math.round(y*10)/10];
+  const x=Math.round((event.clientX-rect.left)/rect.width*640)/10;
+  const y=Math.round((event.clientY-rect.top)/rect.height*640)/10;
+  // Match the guide's radius in the stored 64×64 coordinate system.
+  const radius=64*.42-brush/2;
+  return Math.hypot(x-32,y-32)<=radius?[x,y]:null;
  }
  canvas.addEventListener('pointerdown',event=>{
   if(event.button!==0||active)return;
+  const start=point(event);if(!start)return;
   if(drawing.length>=MOOD_STROKE_LIMIT){notify('笔画太多了，先撤销几笔。');return;}
   sizePop.hidden=true;dialog.querySelector('[data-mood-size]')?.setAttribute('aria-expanded','false');
   resetDelete();
   canvas.setPointerCapture(event.pointerId);
-  active={id:event.pointerId,points:[point(event)]};
+  active={id:event.pointerId,points:[start]};
   drawing.push({points:active.points,width:brush,erase:tool==='eraser'});
   draw();
  });
  canvas.addEventListener('pointermove',event=>{
   if(!active||active.id!==event.pointerId)return;
-  const next=point(event),last=active.points[active.points.length-1];
+  const next=point(event);
+  if(!next){active=null;return;}
+  const last=active.points[active.points.length-1];
   if(Math.hypot(next[0]-last[0],next[1]-last[1])<.6)return;
   if(active.points.length>=MOOD_POINT_LIMIT)active.points[active.points.length-1]=next;
   else active.points.push(next);
   draw();
  });
  const endStroke=event=>{if(active&&(!event||active.id===event.pointerId))active=null;};
- canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointercancel',endStroke);
+ canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointercancel',endStroke);canvas.addEventListener('lostpointercapture',endStroke);
  let colorDrag=null,colorMoved=false;
  const colors=dialog.querySelector('.diary-mood-colors');
  colors.addEventListener('pointerdown',event=>{if(event.pointerType!=='mouse'||event.button!==0)return;colorDrag={x:event.clientX,left:colors.scrollLeft};colorMoved=false;});

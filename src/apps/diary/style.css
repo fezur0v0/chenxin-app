@@ -46,9 +46,9 @@ dialog.diary-editor{position:fixed;inset:auto 0 0;margin:0 auto;max-width:none}
 .diary-mood-colors::-webkit-scrollbar{display:none}
 .diary-mood-swatch{width:28px;height:28px;flex:0 0 28px;border-radius:50%;scroll-snap-align:start;background:var(--swatch);border:2px solid var(--solid);box-shadow:0 0 0 1px var(--hairline)}
 .diary-mood-swatch[aria-pressed=true]{box-shadow:0 0 0 2px var(--swatch)}
-.diary-mood-pad{position:relative;width:100%;aspect-ratio:1;border-radius:24px;background:rgb(var(--glass-tint) / .45);border:1px solid var(--hairline);touch-action:none}
-.diary-mood-guide{position:absolute;inset:8%;border-radius:50%;pointer-events:none;background:color-mix(in srgb,var(--mood) 22%,transparent);border:1.5px dashed color-mix(in srgb,var(--mood) 55%,transparent)}
-.diary-mood-pad canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:crosshair;color:var(--ink)}
+.diary-mood-pad{--mood-guide-inset:8%;position:relative;width:100%;aspect-ratio:1;border-radius:24px;background:rgb(var(--glass-tint) / .45);border:1px solid var(--hairline)}
+.diary-mood-guide{position:absolute;inset:var(--mood-guide-inset);border-radius:50%;pointer-events:none;background:color-mix(in srgb,var(--mood) 22%,transparent);border:1.5px dashed color-mix(in srgb,var(--mood) 55%,transparent)}
+.diary-mood-pad canvas{position:absolute;inset:0;width:100%;height:100%;clip-path:circle(calc(50% - var(--mood-guide-inset)));touch-action:none;cursor:crosshair;color:var(--ink)}
 .diary-mood-legacy{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
 .diary-mood-tools{position:relative;display:flex;justify-content:center;margin-top:10px}
 .diary-mood-toolbar{display:flex;gap:2px;align-items:center;padding:4px;border-radius:99px;background:rgb(var(--glass-tint) / .7);border:1px solid var(--line);box-shadow:0 4px 14px rgb(0 0 0 / .08)}
