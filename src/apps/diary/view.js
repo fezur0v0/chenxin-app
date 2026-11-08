@@ -64,12 +64,11 @@ export function diaryEditor(entry,date,state) {
  <div class="diary-writing">
  ${field('标题（可选）','title',entry?.title||'','给这一天起个名字')}
  <label class="field"><span>日记</span><textarea name="content" rows="8" maxlength="12000" required placeholder="今天，有什么想留下的？">${escape(entry?.content||'')}</textarea></label>
- <footer class="diary-editor-footer">${entry?`<button type="button" class="diary-delete" data-diary-delete>${icon('trash')}<span>删除</span></button>`:'<span class="diary-local-hint">保存在本机</span>'}<button type="button" class="secondary" data-diary-close>取消</button><button type="submit" class="primary">保存</button></footer></div></form><div class="diary-mood-editor" hidden></div></div></div>`;
+ <footer class="diary-editor-footer">${entry?`<button type="button" class="diary-delete" data-diary-delete>${icon('trash')}<span>删除</span></button>`:'<span class="diary-local-hint">保存在本机</span>'}<button type="button" class="secondary" data-diary-close>取消</button><button type="submit" class="primary">保存</button></footer></div></form><div class="diary-mood-editor" role="region" aria-label="自定义心情" tabindex="-1" hidden></div></div></div>`;
 }
-export function moodEditor({title,name,color,legacy,editing}) {
+export function moodEditor({name,color,legacy,editing}) {
  const swatches=(MOOD_SWATCHES.includes(color)?MOOD_SWATCHES:[color,...MOOD_SWATCHES]).map(swatch=>`<button type="button" class="diary-mood-swatch" style="--swatch:${swatch}" data-mood-color="${swatch}" aria-label="颜色 ${swatch}" aria-pressed="${swatch===color}"></button>`).join('');
- return `<header class="diary-mood-heading"><h2 tabindex="-1">${escape(title)}</h2><button type="button" class="diary-mood-close" data-mood-close aria-label="返回日记">${icon('back')}</button></header>
- <form class="diary-mood-form" id="diary-mood-form">
+ return `<form class="diary-mood-form" id="diary-mood-form">
   <p class="diary-mood-error" role="alert" hidden></p>
   <label class="field"><span>名字</span><input name="mood-name" maxlength="12" autocomplete="off" placeholder="1–12 个字" value="${escape(name)}"></label>
   <div class="field"><span>颜色</span><div class="diary-mood-colors" aria-label="颜色">${swatches}</div></div>
@@ -79,7 +78,7 @@ export function moodEditor({title,name,color,legacy,editing}) {
   <div class="diary-mood-tools"><div class="diary-mood-size" hidden><span class="diary-brush-dot" style="width:4px;height:4px"></span><input type="range" min="1.5" max="10" step="0.5" value="4" aria-label="笔刷大小"><span class="diary-brush-dot" style="width:14px;height:14px"></span></div>
    <div class="diary-mood-toolbar" role="toolbar" aria-label="画板工具"><button type="button" data-mood-tool="pen" aria-label="画笔" aria-pressed="true">${toolSvg.pen}</button><button type="button" data-mood-tool="eraser" aria-label="橡皮擦" aria-pressed="false">${toolSvg.eraser}</button><button type="button" data-mood-size aria-label="笔刷大小" aria-expanded="false"><span class="diary-brush-dot" data-brush-dot></span></button><span class="sep" aria-hidden="true"></span><button type="button" data-mood-undo aria-label="撤销" disabled>${toolSvg.undo}</button><button type="button" data-mood-clear aria-label="清空" disabled>${toolSvg.clear}</button></div>
   </div>
-  <button class="primary diary-mood-save" type="submit">保存</button>
   ${editing?`<button type="button" class="diary-mood-delete" data-mood-delete>删除这个心情</button><p class="diary-mood-delete-note" data-mood-delete-note hidden>日记会保留正文，心情改为不标记。主页上的今日心情会回到平静。</p>`:''}
+  <footer class="diary-mood-footer"><button type="button" class="secondary" data-mood-close>取消</button><button class="primary diary-mood-save" type="submit">保存</button></footer>
  </form>`;
 }

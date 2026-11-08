@@ -89,9 +89,9 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   moodReturn=document.activeElement;
   const color=existing?.color||'#f6a5b8';
   const legacy=existing&&!existing.strokes?.length?existing.drawing:'';
-  moodPane.innerHTML=moodEditor({title:existing?'修改心情':'新的心情',name:existing?.name||'',color,legacy,editing:!!existing});
+  moodPane.innerHTML=moodEditor({name:existing?.name||'',color,legacy,editing:!!existing});
   moodState=createMoodCanvas(moodPane.querySelector('form'),{strokes:existing?.strokes||[],editing:!!existing,notify});
-  switchMoodPane(true,moodPane.querySelector('h2'));
+  switchMoodPane(true,moodPane);
   moodState.resize();return true;
  }
  let press=null,suppressChip=false;
