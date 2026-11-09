@@ -1,0 +1,34 @@
+/* The splash owns these tokens; changing its backdrop never changes the app theme. */
+.splash {
+  --splash-color: #e8edef;
+  --splash-fade: 550ms;
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  overflow: hidden;
+  isolation: isolate;
+  background-color: var(--splash-color);
+  background-image: var(--wall-image, none);
+  background-size: cover;
+  background-position: center;
+  transition: opacity var(--splash-fade) ease;
+  touch-action: none;
+}
+html[data-theme=dark] .splash { --splash-color: #171e25; }
+.splash canvas { display: block; width: 100%; height: 100%; }
+.splash.is-leaving { opacity: 0; pointer-events: none; }
+.splash-error {
+  position: absolute;
+  inset: auto 24px max(17%, env(safe-area-inset-bottom)) 24px;
+  margin: 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: var(--bg, #eceef3);
+  color: var(--ink, #353b48);
+  text-align: center;
+  font: 14px/1.8 var(--font-ui, sans-serif);
+}
+.splash-error a { color: inherit; display: inline-block; padding: 12px 20px; }
+@media (prefers-reduced-motion: reduce) {
+  .splash { transition: none; }
+}

@@ -45,19 +45,6 @@ SOFTWARE.
 
 ---
 
-## Opening assets
-
-`assets/distant-stroke.otf` (Distant Stroke Regular) was supplied by the
-repository owner for the opening screen and retains its original rights.
-The application does not relicense this font under Lucide's license above.
-
-`assets/splash-fog.svg` is independently authored procedural mist and droplets.
-`splash-fog.webp` is a rasterization of that SVG, used to avoid recalculating
-procedural filters on every startup.
-The user-provided reference photograph is not included in this repository.
-
----
-
 ## Cormorant Garamond
 
 `assets/fonts/cormorant-garamond-latin-*.woff2` are unmodified Latin subsets

@@ -105,7 +105,7 @@
 - `src/style.css`：主题、玻璃材质、布局与动效。
 - `src/drawer.js` / `src/drawer.css`：聊天、音乐、主页组件、日记和配置 App 共用的抽屉标题模板、关闭/拖动行为与材质。新增同类抽屉使用 bottom-sheet、drawerHeader、bindDrawerDismiss；小卡片可用 drawer-card，具体数据操作与焦点生命周期由各控制器负责。
 - `src/icons.js`：内部线条图标；`src/launcher-icons.js` / `src/launcher.css`：11 个 Nucleo Glass 入口图标、逐实例 SVG ID、共用外框与底部四列布局。
-- `src/splash.js` / `src/splash.css` / `assets/`：水雾开屏。
+- `src/splash/`：独立水波开屏（实现、样式、恢复机制与换壁纸说明）。
 - `legacy/`：旧桌面程序存档，不是当前入口。
 - `docs/architecture.md`：后续架构路线参考，不是已经实现的功能清单。
 - `tests/`：Node 内置测试。最近一轮 57 项通过。

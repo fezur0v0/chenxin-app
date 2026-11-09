@@ -17,7 +17,7 @@ import { acceptedHomeMood, diaryMoods } from './apps/diary/model.js';
 import { createPromptLibraries } from './apps/prompt-library/controller.js';
 import { createHomeEditor } from './home-editor.js';
 import { appView, findApp } from './apps/index.js';
-import { finishSplash } from './splash.js';
+import { finishSplash } from './splash/index.js';
 import { icon } from './icons.js';
 import { launcherIcon } from './launcher-icons.js';
 import { backButton } from './ui.js';
@@ -193,7 +193,7 @@ let shownDate=localDate();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&page==='home'&&shownDate!==localDate()){shownDate=localDate();render();}});
 render();
 
-finishSplash().catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});
+finishSplash({wallpaper:state.appearance.wallpaper}).catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});
 
 function rememberSelection(){const input=app.querySelector('[name=message]');if(input)selection={start:input.selectionStart,end:input.selectionEnd};}
 function resizeComposer(){const input=app.querySelector('[name=message]');if(!input)return;input.style.height='auto';const style=getComputedStyle(input),max=parseFloat(style.lineHeight)*6+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);input.style.height=`${Math.min(input.scrollHeight,max)}px`;input.style.overflowY=input.scrollHeight>max?'auto':'hidden';const footer=app.querySelector('.composer-wrap');if(footer)app.querySelector('.chat-view').style.setProperty('--composer-height',`${footer.getBoundingClientRect().height}px`);}
