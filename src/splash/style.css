@@ -15,8 +15,33 @@
   touch-action: none;
 }
 html[data-theme=dark] .splash { --splash-color: #171e25; }
-.splash canvas { display: block; width: 100%; height: 100%; }
-.splash.is-leaving { opacity: 0; pointer-events: none; }
+/* Native entrance is beneath the water. The shader refracts its visual copy;
+   pointer-events:none lets the real button receive touch and keyboard input. */
+.splash-enter {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  width: 96px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid rgb(80 98 111 / .2);
+  border-radius: 24px;
+  background: rgb(232 237 239 / .94);
+  color: #435461;
+  font: 400 15px/1 system-ui, sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.splash-enter:focus-visible { outline: 2px solid #637d90; outline-offset: 4px; }
+html[data-theme=dark] .splash-enter {
+  background: rgb(23 30 37 / .94);
+  border-color: rgb(213 225 234 / .25);
+  color: #d5e1ea;
+}
+.splash canvas { position: absolute; inset: 0; z-index: 2; display: block; width: 100%; height: 100%; pointer-events: none; }
+.splash.is-leaving { opacity: 0; }
 .splash-error {
   position: absolute;
   inset: auto 24px max(17%, env(safe-area-inset-bottom)) 24px;

@@ -21,4 +21,6 @@
     splash.append(error);
   }, 4000);
   splash.addEventListener('splash:dispose', () => clearTimeout(watchdog), { once: true });
+  // Once the interactive entrance is wired, staying on the water is intentional.
+  splash.addEventListener('splash:ready', () => clearTimeout(watchdog), { once: true });
 })();
