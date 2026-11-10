@@ -25,56 +25,29 @@ uniform sampler2D surface;
 uniform vec2 surfaceStep;
 uniform float time;
 
-vec2 slopeAt(vec2 position) {
-  vec4 encoded = texture2D(surface, position);
-  // Packed slopes interpolate linearly without requiring floating-point textures.
-  return (vec2(dot(encoded.rg, vec2(256. / 257., 1. / 257.)),
-                     dot(encoded.ba, vec2(256. / 257., 1. / 257.))) - .5) * 4.;
-}
-
-float reflection(vec3 normal, vec3 halfway) {
-  float alignment = max(dot(normal, halfway), 0.);
-  // Broad reflected light with a smaller, sharper glint on steep wave faces.
-  return .22 * pow(alignment, 18.) + .16 * pow(alignment, 64.);
+float heightAt(vec2 p) {
+  return texture2D(surface, p).r - 128. / 255.;
 }
 
 void main() {
-  vec2 aspect = size / min(size.x, size.y);
-  vec2 slope = slopeAt(uv);
-  // Slow, broad surface undulation gives still water a little life.
-  vec2 position = uv * aspect;
-  vec2 ambient = vec2(
-    cos(dot(position, vec2(3.2, 2.1)) - time * .28),
-    sin(dot(position, vec2(-1.8, 2.8)) + time * .21)) * .004;
-  vec3 normal = normalize(vec3(-(slope + ambient) * 1.8, 1.));
-  // Cover crop matches the CSS fallback, including portrait/landscape wallpapers.
+  vec2 p = vec2(uv.x, 1. - uv.y);
+  vec2 gradient = vec2(
+    heightAt(p + vec2(surfaceStep.x, 0.)) - heightAt(p - vec2(surfaceStep.x, 0.)),
+    heightAt(p + vec2(0., surfaceStep.y)) - heightAt(p - vec2(0., surfaceStep.y)));
   float cover = max(size.x / imageSize.x, size.y / imageSize.y);
   vec2 crop = size / (imageSize * cover);
-  vec2 refracted = clamp((uv - .5 - normal.xy * .065 / aspect) * crop + .5, .001, .999);
-  vec4 photo = texture2D(wallpaper, refracted);
-  vec3 base = mix(color, photo.rgb, hasImage * photo.a);
-  vec3 light = normalize(vec3(-.35, .5, 1.));
-  float diffuse = dot(normal, light) - light.z;
-  vec3 view = normalize(vec3((.5 - uv) * aspect * .16, 1.));
-  vec3 halfLight = normalize(light + view);
-  float reflected = reflection(normal, halfLight) - reflection(vec3(0., 0., 1.), halfLight);
-  // Dark water still catches light; losing a reflection must not crush it black.
-  float luminance = dot(base, vec3(.2126, .7152, .0722));
-  reflected = max(reflected, 0.) + min(reflected, 0.) * clamp(luminance * 1.2, .12, 1.);
-  // Approximate light focusing from curvature of this same simulated surface.
-  // Bright/dark bands travel with the waves, including overlaps and reflections.
-  vec2 dx = slopeAt(uv + vec2(surfaceStep.x, 0.)) - slopeAt(uv - vec2(surfaceStep.x, 0.));
-  vec2 dy = slopeAt(uv + vec2(0., surfaceStep.y)) - slopeAt(uv - vec2(0., surfaceStep.y));
-  float focusing = clamp(-(dx.x + dy.y) * 1.8, -.18, .28);
-  // Broad illumination passes beneath the tighter highlights on the surface.
-  vec2 lightCenter = vec2(.5 + .18 * cos(time * .07), .42 + .13 * sin(time * .09));
-  float lightPool = exp(-dot((uv - lightCenter) * aspect, (uv - lightCenter) * aspect) * 3.);
-  float crest = min(.11, max(0., dot(slope, vec2(.65, -.8)) - .012) * 1.1);
-  vec3 water = base * (1. + diffuse * .48 + focusing * .48)
-             + vec3(.92, .97, 1.) * reflected
-             + vec3(.035, .045, .055) * diffuse
-             + vec3(1., .98, .92) * (crest + lightPool * .018);
-  gl_FragColor = vec4(clamp(water, 0., 1.), 1.);
+  vec2 samplePoint = clamp((uv - .5) * crop + .5 + vec2(gradient.x, -gradient.y) * .42, .002, .998);
+  vec4 photo = texture2D(wallpaper, samplePoint);
+  vec3 water = mix(color, photo.rgb, hasImage * photo.a);
+  float illumination = (gradient.x + gradient.y) * 2.4;
+  water += illumination * vec3(1., .98, .92);
+  water += max(0., illumination - .045) * 5.5 * vec3(1., 1., .96);
+  float band = sin(dot(p, vec2(1.3, 1.)) * 2.6 - time * .2);
+  water += vec3(smoothstep(.78, 1., band) * .065);
+  vec2 sun = vec2(.5 + .22 * cos(time * .07), .36 + .18 * sin(time * .09));
+  float distanceToSun = length((p - sun) * vec2(1., 1.35));
+  water += vec3((1. - smoothstep(0., .55, distanceToSun)) * .055);
+  gl_FragColor = vec4(water, 1.);
 }`;
 
 export function createWater(host, { wallpaper = '', entry } = {}) {
@@ -83,7 +56,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
   const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
   if (!gl) return null;
   let program, buffer, texture, surfaceTexture, field, image, frame, render, observer;
-  let stopped = false, lastFrame = 0;
+  let stopped = false, lastFrame = 0, nextBreath = 0;
   const startedAt = performance.now();
   const shaders = [];
   const destroy = () => {
@@ -120,10 +93,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     const clamp = value => Math.max(0, Math.min(1, value));
     return {
       x: clamp((event.clientX - rect.left) / Math.max(1, rect.width)),
-      y: clamp(1 - (event.clientY - rect.top) / Math.max(1, rect.height)),
-      time: event.timeStamp,
-      pressure: event.pressure,
-      pointerType: event.pointerType,
+      y: clamp((event.clientY - rect.top) / Math.max(1, rect.height)),
     };
   };
   const down = event => {
@@ -136,12 +106,14 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     wake();
   };
   const move = event => {
-    const gesture = pointers.get(event.pointerId);
-    if (!gesture || !field || host.classList.contains('is-leaving')) return;
-    const samples = event.getCoalescedEvents?.() || [];
-    for (const sample of [...samples, event]) {
-      gesture.move(point(sample));
+    if (!field || host.classList.contains('is-leaving')) return;
+    let gesture = pointers.get(event.pointerId);
+    if (!gesture && event.pointerType === 'mouse' && event.buttons === 0) {
+      const rect = host.getBoundingClientRect();
+      gesture = createGesture(field, point(event), rect.width, rect.height, false);
+      pointers.set(event.pointerId, gesture);
     }
+    gesture?.move(point(event));
     wake();
   };
   const up = event => {
@@ -149,7 +121,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     pointers.delete(event.pointerId);
     if (host.hasPointerCapture(event.pointerId)) host.releasePointerCapture(event.pointerId);
   };
-  const pointerEvents = [['pointerdown', down], ['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up]];
+  const pointerEvents = [['pointerdown', down], ['pointermove', move], ['pointerup', up], ['pointercancel', up], ['lostpointercapture', up], ['pointerleave', event => { if (!host.hasPointerCapture(event.pointerId)) pointers.delete(event.pointerId); }]];
   // Render the backdrop + native entrance into one texture beneath the water.
   // The DOM button remains the real hit target and accessibility surface.
   const paintBackdrop = () => {
@@ -259,15 +231,13 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
       gl.uniform2f(uniforms.size, canvas.width, canvas.height);
       const resized = createSurface(rect.width, rect.height);
       if (!field || field.columns !== resized.columns || field.rows !== resized.rows) {
-        const initial = !field;
         field = resized;
         pointers.clear();
         gl.uniform2f(uniforms.surfaceStep, 1 / field.columns, 1 / field.rows);
-        if (initial) field.tap(.36, .59, .4);
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, field.columns, field.rows, 0, gl.RGBA, gl.UNSIGNED_BYTE, field.normals());
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, field.columns, field.rows, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, field.heights());
       }
       paintBackdrop();
     };
@@ -285,20 +255,18 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
       if (!host.isConnected || document.hidden) { destroy(); return; }
       if (!field) return;
       const elapsed = (now - lastFrame) / 1000;
-      // Ambient light uses at most 30 fps; touch waves retain full frame rate.
-      if (!field.active && elapsed < 1 / 30) {
-        frame = requestAnimationFrame(render);
-        return;
+      nextBreath -= elapsed;
+      if (nextBreath <= 0) {
+        field.breathe((2 + Math.random() * (field.columns - 4)) / field.columns,
+          (2 + Math.random() * (field.rows - 4)) / field.rows);
+        nextBreath = .4 + Math.random() * 1.3;
       }
-      const wasActive = field.active;
       field.advance(elapsed);
       lastFrame = now;
-      if (wasActive) {
-        gl.activeTexture(gl.TEXTURE1);
-        gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
-        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, field.columns, field.rows, gl.RGBA, gl.UNSIGNED_BYTE, field.normals());
-      }
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, field.columns, field.rows, gl.LUMINANCE, gl.UNSIGNED_BYTE, field.heights());
       gl.uniform1f(uniforms.time, (now - startedAt) / 1000);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
       frame = requestAnimationFrame(render);
