@@ -23,6 +23,7 @@ uniform vec2 imageSize;
 uniform float hasImage;
 uniform sampler2D surface;
 uniform vec2 surfaceStep;
+uniform float time;
 
 vec2 slopeAt(vec2 position) {
   vec4 encoded = texture2D(surface, position);
@@ -34,17 +35,22 @@ vec2 slopeAt(vec2 position) {
 float reflection(vec3 normal, vec3 halfway) {
   float alignment = max(dot(normal, halfway), 0.);
   // Broad reflected light with a smaller, sharper glint on steep wave faces.
-  return .17 * pow(alignment, 18.) + .09 * pow(alignment, 84.);
+  return .22 * pow(alignment, 18.) + .16 * pow(alignment, 64.);
 }
 
 void main() {
   vec2 aspect = size / min(size.x, size.y);
   vec2 slope = slopeAt(uv);
-  vec3 normal = normalize(vec3(-slope * 1.45, 1.));
+  // Slow, broad surface undulation gives still water a little life.
+  vec2 position = uv * aspect;
+  vec2 ambient = vec2(
+    cos(dot(position, vec2(3.2, 2.1)) - time * .28),
+    sin(dot(position, vec2(-1.8, 2.8)) + time * .21)) * .004;
+  vec3 normal = normalize(vec3(-(slope + ambient) * 1.8, 1.));
   // Cover crop matches the CSS fallback, including portrait/landscape wallpapers.
   float cover = max(size.x / imageSize.x, size.y / imageSize.y);
   vec2 crop = size / (imageSize * cover);
-  vec2 refracted = clamp((uv - .5 - normal.xy * .036 / aspect) * crop + .5, .001, .999);
+  vec2 refracted = clamp((uv - .5 - normal.xy * .065 / aspect) * crop + .5, .001, .999);
   vec4 photo = texture2D(wallpaper, refracted);
   vec3 base = mix(color, photo.rgb, hasImage * photo.a);
   vec3 light = normalize(vec3(-.35, .5, 1.));
@@ -60,9 +66,14 @@ void main() {
   vec2 dx = slopeAt(uv + vec2(surfaceStep.x, 0.)) - slopeAt(uv - vec2(surfaceStep.x, 0.));
   vec2 dy = slopeAt(uv + vec2(0., surfaceStep.y)) - slopeAt(uv - vec2(0., surfaceStep.y));
   float focusing = clamp(-(dx.x + dy.y) * 1.8, -.18, .28);
-  vec3 water = base * (1. + diffuse * .32 + focusing * .35)
+  // Broad illumination passes beneath the tighter highlights on the surface.
+  vec2 lightCenter = vec2(.5 + .18 * cos(time * .07), .42 + .13 * sin(time * .09));
+  float lightPool = exp(-dot((uv - lightCenter) * aspect, (uv - lightCenter) * aspect) * 3.);
+  float crest = min(.11, max(0., dot(slope, vec2(.65, -.8)) - .012) * 1.1);
+  vec3 water = base * (1. + diffuse * .48 + focusing * .48)
              + vec3(.92, .97, 1.) * reflected
-             + vec3(.035, .045, .055) * diffuse;
+             + vec3(.035, .045, .055) * diffuse
+             + vec3(1., .98, .92) * (crest + lightPool * .018);
   gl_FragColor = vec4(clamp(water, 0., 1.), 1.);
 }`;
 
@@ -73,6 +84,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
   if (!gl) return null;
   let program, buffer, texture, surfaceTexture, field, image, frame, render, observer;
   let stopped = false, lastFrame = 0;
+  const startedAt = performance.now();
   const shaders = [];
   const destroy = () => {
     if (stopped) return;
@@ -199,7 +211,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     const position = gl.getAttribLocation(program, 'position');
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    uniforms = Object.fromEntries(['size', 'color', 'wallpaper', 'imageSize', 'hasImage', 'surface', 'surfaceStep'].map(name => [name, gl.getUniformLocation(program, name)]));
+    uniforms = Object.fromEntries(['size', 'color', 'wallpaper', 'imageSize', 'hasImage', 'surface', 'surfaceStep', 'time'].map(name => [name, gl.getUniformLocation(program, name)]));
     const hex = getComputedStyle(host).getPropertyValue('--splash-color').trim();
     const color = /^#[a-f\d]{6}$/i.test(hex) ? hex.slice(1).match(/../g).map(part => parseInt(part, 16) / 255) : [.91, .93, .94];
     gl.uniform3fv(uniforms.color, color);
@@ -272,14 +284,24 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
       if (stopped) return;
       if (!host.isConnected || document.hidden) { destroy(); return; }
       if (!field) return;
-      field.advance((now - lastFrame) / 1000);
+      const elapsed = (now - lastFrame) / 1000;
+      // Ambient light uses at most 30 fps; touch waves retain full frame rate.
+      if (!field.active && elapsed < 1 / 30) {
+        frame = requestAnimationFrame(render);
+        return;
+      }
+      const wasActive = field.active;
+      field.advance(elapsed);
       lastFrame = now;
-      gl.activeTexture(gl.TEXTURE1);
-      gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
-      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
-      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, field.columns, field.rows, gl.RGBA, gl.UNSIGNED_BYTE, field.normals());
+      if (wasActive) {
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, field.columns, field.rows, gl.RGBA, gl.UNSIGNED_BYTE, field.normals());
+      }
+      gl.uniform1f(uniforms.time, (now - startedAt) / 1000);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      if (field.active) frame = requestAnimationFrame(render);
+      frame = requestAnimationFrame(render);
     };
     wake();
     return { destroy };
