@@ -15,7 +15,7 @@ export function createSurface(width, height) {
   let active = false;
   let quietSteps = 0;
 
-  function disturb(x, y, amplitude) {
+  function disturb(x, y, amplitude, pushX = 0, pushY = 0) {
     const radius = 1.45;
     const reach = Math.ceil(radius * 3);
     for (let row = Math.max(0, Math.floor(y) - reach); row <= Math.min(rows - 1, Math.ceil(y) + reach); row++) {
@@ -25,17 +25,22 @@ export function createSurface(width, height) {
         const displacement = amplitude * (1 - squared / 2) * Math.exp(-squared / 2);
         const index = row * columns + column;
         heights[index] = Math.max(-3, Math.min(3, heights[index] + displacement));
+        // A moving finger pushes water ahead and leaves a wake behind it.
+        // This signed impulse keeps travelling after the finger lifts/turns.
+        const along = ((column - x) * pushX + (row - y) * pushY) / radius;
+        velocities[index] = Math.max(-.5, Math.min(.5,
+          velocities[index] - amplitude * .12 * along * Math.exp(-squared / 2)));
       }
     }
     active = true;
     quietSteps = 0;
   }
 
-  function tap(x, y) {
-    disturb(x * (columns - 1), y * (rows - 1), -.65);
+  function tap(x, y, strength = 1) {
+    disturb(x * (columns - 1), y * (rows - 1), -.65 * strength);
   }
 
-  function stroke(from, to) {
+  function stroke(from, to, strength = 1) {
     const startX = from.x * (columns - 1), startY = from.y * (rows - 1);
     const dx = (to.x - from.x) * (columns - 1), dy = (to.y - from.y) * (rows - 1);
     const distance = Math.hypot(dx, dy);
@@ -43,10 +48,10 @@ export function createSurface(width, height) {
     // Swept, overlapping pressure, including long/coalesced pointer segments.
     // The injected energy follows distance, not pointer event frequency.
     const samples = Math.ceil(distance / .65);
-    const amplitude = -.13 * distance / samples;
+    const amplitude = -.13 * distance / samples * strength;
     for (let i = 1; i <= samples; i++) {
       const fraction = (i - .5) / samples;
-      disturb(startX + dx * fraction, startY + dy * fraction, amplitude);
+      disturb(startX + dx * fraction, startY + dy * fraction, amplitude, dx / distance, dy / distance);
     }
   }
 

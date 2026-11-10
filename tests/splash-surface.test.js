@@ -63,3 +63,36 @@ test('propagation is frame-rate independent and settles after repeated strokes',
   fast.tap(.5, .5);
   assert.equal(fast.active, true);
 });
+
+test('stroke force changes wave energy and repeated strong sweeps remain finite', () => {
+  const light = createSurface(390, 740), heavy = createSurface(390, 740);
+  const start = { x: .2, y: .5 }, end = { x: .8, y: .5 };
+  light.stroke(start, end, .5);
+  heavy.stroke(start, end, 2);
+  advance(light, .2);
+  advance(heavy, .2);
+  const energy = field => slopes(field).reduce((total, slope) => total + slope * slope, 0);
+  assert.ok(energy(heavy) > energy(light) * 10);
+  for (let i = 0; i < 100; i++) {
+    heavy.stroke(i % 2 ? start : end, i % 2 ? end : start, 3.63);
+    heavy.advance(1 / 120);
+  }
+  assert.ok(slopes(heavy).every(Number.isFinite));
+  advance(heavy, 60);
+  assert.equal(heavy.active, false);
+});
+
+test('a reversed stroke leaves opposite momentum even after the contact ends', () => {
+  const right = createSurface(390, 740), left = createSurface(390, 740);
+  const a = { x: .3, y: .5 }, b = { x: .7, y: .5 };
+  right.stroke(a, b);
+  left.stroke(b, a);
+  const first = slopes(right), reversed = slopes(left);
+  assert.ok(first.every((value, i) => Math.abs(value - reversed[i]) < .0001));
+  advance(right, .15);
+  advance(left, .15);
+  const moving = slopes(right), opposite = slopes(left);
+  assert.ok(moving.some((value, i) => Math.abs(value - opposite[i]) > .01));
+  assert.equal(right.active, true);
+  assert.equal(left.active, true);
+});

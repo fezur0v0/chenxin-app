@@ -1,4 +1,5 @@
 import { createSurface } from './surface.js';
+import { createGesture } from './gesture.js';
 
 const vertexSource = `
 attribute vec2 position;
@@ -21,26 +22,47 @@ uniform sampler2D wallpaper;
 uniform vec2 imageSize;
 uniform float hasImage;
 uniform sampler2D surface;
+uniform vec2 surfaceStep;
+
+vec2 slopeAt(vec2 position) {
+  vec4 encoded = texture2D(surface, position);
+  // Packed slopes interpolate linearly without requiring floating-point textures.
+  return (vec2(dot(encoded.rg, vec2(256. / 257., 1. / 257.)),
+                     dot(encoded.ba, vec2(256. / 257., 1. / 257.))) - .5) * 4.;
+}
+
+float reflection(vec3 normal, vec3 halfway) {
+  float alignment = max(dot(normal, halfway), 0.);
+  // Broad reflected light with a smaller, sharper glint on steep wave faces.
+  return .19 * pow(alignment, 18.) + .12 * pow(alignment, 110.);
+}
 
 void main() {
   vec2 aspect = size / min(size.x, size.y);
-  vec4 encoded = texture2D(surface, uv);
-  // Packed slopes interpolate linearly without requiring floating-point textures.
-  vec2 slope = (vec2(dot(encoded.rg, vec2(256. / 257., 1. / 257.)),
-                     dot(encoded.ba, vec2(256. / 257., 1. / 257.))) - .5) * 4.;
-  vec3 normal = normalize(vec3(-slope, 1.));
+  vec2 slope = slopeAt(uv);
+  vec3 normal = normalize(vec3(-slope * 1.65, 1.));
   // Cover crop matches the CSS fallback, including portrait/landscape wallpapers.
   float cover = max(size.x / imageSize.x, size.y / imageSize.y);
   vec2 crop = size / (imageSize * cover);
-  vec2 refracted = clamp((uv - .5 - normal.xy * .031 / aspect) * crop + .5, .001, .999);
+  vec2 refracted = clamp((uv - .5 - normal.xy * .042 / aspect) * crop + .5, .001, .999);
   vec4 photo = texture2D(wallpaper, refracted);
   vec3 base = mix(color, photo.rgb, hasImage * photo.a);
-  vec3 light = normalize(vec3(-.45, .65, 1.));
+  vec3 light = normalize(vec3(-.35, .5, 1.));
   float diffuse = dot(normal, light) - light.z;
-  vec3 halfLight = normalize(light + vec3(0., 0., 1.));
-  float glint = pow(max(dot(normal, halfLight), 0.), 28.);
-  float flatGlint = pow(halfLight.z, 28.);
-  vec3 water = base + vec3(diffuse * .20) + vec3(glint - flatGlint) * .085;
+  vec3 view = normalize(vec3((.5 - uv) * aspect * .16, 1.));
+  vec3 halfLight = normalize(light + view);
+  float reflected = reflection(normal, halfLight) - reflection(vec3(0., 0., 1.), halfLight);
+  // Dark water still catches light; losing a reflection must not crush it black.
+  float luminance = dot(base, vec3(.2126, .7152, .0722));
+  reflected = max(reflected, 0.) + min(reflected, 0.) * clamp(luminance * 1.2, .12, 1.);
+  // Approximate light focusing from curvature of this same simulated surface.
+  // Bright/dark bands travel with the waves, including overlaps and reflections.
+  vec2 dx = slopeAt(uv + vec2(surfaceStep.x, 0.)) - slopeAt(uv - vec2(surfaceStep.x, 0.));
+  vec2 dy = slopeAt(uv + vec2(0., surfaceStep.y)) - slopeAt(uv - vec2(0., surfaceStep.y));
+  float focusing = clamp(-(dx.x + dy.y) * 1.8, -.18, .28);
+  vec3 water = base * (1. + diffuse * .32 + focusing * .45)
+             + vec3(.92, .97, 1.) * reflected
+             + vec3(.035, .045, .055) * diffuse;
   gl_FragColor = vec4(clamp(water, 0., 1.), 1.);
 }`;
 
@@ -87,6 +109,9 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     return {
       x: clamp((event.clientX - rect.left) / Math.max(1, rect.width)),
       y: clamp(1 - (event.clientY - rect.top) / Math.max(1, rect.height)),
+      time: event.timeStamp,
+      pressure: event.pressure,
+      pointerType: event.pointerType,
     };
   };
   const down = event => {
@@ -94,20 +119,17 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
         (event.pointerType === 'mouse' && event.button !== 0) || host.classList.contains('is-leaving')) return;
     host.setPointerCapture(event.pointerId);
     const position = point(event);
-    pointers.set(event.pointerId, position);
-    field.tap(position.x, position.y);
+    const rect = host.getBoundingClientRect();
+    pointers.set(event.pointerId, createGesture(field, position, rect.width, rect.height));
     wake();
   };
   const move = event => {
-    let previous = pointers.get(event.pointerId);
-    if (!previous || !field || host.classList.contains('is-leaving')) return;
+    const gesture = pointers.get(event.pointerId);
+    if (!gesture || !field || host.classList.contains('is-leaving')) return;
     const samples = event.getCoalescedEvents?.() || [];
     for (const sample of [...samples, event]) {
-      const current = point(sample);
-      field.stroke(previous, current);
-      previous = current;
+      gesture.move(point(sample));
     }
-    pointers.set(event.pointerId, previous);
     wake();
   };
   const up = event => {
@@ -177,7 +199,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     const position = gl.getAttribLocation(program, 'position');
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    uniforms = Object.fromEntries(['size', 'color', 'wallpaper', 'imageSize', 'hasImage', 'surface'].map(name => [name, gl.getUniformLocation(program, name)]));
+    uniforms = Object.fromEntries(['size', 'color', 'wallpaper', 'imageSize', 'hasImage', 'surface', 'surfaceStep'].map(name => [name, gl.getUniformLocation(program, name)]));
     const hex = getComputedStyle(host).getPropertyValue('--splash-color').trim();
     const color = /^#[a-f\d]{6}$/i.test(hex) ? hex.slice(1).match(/../g).map(part => parseInt(part, 16) / 255) : [.91, .93, .94];
     gl.uniform3fv(uniforms.color, color);
@@ -228,6 +250,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
         const initial = !field;
         field = resized;
         pointers.clear();
+        gl.uniform2f(uniforms.surfaceStep, 1 / field.columns, 1 / field.rows);
         if (initial) field.tap(.36, .59);
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
