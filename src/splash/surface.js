@@ -1,7 +1,7 @@
-// A damped height field with closed, reflecting walls. Units are grid cells.
+// A damped height field with softly absorbing pool edges. Units are grid cells.
 const STEP = 1 / 120;
 const WAVE_SPEED_SQUARED = .09;
-const DAMPING = Math.exp(-.72 * STEP);
+const DAMPING = Math.exp(-1.8 * STEP);
 
 export function createSurface(width, height) {
   const scale = Math.min(100 / Math.min(width, height), 240 / Math.max(width, height));
@@ -11,6 +11,17 @@ export function createSurface(width, height) {
   const velocities = new Float32Array(heights.length);
   const next = new Float32Array(heights.length);
   const pixels = new Uint8Array(heights.length * 4);
+  const edgeRetention = new Float32Array(heights.length);
+  const edgeWidth = Math.min(columns, rows) * .12;
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      const distance = Math.min(x, y, columns - 1 - x, rows - 1 - y);
+      const edge = Math.max(0, 1 - distance / edgeWidth);
+      // A gradual sponge layer absorbs outgoing water before it meets the wall.
+      // Damp height and velocity together; retain a faint, brief reflected wave.
+      edgeRetention[y * columns + x] = Math.exp(-7 * edge * edge * STEP);
+    }
+  }
   let accumulator = 0;
   let active = false;
   let quietSteps = 0;
@@ -29,7 +40,7 @@ export function createSurface(width, height) {
         // This signed impulse keeps travelling after the finger lifts/turns.
         const along = ((column - x) * pushX + (row - y) * pushY) / radius;
         velocities[index] = Math.max(-.5, Math.min(.5,
-          velocities[index] - amplitude * .12 * along * Math.exp(-squared / 2)));
+          velocities[index] - amplitude * .065 * along * Math.exp(-squared / 2)));
       }
     }
     active = true;
@@ -71,8 +82,9 @@ export function createSurface(width, height) {
         // Nine-point Laplacian reduces the square-grid imprint on circular waves.
         const laplacian = (4 * cardinal + diagonal - 20 * center) / 6;
         const velocity = (velocities[index] + WAVE_SPEED_SQUARED * laplacian) * DAMPING;
-        velocities[index] = velocity;
-        next[index] = center + velocity;
+        const retention = edgeRetention[index];
+        velocities[index] = velocity * retention;
+        next[index] = (center + velocity) * retention;
         motion = Math.max(motion, Math.abs(velocity), Math.abs(laplacian));
       }
     }

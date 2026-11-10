@@ -22,7 +22,7 @@ function trace(duration, count, extras = {}) {
 test('the same path swept quickly pushes more water than a slow stroke', () => {
   const slow = trace(2000, 120), fast = trace(200, 12);
   assert.ok(fast.amount > slow.amount * 2);
-  assert.ok(fast.forces.every(value => value > 0 && value < 3.7));
+  assert.ok(fast.forces.every(value => value > 0 && value < 1.2));
 });
 
 test('integrated stroke force does not depend on event frequency', () => {

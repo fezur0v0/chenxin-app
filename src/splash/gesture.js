@@ -12,8 +12,8 @@ function pressureGain(point) {
 // Coordinates are normalized; speed uses CSS pixels, independent of render DPR.
 export function createGesture(field, start, width, height) {
   let previous = start;
-  let force = .32 * pressureGain(start);
-  field.tap(start.x, start.y, .72 * pressureGain(start));
+  let force = .20 * pressureGain(start);
+  field.tap(start.x, start.y, .40 * pressureGain(start));
 
   return {
     move(current) {
@@ -23,7 +23,7 @@ export function createGesture(field, start, width, height) {
       if (!Number.isFinite(elapsed) || elapsed <= 0) return;
       const distance = Math.hypot((current.x - previous.x) * width, (current.y - previous.y) * height);
       const speed = Math.min(2800, distance * 1000 / elapsed);
-      const target = (.32 + 2.1 * (1 - Math.exp(-speed / 750))) * pressureGain(current);
+      const target = (.20 + .95 * (1 - Math.exp(-speed / 950))) * pressureGain(current);
       // Integrate the exponential response over this segment, not once per event.
       const duration = elapsed / 1000;
       const decay = Math.exp(-duration / .045);

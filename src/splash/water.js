@@ -34,17 +34,17 @@ vec2 slopeAt(vec2 position) {
 float reflection(vec3 normal, vec3 halfway) {
   float alignment = max(dot(normal, halfway), 0.);
   // Broad reflected light with a smaller, sharper glint on steep wave faces.
-  return .19 * pow(alignment, 18.) + .12 * pow(alignment, 110.);
+  return .17 * pow(alignment, 18.) + .09 * pow(alignment, 84.);
 }
 
 void main() {
   vec2 aspect = size / min(size.x, size.y);
   vec2 slope = slopeAt(uv);
-  vec3 normal = normalize(vec3(-slope * 1.65, 1.));
+  vec3 normal = normalize(vec3(-slope * 1.45, 1.));
   // Cover crop matches the CSS fallback, including portrait/landscape wallpapers.
   float cover = max(size.x / imageSize.x, size.y / imageSize.y);
   vec2 crop = size / (imageSize * cover);
-  vec2 refracted = clamp((uv - .5 - normal.xy * .042 / aspect) * crop + .5, .001, .999);
+  vec2 refracted = clamp((uv - .5 - normal.xy * .036 / aspect) * crop + .5, .001, .999);
   vec4 photo = texture2D(wallpaper, refracted);
   vec3 base = mix(color, photo.rgb, hasImage * photo.a);
   vec3 light = normalize(vec3(-.35, .5, 1.));
@@ -60,7 +60,7 @@ void main() {
   vec2 dx = slopeAt(uv + vec2(surfaceStep.x, 0.)) - slopeAt(uv - vec2(surfaceStep.x, 0.));
   vec2 dy = slopeAt(uv + vec2(0., surfaceStep.y)) - slopeAt(uv - vec2(0., surfaceStep.y));
   float focusing = clamp(-(dx.x + dy.y) * 1.8, -.18, .28);
-  vec3 water = base * (1. + diffuse * .32 + focusing * .45)
+  vec3 water = base * (1. + diffuse * .32 + focusing * .35)
              + vec3(.92, .97, 1.) * reflected
              + vec3(.035, .045, .055) * diffuse;
   gl_FragColor = vec4(clamp(water, 0., 1.), 1.);
@@ -251,7 +251,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
         field = resized;
         pointers.clear();
         gl.uniform2f(uniforms.surfaceStep, 1 / field.columns, 1 / field.rows);
-        if (initial) field.tap(.36, .59);
+        if (initial) field.tap(.36, .59, .4);
         gl.activeTexture(gl.TEXTURE1);
         gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);

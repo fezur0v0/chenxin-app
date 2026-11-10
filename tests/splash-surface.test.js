@@ -13,28 +13,37 @@ function advance(surface, seconds, fps = 120) {
   for (let i = 0; i < seconds * fps; i++) surface.advance(1 / fps);
 }
 
-test('pool wall reflects a wave like a mirrored source outside the wall', () => {
-  const pool = createSurface(100, 100);
-  const extended = createSurface(200, 100);
-  pool.tap(5 / 99, 50 / 99);
-  extended.tap(105 / 199, 50 / 99);
-  extended.tap(95 / 199, 50 / 99);
-  advance(pool, .6);
-  advance(extended, .6);
-  const actual = slopes(pool), expected = slopes(extended);
-  let amplitude = 0;
-  for (let y = 20; y < 80; y++) {
-    for (let x = 1; x < 45; x++) {
-      for (let axis = 0; axis < 2; axis++) {
-        const a = actual[(y * 100 + x) * 2 + axis];
-        const b = expected[(y * 200 + x + 100) * 2 + axis];
-        assert.ok(Math.abs(a - b) < .001);
-        amplitude = Math.max(amplitude, Math.abs(a));
+test('the edge leaves only a faint return wave', () => {
+  const pool = createSurface(320, 320);
+  const extended = createSurface(640, 320);
+  pool.tap(20 / 99, 50 / 99);
+  extended.tap(120 / 199, 50 / 99);
+
+  // A matched open section lets us separate the return from the outgoing wave.
+  function measure() {
+    const actual = slopes(pool), open = slopes(extended);
+    let incident = 0, reflected = 0;
+    for (let y = 35; y <= 65; y++) {
+      for (let x = 14; x < 40; x++) {
+        for (let axis = 0; axis < 2; axis++) {
+          const a = actual[(y * 100 + x) * 2 + axis];
+          const b = open[(y * 200 + x + 100) * 2 + axis];
+          incident += b * b;
+          reflected += (a - b) ** 2;
+        }
       }
     }
-    assert.ok(Math.abs(actual[y * 100 * 2]) < .0001);
+    return { incident, reflected };
   }
-  assert.ok(amplitude > .005, 'the comparison includes a moving reflected wave');
+
+  advance(pool, .6);
+  advance(extended, .6);
+  const initial = measure();
+  advance(pool, .6);
+  advance(extended, .6);
+  const { reflected } = measure();
+  assert.ok(reflected > initial.reflected * 10, 'some motion returns from the edge');
+  assert.ok(reflected < initial.incident * .01, 'the return is much weaker than the outgoing wave');
 });
 
 test('swept strokes stay continuous with sparse or frequent pointer events', () => {
@@ -58,7 +67,7 @@ test('propagation is frame-rate independent and settles after repeated strokes',
     fast.stroke({ x: .05, y: .2 + (i % 7) / 10 }, { x: .95, y: .8 - (i % 7) / 10 });
     fast.advance(1 / 60);
   }
-  advance(fast, 60);
+  advance(fast, 8);
   assert.equal(fast.active, false);
   fast.tap(.5, .5);
   assert.equal(fast.active, true);
