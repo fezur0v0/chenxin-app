@@ -53,3 +53,19 @@ test('glass opacity supports both slider endpoints and preserves legacy settings
  }
  for(const [input,expected]of [[0,30],[101,100],[null,60]])assert.equal(normalizeState({...state,appearance:{...state.appearance,opacity:input}}).appearance.opacity,expected);
 });
+
+test('splash wallpaper migrates legacy images and stays independent through reload and reset',()=>{
+ const state=createState(),home='data:image/png;base64,aG9tZQ==',splash='data:image/jpeg;base64,c3BsYXNo';
+ state.appearance.wallpaper=home;
+ delete state.appearance.splashWallpaper;
+ const migrated=normalizeState(state);
+ assert.equal(migrated.appearance.splashWallpaper,home);
+ migrated.appearance.splashWallpaper=splash;
+ const restored=normalizeState(JSON.parse(JSON.stringify(migrated)));
+ assert.equal(restored.appearance.splashWallpaper,splash);
+ assert.equal(restored.appearance.wallpaper,home);
+ restored.appearance.splashWallpaper='';
+ assert.equal(normalizeState(restored).appearance.splashWallpaper,'');
+ restored.appearance.splashWallpaper='javascript:alert(1)';
+ assert.equal(normalizeState(restored).appearance.splashWallpaper,'');
+});

@@ -50,7 +50,7 @@ const sidebarItemMenu=createSidebarItemMenu({getState:()=>state,setState:value=>
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
 function saveNotice(text){if(persist())notify(text);}
-function applyAppearance(){const root=document.documentElement,a=state.appearance;root.dataset.theme=state.theme;root.style.setProperty('--accent',a.accent);const rgb=a.accent.slice(1).match(/../g).map(c=>parseInt(c,16));root.style.setProperty('--tint',rgb.join(' '));const luminance=rgb.map(c=>c/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4).reduce((sum,c,i)=>sum+c*[.2126,.7152,.0722][i],0);root.style.setProperty('--accent-ink',luminance>.179?'#000000':'#ffffff');root.style.setProperty('--glass-alpha',a.opacity/100);root.style.setProperty('--glass-blur',`${a.blur}px`);root.style.setProperty('--wall-image',a.wallpaper?`url("${a.wallpaper}")`:'none');root.dataset.wallpaper=String(Boolean(a.wallpaper));document.querySelector('meta[name=theme-color]').content=state.theme==='dark'?'#0c0d11':'#eceef3';}
+function applyAppearance(){const root=document.documentElement,a=state.appearance;root.dataset.theme=state.theme;root.style.setProperty('--accent',a.accent);const rgb=a.accent.slice(1).match(/../g).map(c=>parseInt(c,16));root.style.setProperty('--tint',rgb.join(' '));const luminance=rgb.map(c=>c/255).map(c=>c<=.04045?c/12.92:((c+.055)/1.055)**2.4).reduce((sum,c,i)=>sum+c*[.2126,.7152,.0722][i],0);root.style.setProperty('--accent-ink',luminance>.179?'#000000':'#ffffff');root.style.setProperty('--glass-alpha',a.opacity/100);root.style.setProperty('--glass-blur',`${a.blur}px`);root.style.setProperty('--wall-image',a.wallpaper?`url("${a.wallpaper}")`:'none');root.style.setProperty('--splash-image',a.splashWallpaper?`url("${a.splashWallpaper}")`:'none');root.dataset.wallpaper=String(Boolean(a.wallpaper));document.querySelector('meta[name=theme-color]').content=state.theme==='dark'?'#0c0d11':'#eceef3';}
 function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
@@ -130,7 +130,7 @@ function handleAction(e){
  else if(action==='persona')focusSettings('persona-settings');
  else if(action==='theme'){state.theme=state.theme==='dark'?'light':'dark';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='accent'){state.appearance.accent=target.dataset.color;persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
- else if(action==='clear-image'){const key=target.dataset.key;if(!['wallpaper','userAvatar','aiAvatar'].includes(key))return;state.appearance[key]='';persist();const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
+ else if(action==='clear-image'){const key=target.dataset.key;if(!['wallpaper','splashWallpaper','userAvatar','aiAvatar'].includes(key))return;const previous=state.appearance[key];state.appearance[key]='';if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;}
  else if(action==='mood'){const name=acceptedHomeMood(target.dataset.mood,diaryMoods(state));if(!name)return;state.home.mood=name;persist();render();}
  else if(action==='new'){newSession(state);composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;persist();goto('chat');app.querySelector('[name=message]').focus();}
  else if(action==='delete-session'){if(!confirm('删除这段会话？已收藏的记忆会保留。'))return;if(state.active===target.dataset.id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}state.sessions=state.sessions.filter(s=>s.id!==target.dataset.id);if(!state.sessions.length)newSession(state);if(!state.sessions.some(s=>s.id===state.active))state.active=state.sessions[0].id;persist();render();}
@@ -174,8 +174,8 @@ app.addEventListener('change',async e=>{
  }
  if(['accent','blur','opacity'].includes(t.name)&&t.closest('#appearance-settings'))persist();
  if(t.dataset.image && t.files[0]){
-   const key=t.dataset.image,previous=state.appearance[key];
-   try{const data=await compressImage(t.files[0],key==='wallpaper'?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
+   const key=t.dataset.image;if(!['wallpaper','splashWallpaper','userAvatar','aiAvatar'].includes(key))return;const previous=state.appearance[key];
+   try{const data=await compressImage(t.files[0],['wallpaper','splashWallpaper'].includes(key)?1440:256);state.appearance[key]=data;if(!persist()){state.appearance[key]=previous;return;}const y=app.querySelector('.page-content').scrollTop;render();app.querySelector('.page-content').scrollTop=y;notify('图片已保存。');}catch(error){notify(error.message);}
  }
 
 });
@@ -193,7 +193,7 @@ let shownDate=localDate();
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&page==='home'&&shownDate!==localDate()){shownDate=localDate();render();}});
 render();
 
-finishSplash({wallpaper:state.appearance.wallpaper}).catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});
+finishSplash({wallpaper:state.appearance.splashWallpaper}).catch(()=>{document.querySelector('#splash')?.remove();app.inert=false;});
 
 function rememberSelection(){const input=app.querySelector('[name=message]');if(input)selection={start:input.selectionStart,end:input.selectionEnd};}
 function resizeComposer(){const input=app.querySelector('[name=message]');if(!input)return;input.style.height='auto';const style=getComputedStyle(input),max=parseFloat(style.lineHeight)*6+parseFloat(style.paddingTop)+parseFloat(style.paddingBottom);input.style.height=`${Math.min(input.scrollHeight,max)}px`;input.style.overflowY=input.scrollHeight>max?'auto':'hidden';const footer=app.querySelector('.composer-wrap');if(footer)app.querySelector('.chat-view').style.setProperty('--composer-height',`${footer.getBoundingClientRect().height}px`);}

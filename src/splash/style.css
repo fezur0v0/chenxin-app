@@ -8,7 +8,7 @@
   overflow: hidden;
   isolation: isolate;
   background-color: var(--splash-color);
-  background-image: var(--wall-image, none);
+  background-image: var(--splash-image, none);
   background-size: cover;
   background-position: center;
   transition: opacity var(--splash-fade) ease;

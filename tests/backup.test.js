@@ -19,6 +19,7 @@ function fixture(){
  const attachment={id:'voice-one',name:'voice.wav',kind:'voice',size:voice.size,type:voice.type,voice:{fileId:'shared-voice',duration:1,peaks:[.1,.9],transcript:'提供的文字'}};
  addDraftMessage(state,'声音',[attachment]);addDraftMessage(state,'另一处引用',[{...attachment,id:'voice-two'}]);
  const album=saveAlbum(state.gallery,{name:'照片'});addUploadedPhotos(state.gallery,[{name:'图片',data:'data:image/png;base64,aGVsbG8=',time:1000}],album.id);
+ state.appearance.splashWallpaper='data:image/png;base64,c3BsYXNo';
  state.home.note='原有便签';state.backupSettings.dailyEnabled=false;return {state,media,track,song,voice};
 }
 const asFile=bundle=>new File([bundle.blob],'backup.zip',{type:'application/zip'});
@@ -28,6 +29,7 @@ test('portable ZIP restores media bytes, remaps IDs and preserves playlists, sha
  const f=fixture(),bundle=await createArchive(f.state,f.media.stores),preview=await inspectArchive(asFile(bundle)),destination=memoryMedia(),saved=storage();
  assert.equal(bundle.manifest.media.length,2);assert.equal(bundle.manifest.missing.length,0);assert.equal(mediaReferences(f.state).length,2);
  const restored=await restoreArchive(preview,{stores:destination.stores,storage:saved});
+ assert.equal(restored.appearance.splashWallpaper,f.state.appearance.splashWallpaper);
  const track=restored.music.tracks[0];assert.notEqual(track.id,f.track.id);assert.deepEqual(restored.music.queue,[track.id]);assert.deepEqual(restored.music.playlists[0].trackIds,[track.id]);assert.equal(restored.music.currentId,track.id);
  assert.deepEqual(new Uint8Array(await destination.maps.music.get(track.id).arrayBuffer()),new Uint8Array(await f.song.arrayBuffer()));
  const voices=restored.sessions[0].messages.map(m=>m.attachments[0].voice.fileId);assert.equal(voices[0],voices[1]);assert.notEqual(voices[0],'shared-voice');assert.deepEqual(new Uint8Array(await destination.maps.voice.get(voices[0]).arrayBuffer()),new Uint8Array(await f.voice.arrayBuffer()));
