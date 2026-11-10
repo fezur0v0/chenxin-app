@@ -1,4 +1,5 @@
-// Independently authored radial wave shader. No remote scripts, images or libraries.
+import { createSurface } from './surface.js';
+
 const vertexSource = `
 attribute vec2 position;
 varying vec2 uv;
@@ -14,46 +15,32 @@ precision highp float;
 precision mediump float;
 #endif
 varying vec2 uv;
-uniform float time;
 uniform vec2 size;
 uniform vec3 color;
 uniform sampler2D wallpaper;
 uniform vec2 imageSize;
 uniform float hasImage;
-uniform vec4 drops[16];
+uniform sampler2D surface;
 
-// Finite wave packets: a soft leading crest and fading trailing ripples.
-vec2 wave(vec2 point, vec2 origin, float age, float strength) {
-  if (age <= 0. || age > 4. || strength == 0.) return vec2(0.);
-  vec2 delta = point - origin;
-  float distance = length(delta);
-  float front = distance - age * .29;
-  float width = .045 + age * .014;
-  float envelope = exp(-pow(front / width, 2.)) * exp(-age * .65);
-  float phase = front * 170.;
-  float slope = (cos(phase) - sin(phase) * front / (width * width * 85.));
-  return delta / max(distance, .001) * slope * envelope * strength
-    * smoothstep(0., .12, age) * smoothstep(0., .025, distance);
-}
 void main() {
   vec2 aspect = size / min(size.x, size.y);
-  vec2 point = uv * aspect;
-  vec2 slope = vec2(0.);
-  for (int i = 0; i < 16; i++) {
-    slope += wave(point, drops[i].xy * aspect, time - drops[i].z, drops[i].w);
-  }
+  vec4 encoded = texture2D(surface, uv);
+  // Packed slopes interpolate linearly without requiring floating-point textures.
+  vec2 slope = (vec2(dot(encoded.rg, vec2(256. / 257., 1. / 257.)),
+                     dot(encoded.ba, vec2(256. / 257., 1. / 257.))) - .5) * 4.;
   vec3 normal = normalize(vec3(-slope, 1.));
   // Cover crop matches the CSS fallback, including portrait/landscape wallpapers.
   float cover = max(size.x / imageSize.x, size.y / imageSize.y);
   vec2 crop = size / (imageSize * cover);
-  vec2 refracted = clamp((uv - .5 + slope * .024 / aspect) * crop + .5, .001, .999);
+  vec2 refracted = clamp((uv - .5 - normal.xy * .031 / aspect) * crop + .5, .001, .999);
   vec4 photo = texture2D(wallpaper, refracted);
   vec3 base = mix(color, photo.rgb, hasImage * photo.a);
   vec3 light = normalize(vec3(-.45, .65, 1.));
   float diffuse = dot(normal, light) - light.z;
-  float glint = pow(max(dot(normal, normalize(light + vec3(0., 0., 1.))), 0.), 42.);
-  float flatGlint = pow(normalize(light + vec3(0., 0., 1.)).z, 42.);
-  vec3 water = base + vec3(diffuse * .24) + vec3(glint - flatGlint) * .12;
+  vec3 halfLight = normalize(light + vec3(0., 0., 1.));
+  float glint = pow(max(dot(normal, halfLight), 0.), 28.);
+  float flatGlint = pow(halfLight.z, 28.);
+  vec3 water = base + vec3(diffuse * .20) + vec3(glint - flatGlint) * .085;
   gl_FragColor = vec4(clamp(water, 0., 1.), 1.);
 }`;
 
@@ -62,7 +49,8 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
   canvas.setAttribute('aria-hidden', 'true');
   const gl = canvas.getContext('webgl', { alpha: false, antialias: false, depth: false, powerPreference: 'low-power' });
   if (!gl) return null;
-  let program, buffer, texture, image, frame, render, observer, stopped = false;
+  let program, buffer, texture, surfaceTexture, field, image, frame, render, observer;
+  let stopped = false, lastFrame = 0;
   const shaders = [];
   const destroy = () => {
     if (stopped) return;
@@ -77,35 +65,53 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     canvas.removeEventListener('webglcontextlost', lost);
     if (image) { image.onload = null; image.onerror = null; }
     if (texture) gl.deleteTexture(texture);
+    if (surfaceTexture) gl.deleteTexture(surfaceTexture);
+    field = null;
     if (buffer) gl.deleteBuffer(buffer);
     if (program) gl.deleteProgram(program);
     shaders.forEach(shader => gl.deleteShader(shader));
     canvas.remove();
     gl.getExtension('WEBGL_lose_context')?.loseContext();
   };
-  let started = performance.now(), cursor = 3, uniforms, loadedImage;
-  const drops = new Float32Array(16 * 4);
-  drops.set([.36, .59, 0, .18, .70, .36, .42, .13, .57, .80, .88, .085]);
+  let uniforms, loadedImage;
   const pointers = new Map();
-  const addDrop = (event, strength) => {
-    const rect = canvas.getBoundingClientRect();
-    drops.set([Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)), Math.max(0, Math.min(1, 1 - (event.clientY - rect.top) / rect.height)), (performance.now() - started) / 1000, strength], cursor * 4);
-    cursor = (cursor + 1) % 16;
-    if (!frame && render && !stopped) frame = requestAnimationFrame(render);
+  const wake = () => {
+    if (!frame && render && !stopped) {
+      lastFrame = performance.now();
+      frame = requestAnimationFrame(render);
+    }
+  };
+  const point = event => {
+    const rect = host.getBoundingClientRect();
+    const clamp = value => Math.max(0, Math.min(1, value));
+    return {
+      x: clamp((event.clientX - rect.left) / Math.max(1, rect.width)),
+      y: clamp(1 - (event.clientY - rect.top) / Math.max(1, rect.height)),
+    };
   };
   const down = event => {
-    if (event.target.closest('button, a') || (event.pointerType === 'mouse' && event.button !== 0) || host.classList.contains('is-leaving')) return;
+    if (!field || event.target.closest('button, a') ||
+        (event.pointerType === 'mouse' && event.button !== 0) || host.classList.contains('is-leaving')) return;
     host.setPointerCapture(event.pointerId);
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, time: performance.now() });
-    addDrop(event, .20);
+    const position = point(event);
+    pointers.set(event.pointerId, position);
+    field.tap(position.x, position.y);
+    wake();
   };
   const move = event => {
-    const last = pointers.get(event.pointerId), now = performance.now();
-    if (!last || now - last.time < 60 || Math.hypot(event.clientX - last.x, event.clientY - last.y) < 8) return;
-    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, time: now });
-    addDrop(event, .10);
+    let previous = pointers.get(event.pointerId);
+    if (!previous || !field || host.classList.contains('is-leaving')) return;
+    const samples = event.getCoalescedEvents?.() || [];
+    for (const sample of [...samples, event]) {
+      const current = point(sample);
+      field.stroke(previous, current);
+      previous = current;
+    }
+    pointers.set(event.pointerId, previous);
+    wake();
   };
   const up = event => {
+    if (event.type === 'pointerup') move(event);
     pointers.delete(event.pointerId);
     if (host.hasPointerCapture(event.pointerId)) host.releasePointerCapture(event.pointerId);
   };
@@ -141,12 +147,13 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
         ctx.strokeStyle = style.outlineColor; ctx.lineWidth = 2; ctx.stroke();
       }
     }
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, backdrop);
     gl.uniform2f(uniforms.imageSize, backdrop.width, backdrop.height);
     gl.uniform1f(uniforms.hasImage, 1);
-    if (!frame && render) frame = requestAnimationFrame(render);
+    wake();
   };
   const lost = event => { event.preventDefault(); destroy(); };
   try {
@@ -170,7 +177,7 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     const position = gl.getAttribLocation(program, 'position');
     gl.enableVertexAttribArray(position);
     gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    uniforms = Object.fromEntries(['time', 'size', 'color', 'wallpaper', 'imageSize', 'hasImage', 'drops[0]'].map(name => [name, gl.getUniformLocation(program, name)]));
+    uniforms = Object.fromEntries(['size', 'color', 'wallpaper', 'imageSize', 'hasImage', 'surface'].map(name => [name, gl.getUniformLocation(program, name)]));
     const hex = getComputedStyle(host).getPropertyValue('--splash-color').trim();
     const color = /^#[a-f\d]{6}$/i.test(hex) ? hex.slice(1).match(/../g).map(part => parseInt(part, 16) / 255) : [.91, .93, .94];
     gl.uniform3fv(uniforms.color, color);
@@ -184,6 +191,14 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([0, 0, 0, 255]));
     gl.uniform1i(uniforms.wallpaper, 0);
     gl.uniform2f(uniforms.imageSize, 1, 1);
+    surfaceTexture = gl.createTexture();
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.uniform1i(uniforms.surface, 1);
     // Match the app's local image policy; don't introduce external image requests.
     if (/^data:image\/(?:jpeg|png|webp);base64,[a-z\d+/=]+$/i.test(wallpaper)) {
       image = new Image();
@@ -202,11 +217,23 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     }
     const resize = () => {
       const rect = host.getBoundingClientRect();
+      if (!rect.width || !rect.height) return;
       const dpr = Math.min(devicePixelRatio || 1, 1.5, Math.min(1600, gl.getParameter(gl.MAX_TEXTURE_SIZE)) / Math.max(rect.width, rect.height));
       canvas.width = Math.max(1, Math.round(rect.width * dpr));
       canvas.height = Math.max(1, Math.round(rect.height * dpr));
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(uniforms.size, canvas.width, canvas.height);
+      const resized = createSurface(rect.width, rect.height);
+      if (!field || field.columns !== resized.columns || field.rows !== resized.rows) {
+        const initial = !field;
+        field = resized;
+        pointers.clear();
+        if (initial) field.tap(.36, .59);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, field.columns, field.rows, 0, gl.RGBA, gl.UNSIGNED_BYTE, field.normals());
+      }
       paintBackdrop();
     };
     host.append(canvas);
@@ -217,24 +244,21 @@ export function createWater(host, { wallpaper = '', entry } = {}) {
     entry?.addEventListener('focus', paintBackdrop);
     entry?.addEventListener('blur', paintBackdrop);
     canvas.addEventListener('webglcontextlost', lost);
-    started = performance.now();
     render = now => {
       frame = 0;
       if (stopped) return;
       if (!host.isConnected || document.hidden) { destroy(); return; }
-      // Keep shader time small even during long play sessions on mediump GPUs.
-      if (now - started > 30000) {
-        started += 30000;
-        for (let i = 0; i < 16; i++) { drops[i * 4 + 2] -= 30; if (drops[i * 4 + 2] < -4) drops[i * 4 + 3] = 0; }
-      }
-      gl.uniform1f(uniforms.time, (now - started) / 1000);
-      gl.uniform4fv(uniforms['drops[0]'], drops);
+      if (!field) return;
+      field.advance((now - lastFrame) / 1000);
+      lastFrame = now;
+      gl.activeTexture(gl.TEXTURE1);
+      gl.bindTexture(gl.TEXTURE_2D, surfaceTexture);
+      gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
+      gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, field.columns, field.rows, gl.RGBA, gl.UNSIGNED_BYTE, field.normals());
       gl.drawArrays(gl.TRIANGLES, 0, 6);
-      // Once the water settles, render nothing until input/resize/focus wakes it.
-      const age = (now - started) / 1000;
-      if (Array.from({ length: 16 }, (_, i) => i).some(i => drops[i * 4 + 3] > 0 && age - drops[i * 4 + 2] < 4)) frame = requestAnimationFrame(render);
+      if (field.active) frame = requestAnimationFrame(render);
     };
-    frame = requestAnimationFrame(render);
+    wake();
     return { destroy };
   } catch {
     destroy();
