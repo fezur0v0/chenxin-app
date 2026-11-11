@@ -13,31 +13,33 @@
 .reasoning-tray .reasoning-content{min-height:80px;margin:0;padding:22px 7px 14px;border:0;border-radius:0;background:none;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.95;font:14px/1.95 var(--font-ui);color:var(--ink);user-select:text}
 .reasoning-content p+p{margin-top:16px}.reasoning-footnote{font:11px/1.6 var(--font-ui);color:var(--muted);padding:12px 7px 2px}
 /* ===== 聊天卡片用色 =====
-   对方是冷灰玻璃，自己走 accent。改浓度和透度即可。
+   对方是中性白色毛玻璃，自己走 accent。深色模式使用中性烟灰。
    小字用 --quiet，比 --muted 更靠近正文色，夜间也读得清。
    拉黑的颜色在全站主题里的 --warning，这里不要写色值。 */
 :root{
   --quiet:color-mix(in srgb,var(--ink) 70%,var(--muted));
-  --bubble-other-ink:12%;
-  --bubble-other-alpha:.48;
-  --bubble-user-ink:32%;
-  --bubble-user-alpha:.84;
+  --bubble-neutral:255 255 255;
+  --bubble-other-alpha:.58;
+  --bubble-user-ink:24%;
+  --bubble-user-alpha:.66;
   --bubble-radius:22px;
   --bubble-tail:8px;
   --bubble-pad-y:13px;
   --bubble-pad-x:16px;
   --row-gap:14px;
-  --bubble-other-fill:color-mix(in srgb,color-mix(in srgb,var(--muted) var(--bubble-other-ink),rgb(var(--glass-tint) / calc(var(--bubble-other-alpha) * var(--glass-soften)))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));
+  --bubble-other-fill:color-mix(in srgb,rgb(var(--bubble-neutral) / calc(var(--bubble-other-alpha) * var(--glass-soften))),rgb(var(--bubble-neutral)) calc(var(--glass-solid) * 100%));
   --bubble-user-fill:color-mix(in srgb,color-mix(in srgb,var(--accent) var(--bubble-user-ink),rgb(var(--glass-tint) / calc(var(--bubble-user-alpha) * var(--glass-soften)))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));
-  --bubble-other-rim:color-mix(in srgb,var(--muted) 18%,transparent);
+  --bubble-other-rim:rgb(255 255 255 / .68);
+  --bubble-shadow:inset 0 1px 0 rgb(255 255 255 / .65),inset 0 -1px 0 rgb(255 255 255 / .18),0 4px 16px rgb(35 40 48 / .045);
   --bubble-user-rim:color-mix(in srgb,var(--accent) 28%,transparent);
 }
 :root[data-theme=dark]{
-  --bubble-other-ink:8%;
-  --bubble-other-alpha:.86;
+  --bubble-neutral:42 44 50;
+  --bubble-other-alpha:.72;
   --bubble-user-ink:36%;
-  --bubble-user-alpha:.92;
-  --bubble-other-rim:rgb(255 255 255 / .12);
+  --bubble-user-alpha:.76;
+  --bubble-other-rim:rgb(255 255 255 / .14);
+  --bubble-shadow:inset 0 1px 0 rgb(255 255 255 / .12),0 4px 16px rgb(0 0 0 / .1);
   --bubble-user-rim:rgb(255 255 255 / .1);
 }
 
@@ -49,9 +51,9 @@
   border-bottom-left-radius:var(--bubble-tail);
   background:var(--bubble-other-fill);
   border:1px solid var(--bubble-other-rim);
-  box-shadow:inset 0 1px 0 var(--glass-glint),0 4px 16px rgb(var(--tint) / .06);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
+  box-shadow:var(--bubble-shadow);
+  backdrop-filter:blur(18px) saturate(110%);
+  -webkit-backdrop-filter:blur(18px) saturate(110%);
   font-size:14px;
   line-height:1.65;
 }
@@ -85,7 +87,7 @@
 .message.is-reference-target .bubble{outline:2px solid rgb(var(--tint) / .65);outline-offset:5px;transition:outline-color 250ms}
 .message.is-reference-target{scroll-margin-block:40px}
 @supports not (backdrop-filter:blur(1px)){
-  .bubble{background:var(--solid);box-shadow:none}
+  .bubble{background:rgb(var(--bubble-neutral));box-shadow:none}
   .user .bubble,.conversation-live-row.is-user .bubble{background:var(--bubble-user-fill)}
   .message .conversation-reply.bubble,.message .bubble.voice-only{background:none}
 }
@@ -147,9 +149,9 @@
   border:1px solid var(--bubble-other-rim);
   border-radius:var(--bubble-radius);
   background:var(--bubble-other-fill);
-  box-shadow:inset 0 1px 0 var(--glass-glint),0 4px 16px rgb(var(--tint) / .06);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
+  box-shadow:var(--bubble-shadow);
+  backdrop-filter:blur(18px) saturate(110%);
+  -webkit-backdrop-filter:blur(18px) saturate(110%);
   white-space:normal;
   font-family:var(--font-ui);
 }
@@ -252,9 +254,9 @@
   padding:12px 14px;
   border-width:1.5px;
   border-style:dashed;
-  border-color:color-mix(in srgb,var(--accent) 55%,var(--muted));
+  border-color:rgb(140 145 154 / .38);
   border-radius:var(--image-radius);
-  background:rgb(var(--tint) / .08);
+  background:var(--bubble-other-fill);
   box-shadow:none;
   font-size:13px;
   line-height:1.65;
@@ -277,9 +279,9 @@
   border:1px solid var(--bubble-other-rim);
   border-radius:var(--transfer-radius);
   background:var(--bubble-other-fill);
-  box-shadow:inset 0 1px 0 var(--glass-glint),0 4px 16px rgb(var(--tint) / .06);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
+  box-shadow:var(--bubble-shadow);
+  backdrop-filter:blur(18px) saturate(110%);
+  -webkit-backdrop-filter:blur(18px) saturate(110%);
 }
 .conversation-live-row.is-user .live-transfer{background:var(--bubble-user-fill);border-color:var(--bubble-user-rim)}
 .transfer-head{padding:12px 14px 0;text-align:center;font-size:12px;letter-spacing:.04em;color:var(--quiet)}
