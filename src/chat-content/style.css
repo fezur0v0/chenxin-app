@@ -19,28 +19,26 @@
 :root{
   --quiet:color-mix(in srgb,var(--ink) 70%,var(--muted));
   --bubble-neutral:255 255 255;
-  --bubble-other-alpha:.58;
-  --bubble-user-ink:24%;
-  --bubble-user-alpha:.66;
+  --bubble-other-alpha:.18;
+  --bubble-user-ink:12%;
+  --bubble-user-alpha:var(--bubble-other-alpha);
   --bubble-radius:22px;
   --bubble-tail:8px;
   --bubble-pad-y:13px;
   --bubble-pad-x:16px;
   --row-gap:14px;
   --bubble-other-fill:color-mix(in srgb,rgb(var(--bubble-neutral) / calc(var(--bubble-other-alpha) * var(--glass-soften))),rgb(var(--bubble-neutral)) calc(var(--glass-solid) * 100%));
-  --bubble-user-fill:color-mix(in srgb,color-mix(in srgb,var(--accent) var(--bubble-user-ink),rgb(var(--glass-tint) / calc(var(--bubble-user-alpha) * var(--glass-soften)))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));
-  --bubble-other-rim:rgb(255 255 255 / .68);
-  --bubble-shadow:inset 0 1px 0 rgb(255 255 255 / .65),inset 0 -1px 0 rgb(255 255 255 / .18),0 4px 16px rgb(35 40 48 / .045);
-  --bubble-user-rim:color-mix(in srgb,var(--accent) 28%,transparent);
+  --bubble-user-tint:color-mix(in srgb,var(--accent) var(--bubble-user-ink),rgb(var(--bubble-neutral)));
+  --bubble-user-fill:color-mix(in srgb,color-mix(in srgb,var(--bubble-user-tint) calc(var(--bubble-user-alpha) * var(--glass-soften) * 100%),transparent),var(--bubble-user-tint) calc(var(--glass-solid) * 100%));
+  --bubble-other-rim:rgb(255 255 255 / .14);
+  --bubble-shadow:inset 0 1px 0 rgb(255 255 255 / .12),0 4px 18px rgb(35 40 48 / .025);
+  --bubble-user-rim:var(--bubble-other-rim);
 }
 :root[data-theme=dark]{
   --bubble-neutral:42 44 50;
-  --bubble-other-alpha:.72;
-  --bubble-user-ink:36%;
-  --bubble-user-alpha:.76;
-  --bubble-other-rim:rgb(255 255 255 / .14);
-  --bubble-shadow:inset 0 1px 0 rgb(255 255 255 / .12),0 4px 16px rgb(0 0 0 / .1);
-  --bubble-user-rim:rgb(255 255 255 / .1);
+  --bubble-other-alpha:.22;
+  --bubble-other-rim:rgb(255 255 255 / .07);
+  --bubble-shadow:inset 0 1px 0 rgb(255 255 255 / .045),0 4px 18px rgb(0 0 0 / .07);
 }
 
 /* ===== 文字气泡 =====
