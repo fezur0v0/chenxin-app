@@ -10,12 +10,14 @@
 }
 .launcher-tile>.launcher-glyph{width:72%;height:72%;overflow:visible;pointer-events:none}
 :root[data-theme=dark] .launcher-tile{
- --nc-gradient-1-color-1:#f4f5f7;--nc-gradient-1-color-2:#b9c0cc;--nc-gradient-2-color-1:#cfd4de;--nc-gradient-2-color-2:#848c9a;
- --launcher-solid:#30343c;
- --launcher-shadow:inset 0 1px 1px rgb(255 255 255 / .3),inset 0 -1px 2px rgb(0 0 0 / .25),0 5px 14px rgb(0 0 0 / .2);
- border-color:rgb(255 255 255 / .28);
- background:linear-gradient(145deg,rgb(77 81 90 / .7),rgb(37 41 49 / .6) 55%,rgb(52 57 67 / .65));background-color:rgb(29 32 39 / .45)
+ --nc-gradient-1-color-1:#c6cfdd;--nc-gradient-1-color-2:#8c9bb0;--nc-gradient-2-color-1:#b7c5d8;--nc-gradient-2-color-2:#71839c;--nc-light:#edf3ff;
+ --launcher-solid:#242a33;
+ --launcher-shadow:inset 0 1px 0 rgb(255 255 255 / .1),0 4px 12px rgb(0 0 0 / .09);
+ border-color:rgb(255 255 255 / .1);
+ background:linear-gradient(145deg,rgb(166 182 204 / .16),rgb(91 109 136 / .06) 55%,rgb(140 159 185 / .1));background-color:rgb(24 29 38 / .12)
 }
+:root[data-theme=dark] .launcher-tile [data-glass=blur]{opacity:.72}
+
 .home-app-launch:active .launcher-tile,.dock-launch:active .launcher-tile{filter:brightness(.9)}
 .nav-dock{position:relative;z-index:5;flex-shrink:0;padding:10px 28px calc(24px + env(safe-area-inset-bottom));background:none;container-type:inline-size}
 .bottom-nav{--launcher-size:clamp(44px,17cqw,64px);--dock-cell:calc((min(100cqw,480px) - 36px) / 4);display:grid;grid-template-columns:repeat(4,var(--dock-cell));gap:12px;width:fit-content;max-width:480px;margin:auto;padding:0;border:0;border-radius:0;background:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
