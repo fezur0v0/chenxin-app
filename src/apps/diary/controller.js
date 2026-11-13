@@ -174,10 +174,11 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   const cancel=event.target.closest('[data-mood-close]');
   if(cancel){afterRipple(cancel,()=>closeMood());return;}
   const swatch=event.target.closest('[data-mood-color]');
-  if(swatch&&!moodState?.draggingColor()){moodState?.setColor(swatch.dataset.moodColor);moodState?.resetDelete();return;}
+  if(swatch){moodState?.setColor(swatch.dataset.moodColor);moodState?.resetDelete();return;}
   if(event.target.closest('[data-mood-tool="pen"]')){moodState?.setTool('pen');return;}
   if(event.target.closest('[data-mood-tool="eraser"]')){moodState?.setTool('eraser');return;}
   if(event.target.closest('[data-mood-size]')){moodState?.toggleSize();return;}
+  if(event.target.closest('[data-mood-palette]')){moodState?.toggleColors();return;}
   if(event.target.closest('[data-mood-undo]')){moodState?.undo();return;}
   if(event.target.closest('[data-mood-clear]')){moodState?.clear();return;}
   if(event.target.closest('[data-mood-delete]')){moodState?.confirmDelete(removeMood);return;}
@@ -222,7 +223,14 @@ function createMoodCanvas(dialog,{strokes,editing,notify}) {
  const legacyImage=dialog.querySelector('.diary-mood-legacy');
  const original=strokes.map(stroke=>({points:stroke.points.map(point=>[point[0],point[1]]),width:stroke.width,erase:stroke.erase===true}));
  const drawing=original.map(stroke=>({points:stroke.points.map(point=>[...point]),width:stroke.width,erase:stroke.erase}));
- let tool='pen',brush=4,active=null,color=dialog.querySelector('[data-mood-color][aria-pressed=true]')?.dataset.moodColor||'#f6a5b8';
+ let tool='pen',brush=Number(sizeInput.value),active=null,color=dialog.querySelector('[data-mood-color][aria-pressed=true]')?.dataset.moodColor||'#f6a5b8';
+ const colors=dialog.querySelector('.diary-mood-colors'),paletteButton=dialog.querySelector('[data-mood-palette]'),sizeButton=dialog.querySelector('[data-mood-size]');
+ function closePanels(){sizePop.hidden=true;colors.hidden=true;sizeButton.setAttribute('aria-expanded','false');paletteButton.setAttribute('aria-expanded','false');}
+ dialog.addEventListener('pointerdown',event=>{if(!event.target.closest('.diary-mood-tools'))closePanels();});
+ dialog.addEventListener('keydown',event=>{
+  if(event.key!=='Escape'||(colors.hidden&&sizePop.hidden))return;
+  event.preventDefault();event.stopPropagation();const target=colors.hidden?sizeButton:paletteButton;closePanels();target.focus({preventScroll:true});
+ });
  const same=()=>JSON.stringify(drawing)===JSON.stringify(original);
  const penStroke=()=>drawing.some(stroke=>!stroke.erase);
  function paintDot(){const size=Math.max(4,brush*2.2);dot.style.width=`${size}px`;dot.style.height=`${size}px`;}
@@ -267,7 +275,7 @@ function createMoodCanvas(dialog,{strokes,editing,notify}) {
   if(event.button!==0||active)return;
   const start=point(event);if(!start)return;
   if(drawing.length>=MOOD_STROKE_LIMIT){notify('笔画太多了，先撤销几笔。');return;}
-  sizePop.hidden=true;dialog.querySelector('[data-mood-size]')?.setAttribute('aria-expanded','false');
+  closePanels();
   resetDelete();
   canvas.setPointerCapture(event.pointerId);
   active={id:event.pointerId,points:[start]};
@@ -286,26 +294,22 @@ function createMoodCanvas(dialog,{strokes,editing,notify}) {
  });
  const endStroke=event=>{if(active&&(!event||active.id===event.pointerId))active=null;};
  canvas.addEventListener('pointerup',endStroke);canvas.addEventListener('pointercancel',endStroke);canvas.addEventListener('lostpointercapture',endStroke);
- let colorDrag=null,colorMoved=false;
- const colors=dialog.querySelector('.diary-mood-colors');
- colors.addEventListener('pointerdown',event=>{if(event.pointerType!=='mouse'||event.button!==0)return;colorDrag={x:event.clientX,left:colors.scrollLeft};colorMoved=false;});
- dialog.addEventListener('pointermove',event=>{if(!colorDrag)return;const delta=event.clientX-colorDrag.x;if(Math.abs(delta)>4){colorMoved=true;colors.style.scrollSnapType='none';}colors.scrollLeft=colorDrag.left-delta;});
- dialog.addEventListener('pointerup',()=>{if(!colorDrag)return;colorDrag=null;colors.style.scrollSnapType='';setTimeout(()=>{colorMoved=false;},0);});
  function resetDelete(){const button=dialog.querySelector('[data-mood-delete]'),note=dialog.querySelector('[data-mood-delete-note]');if(!button)return;button.classList.remove('is-confirm');button.textContent='删除这个心情';if(note)note.hidden=true;button.dataset.confirm='';}
   paintDot();syncButtons();
  return {
   editing,previousName:editing?name.defaultValue:'',
   resize,resetDelete,syncSave:syncButtons,
   destroy(){observer.disconnect();theme.disconnect();},
-  draggingColor:()=>colorMoved,
   setColor(next){
    color=next;pad.style.setProperty('--mood',next);
+   paletteButton.style.setProperty('--swatch',next);
    for(const button of colors.querySelectorAll('[data-mood-color]'))button.setAttribute('aria-pressed',String(button.dataset.moodColor===next));
-   colors.querySelector('[aria-pressed=true]')?.scrollIntoView({inline:'nearest',block:'nearest'});
+   closePanels();paletteButton.focus({preventScroll:true});
   },
-  setTool(next){tool=next;dialog.querySelector('[data-mood-tool=pen]').setAttribute('aria-pressed',String(next==='pen'));dialog.querySelector('[data-mood-tool=eraser]').setAttribute('aria-pressed',String(next==='eraser'));sizePop.hidden=true;},
-  toggleSize(){sizePop.hidden=!sizePop.hidden;dialog.querySelector('[data-mood-size]').setAttribute('aria-expanded',String(!sizePop.hidden));},
-  setBrush(value){brush=Number(value);sizeInput.value=String(brush);paintDot();},
+  setTool(next){tool=next;dialog.querySelector('[data-mood-tool=pen]').setAttribute('aria-pressed',String(next==='pen'));dialog.querySelector('[data-mood-tool=eraser]').setAttribute('aria-pressed',String(next==='eraser'));closePanels();},
+  toggleSize(){const opening=sizePop.hidden;closePanels();sizePop.hidden=!opening;sizeButton.setAttribute('aria-expanded',String(opening));},
+  toggleColors(){const opening=colors.hidden;closePanels();colors.hidden=!opening;paletteButton.setAttribute('aria-expanded',String(opening));},
+  setBrush(value){const next=Number(value);if(!Number.isFinite(next))return;brush=Math.min(Number(sizeInput.max),Math.max(Number(sizeInput.min),next));sizeInput.value=String(brush);paintDot();},
   undo(){drawing.pop();draw();resetDelete();},
   clear(){drawing.splice(0,drawing.length);draw();resetDelete();},
   draft(){

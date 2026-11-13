@@ -38,10 +38,14 @@ dialog.diary-editor{position:fixed;inset:auto 0 0;margin:0 auto;max-width:none}
 .diary-mood-editor{padding:2px 2px 4px}
 .diary-mood-form .field{margin:8px 0}
 .diary-mood-error{font-size:12px;line-height:1.7;color:var(--ink)}
-.diary-mood-colors{display:flex;gap:10px;align-items:center;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;padding:4px 22px 4px 4px;margin:0 -4px;touch-action:pan-x;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(90deg,transparent,#000 12px,#000 calc(100% - 28px),transparent)}
+.diary-mood-colors{position:absolute;z-index:3;left:50%;bottom:58px;transform:translateX(-50%);display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;width:min(288px,100%);box-sizing:border-box;padding:10px;border-radius:20px;background:var(--solid);border:1px solid var(--line);box-shadow:0 4px 14px rgb(0 0 0 / .08)}
 .diary-mood-colors::-webkit-scrollbar{display:none}
-.diary-mood-swatch{width:28px;height:28px;flex:0 0 28px;border-radius:50%;scroll-snap-align:start;background:var(--swatch);border:2px solid var(--solid);box-shadow:0 0 0 1px var(--hairline)}
-.diary-mood-swatch[aria-pressed=true]{box-shadow:0 0 0 2px var(--swatch)}
+.diary-mood-swatch{position:relative;width:100%;height:36px;border-radius:10px}
+.diary-mood-swatch:before{content:"";position:absolute;inset:6px;border-radius:50%;background:var(--swatch);border:2px solid var(--solid);box-shadow:0 0 0 1px var(--hairline)}
+.diary-mood-swatch[aria-pressed=true]:before{box-shadow:0 0 0 2px var(--swatch)}
+.diary-mood-swatch:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.diary-mood-toolbar [data-mood-palette]{position:relative}
+.diary-color-dot{position:absolute;width:8px;height:8px;bottom:6px;right:6px;border-radius:50%;background:var(--swatch);border:1px solid var(--solid)}
 .diary-mood-pad{--mood-guide-inset:8%;position:relative;width:100%;aspect-ratio:1;border-radius:24px;background:rgb(var(--glass-tint) / .45);border:1px solid var(--hairline)}
 .diary-mood-guide{position:absolute;inset:var(--mood-guide-inset);border-radius:50%;pointer-events:none;background:color-mix(in srgb,var(--mood) 22%,transparent);border:1.5px dashed color-mix(in srgb,var(--mood) 55%,transparent)}
 .diary-mood-pad canvas{position:absolute;inset:0;width:100%;height:100%;clip-path:circle(calc(50% - var(--mood-guide-inset)));touch-action:none;cursor:crosshair;color:var(--ink)}
@@ -64,7 +68,3 @@ dialog.diary-editor{position:fixed;inset:auto 0 0;margin:0 auto;max-width:none}
 @media(prefers-reduced-motion:reduce){.diary-mood-chip:has(input:checked) .diary-mood-face{transition:none}}
 
 .diary-timeline-heading .diary-now{font-family:var(--font-en);font-size:14px;min-width:44px}
-@media(prefers-reduced-motion:no-preference){
- .diary-now{animation:diary-now-appear 180ms ease-out}
- @keyframes diary-now-appear{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
-}
