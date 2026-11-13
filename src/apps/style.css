@@ -10,7 +10,7 @@
 .home-app{min-width:0;--app-line:var(--ink)}
 .home-app-launch{width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;border:0;background:none;padding:4px 0 0;color:var(--app-line);border-radius:18px;font-family:var(--font-ui)}
 
-.home-app-name{font-size:clamp(10px,3.2cqw,12px);line-height:1.2;white-space:nowrap}
+.home-app .home-app-name{color:#fff;font-size:clamp(10px,3.2cqw,12px);line-height:1.2;white-space:nowrap}
 
 .home-editing .home-app .widget-remove{width:44px;height:44px;top:-12px;left:-12px}.home-app .widget-remove svg{width:13px;height:13px}
 .desktop-app-page{padding-top:0!important;padding-bottom:calc(24px + env(safe-area-inset-bottom))!important}
