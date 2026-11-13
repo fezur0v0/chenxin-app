@@ -142,16 +142,16 @@ dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
 .color-presets{flex-wrap:wrap}
 
 /* A six-row desktop, with 4×2 and 2×2 widgets sharing the same cells. */
+/* Equal gaps and square cells keep every N×N widget square on any screen. */
 .home-desktop{
- --home-column-gap:clamp(10px,3cqw,16px);
- --home-row-gap:clamp(14px,4cqw,22px);
- --home-min-row:clamp(76px,22cqw,96px);
+ --home-gap:clamp(14px,4cqw,20px);
+ --home-cell:calc((100cqw - 3 * var(--home-gap)) / 4);
  height:100%;min-height:0;container-type:inline-size
 }
-/* Preserve 4×6 logical slots across phones; stretch rows into available height.
-   Short/landscape screens scroll the page rather than squeezing widget content. */
-.home-desktop-page{flex:1;min-height:calc(6 * var(--home-min-row) + 5 * var(--home-row-gap));position:relative;display:grid}
-.home-desktop .widget-grid{height:100%;margin:0;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,minmax(var(--home-min-row),1fr));column-gap:var(--home-column-gap);row-gap:var(--home-row-gap);align-items:stretch}
+/* Width controls widget proportions. Spare height stays outside the grid;
+   short/landscape screens scroll instead of distorting the cells. */
+.home-desktop-page{flex:1;min-height:calc(6 * var(--home-cell) + 5 * var(--home-gap));position:relative}
+.home-desktop .widget-grid{height:auto;margin:0;grid-template-columns:repeat(4,minmax(0,1fr));grid-template-rows:repeat(6,var(--home-cell));gap:var(--home-gap);align-items:stretch}
 .home-desktop .widget{min-height:0;padding:16px;overflow:hidden}
 .home-desktop .widget p{margin-top:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .home-desktop .widget-foot{padding-top:8px;flex-shrink:0}
