@@ -9,10 +9,18 @@ export function createVoiceRecorder({onFile,onState,notify}){
   if(!navigator.mediaDevices?.getUserMedia||!globalThis.MediaRecorder){notify('当前环境不支持录音，请在支持麦克风的浏览器或更新后的手机 App 中使用。');return;}
   const ticket=++revision,run={chunks:[],words:new Map(),cancelled:false,started:0};current=run;onState(true);
   try{
-   run.stream=await navigator.mediaDevices.getUserMedia({audio:true});
+   // Voice-oriented capture: reduce ambient noise and speaker feedback without
+   // letting automatic gain lift the room's noise floor during pauses. These
+   // are preferences, so unsupported processing must not block the microphone.
+   run.stream=await navigator.mediaDevices.getUserMedia({audio:{
+    echoCancellation:{ideal:true},
+    noiseSuppression:{ideal:true},
+    autoGainControl:{ideal:false},
+    channelCount:{ideal:1},
+   }});
    if(ticket!==revision){release(run);return;}
    const type=['audio/webm;codecs=opus','audio/mp4','audio/ogg;codecs=opus'].find(value=>MediaRecorder.isTypeSupported(value));
-   run.recorder=new MediaRecorder(run.stream,type?{mimeType:type}:undefined);
+   run.recorder=new MediaRecorder(run.stream,{...(type?{mimeType:type}:{}),audioBitsPerSecond:128000});
    const Recognition=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
    if(Recognition){
     try{
