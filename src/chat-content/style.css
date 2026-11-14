@@ -190,10 +190,6 @@
 .voice-seek:focus-within{outline:2px solid var(--accent);outline-offset:3px}
 .voice-seek:has(input:disabled){opacity:.75}
 .voice-time,.voice-sec{flex-shrink:0;min-width:32px;font:12px/1.4 var(--font-ui);font-variant-numeric:tabular-nums;color:var(--ink);text-align:right;opacity:.85}
-.voice-action,.voice-transcript-toggle{display:inline-flex;align-items:center;gap:5px;align-self:flex-start;min-height:44px;padding:8px 10px;border:0;border-radius:12px;background:none;font-size:12px;color:var(--quiet)}
-.voice-transcript-toggle{margin:2px 0 0}
-.voice-action svg,.voice-transcript-toggle svg{width:12px;height:12px;color:var(--accent)}
-.live-voice[aria-expanded=true] .voice-action,.voice-transcript-toggle[aria-expanded=true]{color:var(--ink);background:rgb(var(--tint) / .16)}
 .voice-transcript,.live-voice-text{white-space:pre-wrap;overflow-wrap:anywhere;user-select:text;width:100%;margin-top:2px;padding:10px 12px;border:1px solid var(--hairline);border-radius:14px;background:rgb(var(--glass-tint) / .5);font:13px/1.7 var(--font-ui);color:var(--quiet)}
 .voice-status{font:11px/1.7 var(--font-ui);color:var(--muted);margin-top:8px}
 .voice-relink{min-height:44px;font-size:12px;padding:9px 0;color:var(--ink)}
@@ -329,3 +325,14 @@
 .block-hint{margin:0;padding:0 2px;font-size:12px;line-height:1.45;color:var(--quiet);text-align:right}
 .live-read{margin:0;padding:0 4px;font-size:12px;line-height:1.4;color:var(--quiet)}
 .chat-preview-note{flex-wrap:wrap;padding:0 12px;text-align:center}
+/* Only the menu surface frosts the content beneath it; the room stays clear. */
+.message-dialog{
+ background:linear-gradient(135deg,rgb(255 255 255 / .2),transparent 58%),rgb(var(--glass-tint) / .4);
+ border:1px solid rgb(255 255 255 / .62);
+ box-shadow:0 12px 32px rgb(32 42 60 / .13),inset 0 1px 0 rgb(255 255 255 / .8),inset 0 -1px 0 rgb(255 255 255 / .16);
+ backdrop-filter:blur(18px) saturate(155%);
+ -webkit-backdrop-filter:blur(18px) saturate(155%);
+}
+.message-dialog::backdrop{background:transparent;backdrop-filter:none;-webkit-backdrop-filter:none}
+:root[data-theme=dark] .message-dialog{background:linear-gradient(135deg,rgb(255 255 255 / .08),transparent 58%),rgb(var(--glass-tint) / .62);border-color:rgb(255 255 255 / .24)}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.message-dialog{background:var(--solid)}}

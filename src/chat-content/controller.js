@@ -52,10 +52,7 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
  app.addEventListener('click',event=>{
   const live=event.target.closest('[data-live-voice]');
   if(live){
-   const text=live.parentElement?.querySelector('[data-live-voice-text]');
-   const open=live.getAttribute('aria-expanded')==='true';
-   live.setAttribute('aria-expanded',String(!open));
-   if(text)text.hidden=open;
+   notify('这条语音暂未附带可播放的音频，长按可转文字。');
    return;
   }
   const button=event.target.closest('[data-voice-action]');if(!button)return;
@@ -64,10 +61,6 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
   if(!card)return;
   if(action==='play')void play(card);
   if(action==='relink'){relink={key:card.dataset.voiceKey,session:getState().active};picker.value='';picker.click();}
-  if(action==='transcript'){
-   const text=card.querySelector('.voice-transcript'),expanded=button.getAttribute('aria-expanded')==='true';button.setAttribute('aria-expanded',String(!expanded));text.hidden=expanded;
-   if(!expanded)card.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
-  }
  });
  app.addEventListener('pointerdown',e=>{if(e.target.matches('[data-voice-seek]'))seeking=true;});
  window.addEventListener('pointerup',()=>{if(seeking){seeking=false;paint();}});window.addEventListener('pointercancel',()=>{if(seeking){seeking=false;paint();}});
@@ -99,5 +92,12 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
  audio.addEventListener('error',()=>{if(active){loading=false;error='这段语音暂时无法播放，请重试或补回原音频。';paint();}});
  document.addEventListener('chenxin:media-play',event=>{if(event.detail!=='voice')audio.pause();});
  window.addEventListener('pagehide',stop);
- return {sync,reset(){importRevision++;busy=false;pendingSession='';picker.disabled=false;getUI().voiceBusy=false;stop();}};
+ function showTranscript(target){
+  if(!target?.isConnected||!app.contains(target))return;
+  const text=target.matches('[data-live-voice]')?target.nextElementSibling:target.querySelector('.voice-transcript');
+  if(!text?.matches('.voice-transcript,[data-live-voice-text]')||!text.textContent.trim()){notify('这段语音还没有对应文字，暂未接入语音识别。');return;}
+  text.hidden=false;
+  text.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
+ }
+ return {sync,showTranscript,reset(){importRevision++;busy=false;pendingSession='';picker.disabled=false;getUI().voiceBusy=false;stop();}};
 }

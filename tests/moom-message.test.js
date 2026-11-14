@@ -110,7 +110,8 @@ user：[拒收] 旧写法也算拉黑
  assert(html.includes('¥52.00'));
  assert(html.includes('奶茶|和蛋糕钱'));
  assert(html.includes('已收款'));
- assert(html.includes('查看语音内容'));
+ assert(!html.includes('查看语音内容'));
+ assert(html.includes('长按转文字'));
  assert(html.includes('消息已发出，但被对方拉黑了'));
  assert(html.includes('data-live-part="bubble">你怎么不回消息'));
  assert(!html.includes('data-live-part="blocked">你怎么不回消息'));
