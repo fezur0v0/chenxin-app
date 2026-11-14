@@ -3,6 +3,15 @@ export const HOME_TYPES=['anniversary','date','note','mood','memory',...APP_TYPE
 export function homeItemVisible(home,type){
  return APP_TYPES.includes(type)?DESKTOP_APP_TYPES.includes(type)&&!home.hiddenApps?.includes(type):type==='anniversary'?home.anniversaryVisible!==false:home.widgets.some(w=>w.type===type&&w.enabled);
 }
+// Move the enlarged calendar once, before packing the old layout. Keep all
+// other page assignments; normalization will carry any overflow forward.
+export function migrateHomeCalendarPages(pages,widgets){
+ const source=Array.isArray(pages)&&pages.length?pages.slice(0,12):[['anniversary',...widgets.map(w=>w.type)],[...DESKTOP_APP_TYPES]];
+ const result=source.map(page=>Array.isArray(page)?page.filter(type=>type!=='date'):[]);
+ if(!result[1])result[1]=[];
+ result[1].unshift('date');
+ return result;
+}
 export function normalizeHomePages(pages,widgets,options={}){
  const fallback=['anniversary',...widgets.map(w=>w.type)],seen=new Set();
  const result=(Array.isArray(pages)&&pages.length?pages.slice(0,12):[fallback]).map(page=>(Array.isArray(page)?page:[]).filter(type=>HOME_TYPES.includes(type)&&!seen.has(type)&&seen.add(type)));
@@ -49,7 +58,7 @@ export function widgetMenuPosition(r,size,v){
 
 // First-fit with backtracking avoids holes when 1×1 icons precede large widgets.
 export function homeGridSlots(types){
- const sizes=types.map(type=>{const isApp=APP_TYPES.includes(type);return {type,width:isApp?1:type==='anniversary'?4:2,height:isApp?1:2};});
+ const sizes=types.map(type=>{const isApp=APP_TYPES.includes(type);return {type,width:isApp?1:['anniversary','date'].includes(type)?4:2,height:isApp?1:2};});
  if(sizes.reduce((area,item)=>area+item.width*item.height,0)>24)throw new RangeError('主页网格已满');
  const failed=new Set();
  function pack(index,occupied){

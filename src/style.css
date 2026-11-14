@@ -3,6 +3,7 @@
 @import './components/touch-ripple.css';
 @import './navigation.css';
 @import './launcher.css';
+@import './home-calendar.css';
 :root{--font-ui:"Source Han Sans CN",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;--font-en:"Cormorant Garamond",var(--font-ui);--theme-text:#465366;--bubble-bg:color-mix(in srgb,rgb(255 255 255 / calc(.2 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));--bubble-rim:rgb(255 255 255 / .5);--accent:#7a879a;--tint:122 135 154;--ink:color-mix(in srgb,var(--accent) 18%,#353b48);--muted:color-mix(in srgb,var(--accent) 10%,#626a76);--bg:#eceef3;--glass-tint:255 255 255;--glass-alpha:.6;--glass-soften:min(1,calc(var(--glass-alpha) / .6));--glass-solid:clamp(0,calc((var(--glass-alpha) - .6) / .4),1);--glass-blur:22px;--line:rgb(255 255 255 / .72);--hairline:rgb(83 94 114 / .12);--glass-shadow:0 8px 24px rgb(64 73 95 / .055),inset 0 1px 0 rgb(255 255 255 / .8),inset 0 -1px 0 rgb(255 255 255 / .23);--solid:#f4f5f8;--wall-image:none;font-family:var(--font-ui);color:var(--ink);background:var(--bg);font-synthesis:none}
 :root[data-theme=dark]{--ink:color-mix(in srgb,var(--accent) 12%,#d5d7dd);--muted:color-mix(in srgb,var(--accent) 10%,#979da9);--bg:#0c0d11;--glass-tint:24 26 32;--line:rgb(255 255 255 / .18);--hairline:rgb(220 225 245 / .12);--glass-shadow:0 8px 24px rgb(0 0 0 / .1),inset 0 1px 0 rgb(255 255 255 / .13),inset 0 -1px 0 rgb(255 255 255 / .025);--solid:#181a20;color-scheme:dark}
 *{box-sizing:border-box}html,body{margin:0;height:100%;overflow:hidden}button,input,select,textarea{font:inherit}button{border:0;background:none;color:inherit;cursor:pointer}button:disabled{opacity:.35;cursor:default}svg{width:21px;height:21px;flex-shrink:0}button,input,select,textarea,a{-webkit-tap-highlight-color:transparent}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}h1,h2,p{margin:0}h1{font-size:26px;font-weight:600;letter-spacing:-.04em}h2{font-size:17px;font-weight:550}input,textarea,select{color:var(--ink);accent-color:var(--accent)}button:hover:not(:disabled){filter:brightness(.97)}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
@@ -155,7 +156,6 @@ dialog[open]::backdrop{animation:none}
 .home-desktop .widget{min-height:0;padding:16px;overflow:hidden}
 .home-desktop .widget p{margin-top:10px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .home-desktop .widget-foot{padding-top:8px;flex-shrink:0}
-.home-desktop .date-widget strong{margin-top:12px}
 .home-page-controls{flex-shrink:0;margin-top:4px}
 
 .home-edit-help{flex-shrink:0;margin-bottom:16px}
@@ -176,19 +176,7 @@ dialog[open]::backdrop{animation:none}
 /* Quiet theme-colored typography on the transparent anniversary. */
 .anniversary-horizontal .day-count strong,.anniversary-horizontal .since,.anniversary-pill,.anniversary-avatar .avatar>span{color:var(--theme-text)}
 
-/* Reference calendar: live time, day tag, divider and a three-week window. */
-.widget-surface>.date-widget{background:color-mix(in srgb,rgb(var(--glass-tint) / calc(.07 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));border:1px solid rgb(255 255 255 / .25);box-shadow:0 12px 30px rgb(0 0 0 / .045),inset 0 1px 0 rgb(255 255 255 / .3);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));justify-content:space-between;gap:10px}
-.calendar-head{display:flex;justify-content:space-between;align-items:baseline;gap:5px;min-width:0}
-.calendar-head time{font-style:italic;font-weight:700;font-family:var(--font-display-numerals);font-size:clamp(30px,9.5vw,40px);line-height:1;letter-spacing:-.03em;white-space:nowrap;color:var(--theme-text)}
-.calendar-tag{font-size:10px;white-space:nowrap;letter-spacing:.04em;color:var(--muted)}
-.calendar-divider{width:100%;height:1px;flex-shrink:0;background:var(--hairline)}
-.calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px 2px;text-align:center;font-size:12px;line-height:1.5;color:var(--muted)}
-.calendar-grid span{min-width:0;border-radius:4px}
-.calendar-weekday{font-size:11px;padding-bottom:3px}
-.calendar-day.active{background:rgb(var(--tint) / .24);color:var(--theme-text);font-weight:700}
-.calendar-day.adjacent-month{opacity:.6}
-@media(max-width:380px){.calendar-head time{font-size:31px}.calendar-tag{font-size:9px}.calendar-grid{font-size:11px;gap:2px 1px}}
-@media(max-height:720px){.date-widget{gap:4px!important}.calendar-grid{gap:1px}.calendar-weekday{padding-bottom:0}.calendar-head time{font-size:30px}.home-editing .anniversary-horizontal .since{margin-bottom:8px}.home-editing .anniversary-horizontal .day-count>span{font-size:12px}}
+@media(max-height:720px){.home-editing .anniversary-horizontal .since{margin-bottom:8px}.home-editing .anniversary-horizontal .day-count>span{font-size:12px}}
 
 /* System-wide dark appearance: subdued wallpaper, charcoal surfaces and soft whites. */
 :root[data-theme=dark]{--theme-text:var(--accent);--bubble-bg:color-mix(in srgb,rgb(42 44 51 / calc(.4 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));--bubble-rim:rgb(255 255 255 / .1)}
@@ -196,33 +184,21 @@ dialog[open]::backdrop{animation:none}
 :root[data-theme=dark] .wallpaper:after{background:rgb(0 0 0 / .24)}
 :root[data-theme=dark] .glass{border-color:rgb(255 255 255 / .09)}
 :root[data-theme=dark] .widget-surface>.widget{background-color:color-mix(in srgb,rgb(27 29 35 / calc(.58 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));box-shadow:inset 0 1px 0 rgb(255 255 255 / .045),0 6px 22px rgb(0 0 0 / .14)}
-:root[data-theme=dark] .widget-surface>.date-widget{background-color:color-mix(in srgb,rgb(27 29 35 / calc(.22 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));border-color:rgb(255 255 255 / .1)}
 
 :root[data-theme=dark] .anniversary-avatar .avatar{border-color:rgb(255 255 255 / .14);background:color-mix(in srgb,var(--accent) 22%,#1b1d23)}
 :root[data-theme=dark] .anniversary-avatar.ai .avatar{background:color-mix(in srgb,var(--accent) 30%,#1b1d23)}
 :root[data-theme=dark] .home-context-menu{background:color-mix(in srgb,rgb(29 31 37 / calc(.94 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%))}
 :root[data-theme=dark] .tray-backdrop{background:rgb(0 0 0 / .5)}
 :root[data-theme=dark] .primary{background:#bcc2cc;color:#15171c}
-@media(max-height:720px){
- .home-editing .date-widget{gap:3px!important}
-}
 
 /* Keep only the page dots above the dock, without the former footer gap. */
 .home-page{padding-bottom:8px}
-/* Calendar content keeps its padding after the card becomes square. */
-.home-desktop .date-widget{padding:14px;gap:4px}
-.calendar-head,.calendar-grid{flex-shrink:0}
-@media(max-width:380px){.home-desktop .date-widget{padding:11px}.calendar-grid{line-height:1.35}}
-
 /* Serif is reserved for large display text; compact UI uses clear lining figures. */
 .usage-values strong{font-family:var(--font-display);font-style:italic;font-weight:700}
 .field output,.widget-foot{font-family:var(--font-ui)}
-.field output,.widget-foot,.calendar-grid,.calendar-tag{font-variant-numeric:lining-nums tabular-nums}
+.field output,.widget-foot{font-variant-numeric:lining-nums tabular-nums}
 .anniversary-horizontal .since,
-.calendar-grid,.calendar-tag,
 .home-desktop .quote-widget .note-text{font-family:"Noto Serif SC","Songti SC",SimSun,serif}
-.calendar-grid,.calendar-tag{color:var(--theme-text)}
-.calendar-weekday{color:var(--theme-text);opacity:1;font-weight:500}
 
 /* Settings glass shows the wallpaper through both light and dark surfaces. */
 .settings-section.glass{background:color-mix(in srgb,rgb(var(--glass-tint) / calc(var(--glass-alpha) * .28)),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));border-color:rgb(255 255 255 / .3);box-shadow:inset 0 1px 0 rgb(255 255 255 / .24),0 5px 20px rgb(0 0 0 / .025)}
