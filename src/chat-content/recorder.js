@@ -51,7 +51,7 @@ export function createVoiceRecorder({onFile,onState,notify}){
    };
    run.recorder.onerror=()=>{notify('录音中断，请检查麦克风权限后重试。');cancel();};
    run.started=performance.now();run.recorder.start(250);run.limit=setTimeout(stop,600000);
-  }catch(error){if(ticket!==revision)return;cancel();notify(error.name==='NotAllowedError'?'请允许麦克风权限后再录音。':error.message||'麦克风暂时无法使用。');}
+  }catch(error){if(ticket!==revision)return;cancel();notify(error.name==='NotAllowedError'?(globalThis.Capacitor?.isNativePlatform?.()?'App 未能访问麦克风；若系统权限已允许，请更新并重新安装 App 后重试。':'麦克风访问被阻止，请检查浏览器的网站麦克风权限。'):error.message||'麦克风暂时无法使用。');}
  }
  function stop(){const run=current;if(!run||run.recorder?.state!=='recording')return;run.stopped=performance.now();run.recorder.stop();onState(true,true);}
  return {start,stop,cancel,get active(){return !!current;},get recording(){return current?.recorder?.state==='recording';}};

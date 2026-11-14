@@ -10,7 +10,7 @@
 
 ## Android APK 限制
 
-当前仓库仍以网页前端为主，安卓打包工程在用户本机维护。本次没有替换本机 Android 工程。已核对当前工程缺少 `RECORD_AUDIO` 声明；本机 Capacitor 8 的 `BridgeWebChromeClient` 会在网页申请音频采集时处理运行时权限，但仍须先声明权限并重装 APK。
+当前仓库仍以网页前端为主，安卓打包工程在用户本机维护。本次没有替换本机 Android 工程。Capacitor 8.6.0 的 `BridgeWebChromeClient` 在 WebView 申请音频采集时同时请求 `RECORD_AUDIO` 和 `MODIFY_AUDIO_SETTINGS`，任一返回失败就拒绝 WebView 的访问。**两项都必须在 Manifest 中声明**；只补录音权限，仍可能在系统已允许麦克风时返回 `NotAllowedError`。已在连接手机的日志中确认过 `Requires MODIFY_AUDIO_SETTINGS and RECORD_AUDIO` 的失败路径。
 
 在本机项目目录执行：
 
@@ -20,7 +20,9 @@ Copy-Item -Path index.html,icon.svg,src,assets -Destination dist -Recurse -Force
 npx.cmd cap sync android
 ```
 
-然后通过 Android Studio 重新运行安装 APK，首次使用允许麦克风。准备脚本只补充缺失的录音权限，重复运行不会重复添加。WebView 是否提供有效识别服务仍需要真机验证；浏览器流程通过不能等同于 APK 的识别已经接通。
+然后通过 Android Studio 重新运行安装 APK，首次使用允许麦克风。准备脚本补齐缺失的两项音频权限，重复运行不会重复添加，也能修复只运行过旧版准备脚本的工程。`MODIFY_AUDIO_SETTINGS` 是安装时授予的普通权限，不是系统设置里需要手动打开的另一个麦克风开关。必须重装新 APK，单独复制网页或 `cap sync` 不会更改已安装包的权限声明。WebView 是否提供有效识别服务仍需要真机验证；修复录音权限不能等同于 STT 已接通。
+
+框架实现：https://github.com/ionic-team/capacitor/blob/8.6.0/android/capacitor/src/main/java/com/getcapacitor/BridgeWebChromeClient.java
 
 若 APK 的 WebView 不提供所需能力，下一步应在原生工程接入录音权限及系统识别桥，或接入明确配置的音频转写服务。前者不要求我们自建后端，但依赖手机系统的识别服务；后者可以处理已经录下来的音频。不能仅依靠语音识别插件代替真实录音文件，也不能假设两个麦克风消费者可在所有 Android 设备上同时运行。
 
