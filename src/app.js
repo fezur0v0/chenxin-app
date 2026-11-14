@@ -56,7 +56,7 @@ function render(){
  for(const node of app.querySelectorAll('details')){if(node.open)opened.add(node.id);else opened.delete(node.id);}
  applyAppearance();
  const desktopApp=findApp(page),utilityPage=['memory','settings'].includes(page),immersive=page!=='home';
- const markup=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp||utilityPage?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:page==='app-gallery'?galleryApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state,backupManager.ui):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav" aria-label="桌面快捷栏">${nav.filter(([p])=>p!=='home').map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="dock-launch"><span class="launcher-tile">${launcherIcon(i)}</span></button>`).join('')}</nav></div>`}</div>`;
+ const markup=`<div class="shell ${immersive?'immersive':''}"><div class="wallpaper" aria-hidden="true"></div><div class="shell-top-glass" aria-hidden="true"></div><main>${page==='chat'?chat(state,chatUI):page==='sessions'?sessions(state,sessionSearch,oldestFirst):`<div class="page-content ${page==='home'?'home-page':desktopApp||utilityPage?'desktop-app-page':''}">${desktopApp?appView(page,state,page==='app-music'?musicApp.ui:page==='app-gallery'?galleryApp.ui:promptLibraries.ui[desktopApp.icon]||diaryApp.ui):page==='home'?home(state,homeEditor.ui):page==='memory'?memory(state,memoryFilter,memorySearch):page==='settings'?settings(state,backupManager.ui):`<header class="session-header">${backButton('chat','返回对话')}</header>${sessions(state)}`}</div>`}</main>${immersive?'':`<div class="nav-dock"><nav class="bottom-nav" aria-label="桌面快捷栏">${nav.filter(([p])=>p!=='home').map(([p,i,l])=>`<button data-action="${p}" aria-label="${l}" class="dock-launch"><span class="launcher-tile">${launcherIcon(i)}</span></button>`).join('')}</nav></div>`}</div>`;
  // Keep the wallpaper and its backdrop surface mounted between App pages.
  const shell=app.querySelector(':scope>.shell');
  if(shell){
@@ -68,6 +68,7 @@ function render(){
   shell.querySelector('.nav-dock')?.remove();
   const dock=next.querySelector('.nav-dock');if(dock)shell.append(dock);
  }else app.innerHTML=markup;
+ app.querySelector(':scope>.shell').dataset.topbar=page==='chat'?'chat':desktopApp||utilityPage?'app':'none';
  if(sidebarDialog.open){const scroll=sidebarDialog.querySelector('.sidebar-conversations')?.scrollTop||0;sidebarDialog.innerHTML=sidebar(state,page);sidebarDialog.querySelector('.sidebar-conversations').scrollTop=scroll;}
  for(const id of opened){const d=document.getElementById(id);if(d)d.open=true;}
  const messages=document.querySelector('#messages');if(messages)messages.scrollTop=messages.scrollHeight;
@@ -92,7 +93,7 @@ function renderHome(){
  }
  if(focusedDot!==undefined)dots.querySelector(`[data-page="${focusedDot}"]`)?.focus({preventScroll:true});
 }
-function goto(next){if(next==='app-memory')next='memory';if(next==='chat'&&composerSession!==state.active){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}composerSession=state.active;homeEditor.exit();if(next==='app-gallery')galleryApp.openHome();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next)||['memory','settings'].includes(next))app.querySelector('.desktop-app-header h1,.music-header h1,.moom-header h1')?.focus({preventScroll:true});if(!matchMedia('(prefers-reduced-motion: reduce)').matches)app.querySelector('.app-topbar>h1,.chat-header .peer-details,.conversations-header h1')?.animate([{transform:'translateY(4px)'},{transform:'translateY(0)'}],{duration:210,easing:'ease-out'});}
+function goto(next){if(next==='app-memory')next='memory';if(next==='chat'&&composerSession!==state.active){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;}composerSession=state.active;homeEditor.exit();if(next==='app-gallery')galleryApp.openHome();if(sidebarDialog.open)sidebarDialog.close();chatUI.tray='';page=next;render();app.querySelector('.page-content')?.scrollTo(0,0);if(findApp(next)||['memory','settings'].includes(next))app.querySelector('.desktop-app-header h1,.music-header h1,.moom-header h1')?.focus({preventScroll:true});}
 function focusSettings(id){if(id==='appearance-settings'){goto('app-appearance');return;}goto('settings');const d=document.getElementById(id);if(d){d.open=true;opened.add(id);d.scrollIntoView({behavior:'smooth',block:'start'});}}
 function showMemoryEditor(item,source=''){dialog.innerHTML=memoryEditor(item,source);dialog.showModal();dialog.querySelector('[name=title]').focus();}
 function closeModal(){dialog.close();}
