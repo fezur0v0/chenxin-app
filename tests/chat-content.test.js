@@ -3,6 +3,29 @@ import assert from 'node:assert/strict';
 import {createState,normalizeState,addDraftMessage,changeMessage,exportData} from '../src/store.js';
 import {makeReply,normalizeReply,normalizeVoice,messageExcerpt,audioPeaks,formatVoiceTime} from '../src/chat-content/model.js';
 import {chat} from '../src/views.js';
+import {replyPreview} from '../src/chat-content/view.js';
+
+test('formatted reply snapshots render safely before and after sending and survive original changes',()=>{
+ const s=createState(),session=s.sessions[0];
+ const source={id:'formatted',role:'assistant',text:'<think>不应出现在引用里</think>\n*轻轻点头* **好呀**\n<live>\nchar：那就慢一点吧。\nuser：好，陪我坐一会儿。\nchar：[语音] 好想见你|6秒\nchar：[图片] <img src=x onerror=alert(1)>\n</live>',time:1,attachments:[]};
+ session.messages.push(source);const quote=makeReply(s,source);
+ assert.equal(quote.source,source.text);
+ const draft=replyPreview(quote,session,{draft:true});
+ assert(draft.includes('data-moom-part="action"'));assert(draft.includes('data-moom-part="emphasis"'));
+ assert(draft.includes('reply-voice'));assert(draft.includes('语音 · 0:06'));
+ assert(draft.includes('那就慢一点吧。'));assert(!draft.includes('&lt;live&gt;'));assert(!draft.includes('char：'));assert(!draft.includes('不应出现在引用里'));
+ assert(!draft.includes('<img src=x'));assert(draft.includes('&lt;img src=x'));
+ assert(!draft.includes('data-live-voice'));assert(!draft.includes('data-voice-action'));
+ const response=addDraftMessage(s,'引用后的回答',[],quote);
+ source.text='修改后的正文';session.messages=session.messages.filter(m=>m.id!==source.id);
+ const restored=normalizeState(JSON.parse(exportData(s))),reply=restored.sessions[0].messages.find(m=>m.id===response.id).replyTo;
+ assert.equal(reply.source,quote.source);assert(chat(restored).includes('那就慢一点吧。'));assert(!chat(restored).includes('&lt;live&gt;'));
+ const old={...quote};delete old.source;old.text='<live>\nchar：旧引用内容\nuser：[语音] 你好|3秒';
+ assert(replyPreview(old,session).includes('reply-voice'));assert(!replyPreview(old,session).includes('char：'));
+ const literal=replyPreview({messageId:'literal',role:'user',text:'<live>char：**只是例子**</live>'},session);
+ assert(literal.includes('&lt;live&gt;char：**只是例子**&lt;/live&gt;'));
+ assert.equal(normalizeReply({...quote,source:'x'.repeat(13000)}).source.length,12000);
+});
 
 test('reply snapshots survive edits, branches, deletions and backup without copying image bytes',()=>{
  const s=createState(),source=addDraftMessage(s,'原来的内容',[{name:'图',data:'data:image/png;base64,AAAA'}]);

@@ -5,7 +5,9 @@ export function normalizeVoice(value){
 }
 export function normalizeReply(value){
  if(!value||typeof value.messageId!=='string'||!value.messageId.trim()||value.messageId.length>100)return null;
- return {messageId:value.messageId,role:value.role==='assistant'?'assistant':'user',author:text(value.author,40),text:text(value.text,240),kind:['image','voice','file'].includes(value.kind)?value.kind:'text'};
+ const reply={messageId:value.messageId,role:value.role==='assistant'?'assistant':'user',author:text(value.author,40),text:text(value.text,240),kind:['image','voice','file'].includes(value.kind)?value.kind:'text'};
+ if(reply.role==='assistant'&&typeof value.source==='string'&&value.source)reply.source=text(value.source,12000);
+ return reply;
 }
 export function messageExcerpt(message){
  if(message.text?.trim())return message.text.trim().slice(0,240);
@@ -14,7 +16,7 @@ export function messageExcerpt(message){
  return message.attachments?.length?`[文件] ${message.attachments[0].name}`:'消息内容为空';
 }
 export function makeReply(state,message){
- return normalizeReply({messageId:message.id,role:message.role,author:message.role==='assistant'?state.persona.name:state.home.userName,text:messageExcerpt(message),kind:message.text?.trim()?'text':message.attachments?.some(a=>a.kind==='voice')?'voice':message.attachments?.some(a=>a.data)?'image':'file'});
+ return normalizeReply({messageId:message.id,role:message.role,author:message.role==='assistant'?state.persona.name:state.home.userName,text:messageExcerpt(message),source:message.role==='assistant'?message.text:undefined,kind:message.text?.trim()?'text':message.attachments?.some(a=>a.kind==='voice')?'voice':message.attachments?.some(a=>a.data)?'image':'file'});
 }
 export function formatVoiceTime(value){
  if(!Number.isFinite(value)||value<0)return '0:00';const seconds=Math.floor(value);return `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')}`;

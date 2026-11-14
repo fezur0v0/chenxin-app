@@ -119,6 +119,18 @@
 .message .message-reply{width:100%}
 .reply-body{display:grid;gap:5px;min-width:0;flex:1}
 .reply-body>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;overflow-wrap:anywhere;font-size:12px;line-height:1.6}
+.reply-body>.reply-rendered{display:block;max-height:104px;white-space:pre-wrap}
+.reply-part{display:block;min-width:0}
+.reply-part+.reply-part{margin-top:3px}
+.reply-part:not(.reply-offline){padding:3px 7px;border-radius:8px;background:rgb(var(--glass-tint) / .24)}
+.reply-part.is-user{margin-left:10px}
+.reply-media{display:inline-flex;align-items:center;gap:5px;font-size:11px}
+.reply-media svg{width:13px;height:13px;flex-shrink:0}
+.reply-caption{display:block;font-size:11px}
+.reply-nested{display:block;padding:3px 6px;border-radius:6px;background:rgb(var(--tint) / .1);margin-bottom:3px}
+.reply-rendered [data-moom-part=action]{font-style:italic;opacity:.8}
+.reply-rendered [data-moom-part=emphasis]{font-weight:600}
+.reply-rendered strong{display:inline;margin:0;font-size:inherit;line-height:inherit}
 .reply-body small{font-size:11px;line-height:1.5}
 .message-reply>img,.reply-snippet>img{width:40px;height:40px;object-fit:cover;border-radius:9px;flex-shrink:0}
 .message .message-reply.is-unavailable{opacity:.7}
