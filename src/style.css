@@ -68,21 +68,21 @@ input,textarea,select{transition:border-color var(--motion-fast),box-shadow var(
 
 .settings-section[open] .settings-body{animation:content-arrive 190ms var(--motion-ease)}
 dialog[open]{animation:dialog-arrive var(--motion-normal) var(--motion-ease)}
-dialog[open]::backdrop{animation:backdrop-arrive 180ms ease-out}
+/* Keep glass and its ancestors at full element opacity during motion.
+   A fading ancestor changes the backdrop root, causing blur to snap at the end.
+   Transparency belongs to the material's background color instead. */
+dialog[open]::backdrop{animation:none}
 .app-sidebar[open]{animation:sidebar-arrive 260ms var(--motion-ease)}
-.tray-backdrop{animation:backdrop-arrive 180ms ease-out}
+.tray-backdrop{animation:none}
 .expression-tabs [aria-selected=true],.filter-tabs .active{animation:feedback-pop 180ms var(--motion-ease)}
 @keyframes feedback-pop{0%{transform:scale(.92)}65%{transform:scale(1.04)}100%{transform:scale(1)}}
-@keyframes content-arrive{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-@keyframes dialog-arrive{from{opacity:0;transform:translateY(6px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes backdrop-arrive{from{opacity:0}to{opacity:1}}
+@keyframes content-arrive{from{transform:translateY(5px)}to{transform:translateY(0)}}
+@keyframes dialog-arrive{from{transform:translateY(6px) scale(.97)}to{transform:none}}
 @keyframes sidebar-arrive{from{transform:translateX(-100%)}to{transform:translateX(0)}}
 @keyframes sheet-arrive{from{transform:translateY(100%)}to{transform:translateY(0)}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 .thought-bubble>span{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden;max-width:100%}
-@supports (transition-behavior:allow-discrete){dialog{opacity:0;transition:opacity 160ms ease-out,display 160ms allow-discrete,overlay 160ms allow-discrete}dialog[open]{opacity:1}dialog::backdrop{opacity:0;transition:opacity 160ms,display 160ms allow-discrete,overlay 160ms allow-discrete}dialog[open]::backdrop{opacity:1}}
-@media(prefers-reduced-motion:reduce){dialog,dialog::backdrop{transition:none!important}}
 
 /* Widget content actions stay separate from home layout editing. */
 .home-context-menu{position:fixed;inset:auto;margin:0;width:220px;max-width:calc(100vw - 24px);padding:5px 0;border:1px solid var(--line);border-radius:22px;color:var(--ink);background:color-mix(in srgb,rgb(var(--glass-tint) / calc(.94 * var(--glass-soften))),rgb(var(--glass-tint)) calc(var(--glass-solid) * 100%));box-shadow:0 12px 40px rgb(var(--tint) / .2);overflow:hidden}

@@ -75,7 +75,7 @@ export function createDiaryApp({app,getState,setState,persist,notify}) {
   const offsetTop=incoming.getBoundingClientRect().top-scrollRect.top+scroll.scrollTop;
   if(motionOk()){
    const offset=opening?'8px':'-5px';
-   incoming.animate([{opacity:.15,transform:'translateY('+offset+')'},{opacity:1,transform:'translateY(0)'}],{duration:220,easing:EASE});
+   incoming.animate([{transform:'translateY('+offset+')'},{transform:'translateY(0)'}],{duration:220,easing:EASE});
    if(Math.abs(height-nextHeight)>1)scroll.animate([{height:height+'px'},{height:nextHeight+'px'}],{duration:220,easing:EASE});
   }
   focus?.focus({preventScroll:true});
