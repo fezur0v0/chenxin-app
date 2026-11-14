@@ -16,7 +16,7 @@ export function replyPreview(reply,session,{draft=false}={}){
  if(!reply)return '';
  const original=session.messages.find(m=>m.id===reply.messageId),image=original?.attachments?.find(a=>a.data)?.data;
  const body=`<span class="reply-body"><strong>${escape(reply.author||(reply.role==='assistant'?'对方':'我'))}</strong><span>${escape(reply.text||messageExcerpt(original||{}))}</span>${!original?'<small>原消息已不在当前对话中</small>':''}</span>${reply.kind==='image'&&image?`<img src="${escape(image)}" alt="引用图片" referrerpolicy="no-referrer">`:''}`;
- if(draft)return `<div class="reply-compose" aria-label="正在引用消息"><div class="reply-snippet quote-box">${body}</div><button type="button" data-action="cancel-reply" aria-label="取消引用">取消</button></div>`;
+ if(draft)return `<div class="reply-compose" aria-label="正在引用消息"><div class="reply-snippet quote-box">${body}</div><button type="button" data-action="cancel-reply" aria-label="取消引用">${icon('close')}</button></div>`;
  return `<button type="button" class="message-reply quote-box ${original?'':'is-unavailable'}" data-action="jump-reply" data-id="${escape(reply.messageId)}" ${original?'':'disabled'} aria-label="${original?'定位引用的消息':'引用的原消息已不在当前对话中'}">${body}</button>`;
 }
 function waveHeights(peaks,count=14){

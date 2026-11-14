@@ -122,12 +122,13 @@
 .reply-body small{font-size:11px;line-height:1.5}
 .message-reply>img,.reply-snippet>img{width:40px;height:40px;object-fit:cover;border-radius:9px;flex-shrink:0}
 .message .message-reply.is-unavailable{opacity:.7}
-.reply-compose{display:flex;align-items:center;gap:6px;margin:0 0 13px;padding:0 0 12px;border-bottom:1px solid var(--hairline)}
+.reply-compose{display:flex;align-items:center;gap:6px;margin:0 0 13px;padding:0 0 12px;border:0}
 .reply-compose .reply-snippet{flex:1}
-.reply-compose>button{flex-shrink:0;min-width:44px;min-height:44px;font-size:12px;color:var(--muted);border-radius:12px;padding:7px}
+.reply-compose>button{display:grid;place-items:center;flex-shrink:0;min-width:44px;min-height:44px;color:var(--muted);border-radius:12px;padding:7px}
+.reply-compose>button>svg{width:14px;height:14px}
 
 /* ===== 语音条 =====
-   播放圆钮 + 竖条波形 + 秒数。已播用 --accent，未播用淡 tint。
+   播放圆钮 + 竖条波形 + 秒数。已播与未播颜色对调，已播呈现更深的波形。
    线上文字语音没有真实进度，用 --live-voice-progress 让两种颜色同时看得见。 */
 .voice-message,.live-voice{
   --voice-progress:0%;
@@ -135,8 +136,8 @@
   --voice-disc:32px;
   --voice-bar-w:3px;
   --voice-bar-gap:2.5px;
-  --voice-heard:var(--accent);
-  --voice-rest:color-mix(in srgb,var(--accent) 34%,var(--quiet));
+  --voice-heard:color-mix(in srgb,var(--accent) 34%,var(--quiet));
+  --voice-rest:var(--accent);
   --voice-play-ink:var(--accent-ink);
 }
 .live-voice{--live-voice-progress:46%;--voice-progress:var(--live-voice-progress)}
