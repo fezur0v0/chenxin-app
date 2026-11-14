@@ -1,11 +1,27 @@
 import {voiceFile,analyzeVoice} from './voice-files.js';
 import {formatVoiceTime} from './model.js';
 import {musicIcon} from '../apps/music/icons.js';
+import {createVoiceRecorder} from './recorder.js';
 export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,render,notify}){
  const audio=new Audio();audio.preload='metadata';
  const picker=document.createElement('input');picker.type='file';picker.accept='audio/*,.mp3,.m4a,.aac,.wav,.ogg,.opus,.flac,.webm';picker.hidden=true;picker.dataset.chatVoice='';document.body.append(picker);
  let active=null,url='',revision=0,importRevision=0,busy=false,relink=null,loading=false,error='',pendingSession='',seeking=false;
  const drafts=new Set();
+ let recordingSession='';
+ const recorder=createVoiceRecorder({notify,onState(active,finishing=false){
+  getUI().voiceRecording=active;getUI().voiceFinishing=finishing;
+  if(isChat())render();
+ },async onFile(file,transcript,duration,isCurrent){
+  if(!isCurrent()||!isChat()||recordingSession!==getState().active)return;
+  if(getUI().attachments.length>=6)throw new Error('一次最多添加 6 项附件。');
+  let metadata;try{metadata=await analyzeVoice(file);}catch{metadata={duration,peaks:[]};}
+  if(!isCurrent()||!isChat()||recordingSession!==getState().active)return;
+  const fileId=crypto.randomUUID();await files(fileId,file);
+  if(!isCurrent()||!isChat()||recordingSession!==getState().active){await files(fileId,null);return;}
+  if(getUI().attachments.length>=6){await files(fileId,null);throw new Error('一次最多添加 6 项附件，录音未加入，请腾出一个位置后重录。');}
+  drafts.add(fileId);getUI().attachments.push({id:crypto.randomUUID(),name:file.name,type:file.type,size:file.size,kind:'voice',data:'',voice:{fileId,...metadata,transcript}});
+  notify('录音已加入待发送内容。');
+ }});
  function resolve(key){
   for(const message of getState().sessions.find(s=>s.id===getState().active)?.messages||[]){
    const attachment=message.attachments?.find(a=>a.kind==='voice'&&`${message.id}/${a.id}`===key);if(attachment?.voice)return {message,attachment};
@@ -25,6 +41,7 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
   }
  }
  function sync(){
+  if(recorder.active&&(!isChat()||recordingSession!==getState().active))recorder.cancel();
   if(active&&(!isChat()||active.session!==getState().active||resolve(active.key)?.attachment.voice.fileId!==active.fileId))stop();
   if(busy&&pendingSession&&(!isChat()||pendingSession!==getState().active)){importRevision++;busy=false;pendingSession='';getUI().voiceBusy=false;picker.disabled=false;}
   for(const id of drafts){
@@ -50,6 +67,14 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
   }catch(e){if(ticket!==revision)return;loading=false;error=e.message?.includes('此浏览器')?e.message:'这段语音暂时无法播放，请重试或补回原音频。';paint();}
  }
  app.addEventListener('click',event=>{
+  if(event.target.closest('[data-voice-action=cancel-record]')){recorder.cancel();return;}
+  if(event.target.closest('[data-voice-action=record]')){
+   if(recorder.recording){recorder.stop();return;}
+   if(recorder.active||busy)return;
+   if(getUI().attachments.length>=6){notify('一次最多添加 6 项附件。');return;}
+   stop();document.dispatchEvent(new CustomEvent('chenxin:media-play',{detail:'voice-recording'}));
+   recordingSession=getState().active;void recorder.start();return;
+  }
   const live=event.target.closest('[data-live-voice]');
   if(live){
    notify('这条语音暂未附带可播放的音频，长按可转文字。');
@@ -57,7 +82,7 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
   }
   const button=event.target.closest('[data-voice-action]');if(!button)return;
   const action=button.dataset.voiceAction,card=button.closest('[data-voice-key]');
-  if(action==='import'){if(busy)return;relink=null;picker.value='';picker.click();return;}
+  if(action==='import'){if(busy||recorder.active)return;relink=null;picker.value='';picker.click();return;}
   if(!card)return;
   if(action==='play')void play(card);
   if(action==='relink'){relink={key:card.dataset.voiceKey,session:getState().active};picker.value='';picker.click();}
@@ -91,7 +116,8 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
  audio.addEventListener('play',()=>{loading=false;error='';document.dispatchEvent(new CustomEvent('chenxin:media-play',{detail:'voice'}));paint();});
  audio.addEventListener('error',()=>{if(active){loading=false;error='这段语音暂时无法播放，请重试或补回原音频。';paint();}});
  document.addEventListener('chenxin:media-play',event=>{if(event.detail!=='voice')audio.pause();});
- window.addEventListener('pagehide',stop);
+ window.addEventListener('pagehide',()=>{recorder.cancel();stop();});
+ document.addEventListener('visibilitychange',()=>{if(document.hidden&&recorder.active){recorder.cancel();notify('录音已取消。');}});
  function showTranscript(target){
   if(!target?.isConnected||!app.contains(target))return;
   const text=target.matches('[data-live-voice]')?target.nextElementSibling:target.querySelector('.voice-transcript');
@@ -99,5 +125,5 @@ export function createChatMedia({files=voiceFile,app,getState,getUI,isChat,rende
   text.hidden=false;
   text.scrollIntoView({block:'nearest',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});
  }
- return {sync,showTranscript,reset(){importRevision++;busy=false;pendingSession='';picker.disabled=false;getUI().voiceBusy=false;stop();}};
+ return {sync,showTranscript,reset(){recorder.cancel();importRevision++;busy=false;pendingSession='';picker.disabled=false;getUI().voiceBusy=false;stop();}};
 }

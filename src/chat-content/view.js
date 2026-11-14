@@ -4,6 +4,7 @@ import {musicIcon} from '../apps/music/icons.js';
 import {drawerHeader} from '../drawer.js';
 import {formatVoiceTime,messageExcerpt} from './model.js';
 import {renderReplyContent} from './reply.js';
+import {transferStatus} from './transfers.js';
 export function reasoningTrigger(message){
  if(message.role!=='assistant'||(!message.reasoningSummary?.trim()&&message.reasoningStatus!=='thinking'))return '';
  const thinking=message.reasoningStatus==='thinking',duration=Number.isFinite(message.reasoningDurationMs)?`${Math.round(message.reasoningDurationMs/100)/10}s`:'';
@@ -37,12 +38,13 @@ function formatTransferAmount(raw){
 function quotedName(state,role){
  return role==='user'?(state.persona?.name||'对方'):(state.home?.userName||'我');
 }
-export function renderLiveRow(part,state){
+export function renderLiveRow(part,state,{message,index,receipt=false}={}){
+ if(part.kind==='transfer')part={...part,status:transferStatus(message,index,part)};
  const user=part.role==='user';
  const read=part.read?'<p class="live-read" data-live-part="read">已读</p>':'';
  const body=part.kind==='voice'?`<button type="button" class="bubble live-voice" data-live-part="voice" data-live-voice aria-label="语音 ${formatVoiceTime(part.seconds)}，长按转文字"><span class="voice-row"><span class="voice-play" aria-hidden="true">${musicIcon('play')}</span>${waveMarkup(liveWave)}<span class="voice-sec">${formatVoiceTime(part.seconds)}</span></span></button>${part.text?`<p class="live-voice-text" data-live-voice-text hidden>${escape(part.text)}</p>`:''}`
   :part.kind==='image'?`<div class="bubble live-image" data-live-part="image">${escape(part.text)}</div>`
-  :part.kind==='transfer'?`<div class="live-transfer ${part.status==='done'?'is-done':''}" data-live-part="transfer" data-transfer-status="${part.status}"><div class="transfer-head">转账</div><div class="transfer-body"><div class="transfer-mark" aria-hidden="true">$</div><div class="transfer-copy"><div class="transfer-amount">${escape(formatTransferAmount(part.amount))}</div>${part.note?`<div class="transfer-note">${escape(part.note)}</div>`:''}</div></div><div class="transfer-foot">${part.status==='done'?'<span class="transfer-done">已收款</span>':'<span class="transfer-receive">收款</span><span class="transfer-refuse">拒收</span>'}</div></div>`
+  :part.kind==='transfer'?`<div class="live-transfer ${part.status!=='pending'?'is-done':''}" data-live-part="transfer" data-transfer-status="${part.status}"><div class="transfer-head">转账</div><div class="transfer-body"><div class="transfer-mark" aria-hidden="true">$</div><div class="transfer-copy"><div class="transfer-amount">${escape(formatTransferAmount(part.amount))}</div>${part.note?`<div class="transfer-note">${escape(part.note)}</div>`:''}</div></div><div class="transfer-foot">${part.status==='done'?'<span class="transfer-done">已收款</span>':part.status==='refused'?'<span class="transfer-done">已退还</span>':!user&&message&&!receipt?`<button type="button" class="transfer-receive" data-transfer-action="done" data-transfer-message="${escape(message.id)}" data-transfer-index="${index}">收款</button><button type="button" class="transfer-refuse" data-transfer-action="refused" data-transfer-message="${escape(message.id)}" data-transfer-index="${index}">拒收</button>`:'<span class="transfer-done">待收款</span>'}</div></div>`
   :part.kind==='quote'?`<div class="bubble live-quote" data-live-part="quote"><span class="quote-box"><span class="quote-name">${escape(quotedName(state,part.role))}</span><span class="quote-src">${escape(part.quote)}</span></span>${part.text?`<div class="quote-body">${escape(part.text)}</div>`:''}</div>`
   :part.kind==='blocked'?`<div class="block-row"><span class="block-mark" role="img" aria-label="拉黑">!</span><div class="bubble" data-live-part="blocked">${escape(part.text)}</div></div><p class="block-hint">消息已发出，但被对方拉黑了</p>`
   :`<div class="bubble" data-live-part="bubble">${escape(part.text)}</div>`;

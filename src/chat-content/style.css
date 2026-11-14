@@ -256,8 +256,13 @@
    虚线框里直接放文字，不用再点开。自己和对方只差一层淡淡的 accent。 */
 .bubble.live-image{
   --image-radius:18px;
-  min-width:148px;
-  max-width:220px;
+  width:148px;
+  min-width:0;
+  max-width:100%;
+  aspect-ratio:1;
+  box-sizing:border-box;
+  overflow:auto;
+  overflow-wrap:anywhere;
   padding:12px 14px;
   border-width:1.5px;
   border-style:dashed;
@@ -276,7 +281,7 @@
 }
 
 /* ===== 转账卡片 =====
-   顶栏、金额、备注、底部分隔后的状态。待收款是「收款 / 拒收」，备注末段写「已收款」才换成已收款。 */
+   顶栏、金额、备注、底部状态。收到的待处理卡可收款或拒收，操作后保存状态并追加回执。 */
 .live-transfer{
   --transfer-width:206px;
   --transfer-radius:20px;
@@ -291,6 +296,8 @@
   -webkit-backdrop-filter:blur(18px) saturate(110%);
 }
 .conversation-live-row.is-user .live-transfer{background:var(--bubble-user-fill);border-color:var(--bubble-user-rim)}
+.message>.conversation-live-row{width:100%}
+.conversation-live-row .live-stack:has(>.live-transfer){width:206px}
 .transfer-head{padding:12px 14px 0;text-align:center;font-size:12px;letter-spacing:.04em;color:var(--quiet)}
 .transfer-body{display:flex;align-items:center;gap:12px;padding:10px 16px 14px}
 .transfer-mark{
@@ -315,6 +322,11 @@
 .transfer-receive{color:color-mix(in srgb,var(--accent) 58%,var(--ink))}
 .transfer-refuse{border-left:1px solid var(--hairline);color:var(--quiet)}
 .transfer-done{color:var(--quiet)}
+.transfer-foot button{border-radius:0;cursor:pointer;min-width:0}
+.transfer-foot button:hover{background:rgb(var(--tint) / .1)}
+.voice-import-state{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.voice-import-state button{min-width:44px;min-height:36px;color:var(--ink)}
+.composer [data-voice-action=record][aria-pressed=true]{color:var(--ink);background:rgb(var(--tint) / .2)}
 
 /* ===== 拉黑 =====
    只出现在自己发出、被对方拦住的气泡上。感叹号在气泡左边，颜色只用 --warning。 */

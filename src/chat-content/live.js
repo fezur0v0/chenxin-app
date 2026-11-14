@@ -36,8 +36,8 @@ function parseBubble(role,body){
  if(type==='转账'){
   const [amount,noteRaw]=fields(rest,2);
   const pieces=noteRaw?noteRaw.split(/\s*[|｜]\s*/):[];
-  const done=pieces.length>1&&pieces.at(-1)==='已收款';
-  return {kind:'transfer',role,amount,note:done?pieces.slice(0,-1).join('|'):noteRaw,status:done?'done':'pending',text:amount?`转账 ${amount}`:'转账'};
+  const status=pieces.length>1?({'已收款':'done','已退还':'refused','已拒收':'refused'}[pieces.at(-1)]||'pending'):'pending';
+  return {kind:'transfer',role,amount,note:status!=='pending'?pieces.slice(0,-1).join('|'):noteRaw,status,text:amount?`转账 ${amount}`:'转账'};
  }
  if(type==='引用'){
   const [quote,reply]=fields(rest,2);

@@ -7,6 +7,7 @@ import {createGalleryApp} from './apps/gallery/controller.js';
 import {createChatPreview} from './chat-content/preview.js';
 import {createChatMedia} from './chat-content/controller.js';
 import {makeReply} from './chat-content/model.js';
+import {settleTransfer} from './chat-content/transfers.js';
 import {expressionCategories,saveKaomoji} from './expressions/model.js';
 import {categoryField} from './expressions/view.js';
 import {createStickerLibrary} from './expressions/controller.js';
@@ -45,7 +46,7 @@ const musicApp=createMusicApp({app,getState:()=>state,setState:value=>{state=val
 const promptLibraries=createPromptLibraries({app,getState:()=>state,setState:value=>{state=value;},persist,notify});
 const stickerLibrary=createStickerLibrary({app,getState:()=>state,setState:value=>{state=value;},getUI:()=>chatUI,persist,notify,compressImage});
 const chatMedia=createChatMedia({files:isolatedPreview?.files,app,getState:()=>state,getUI:()=>chatUI,isChat:()=>page==='chat',render,notify});
-const backupManager=createBackupManager({app,getState:()=>state,storage,media:{music:isolatedPreview?.files||musicFile,voice:isolatedPreview?.files||voiceFile},snapshots:isolatedPreview?memorySnapshots():undefined,allowAuto:!isolatedPreview,persist,notify,applyRestored,canStart:()=>!musicApp.ui.busy&&!galleryApp.ui.busy&&!chatUI.voiceBusy});
+const backupManager=createBackupManager({app,getState:()=>state,storage,media:{music:isolatedPreview?.files||musicFile,voice:isolatedPreview?.files||voiceFile},snapshots:isolatedPreview?memorySnapshots():undefined,allowAuto:!isolatedPreview,persist,notify,applyRestored,canStart:()=>!musicApp.ui.busy&&!galleryApp.ui.busy&&!chatUI.voiceBusy&&!chatUI.voiceRecording});
 const sidebarItemMenu=createSidebarItemMenu({getState:()=>state,setState:value=>{state=value;},persist,notify,onChange:({kind,id,operation,previousActive})=>{if(kind==='session'&&operation==='delete'&&previousActive===id){composeDraft='';chatUI.attachments=[];chatUI.replyTo=null;composerSession=state.active;}render();}});
 function notify(value){const n=document.querySelector('#notice');n.textContent=value;n.classList.add('visible');clearTimeout(toastTimer);toastTimer=setTimeout(()=>n.classList.remove('visible'),3500);}
 function persist(){try{saveState(storage,state);return true;}catch{notify('本机存储不足或不可用。修改尚未保存，请导出备份或换一张更小的图片。');return false;}}
@@ -143,10 +144,16 @@ function handleAction(e){
  else if(action==='export')backupManager.exportJSON();
 }
 app.addEventListener('click',handleAction);
+app.addEventListener('click',event=>{
+ const target=event.target.closest('[data-transfer-action]');if(!target)return;
+ const snapshot=structuredClone(state);
+ try{settleTransfer(state,target.dataset.transferMessage,Number(target.dataset.transferIndex),target.dataset.transferAction);if(!persist()){state=snapshot;return;}render();}
+ catch(error){state=snapshot;notify(error.message);}
+});
 sidebarDialog.addEventListener('click',e=>{if(e.target===sidebarDialog){const r=sidebarDialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)sidebarDialog.close();}else handleAction(e);});
 app.addEventListener('submit',e=>{
  e.preventDefault();const form=e.target,data=Object.fromEntries(new FormData(form));
- if(form.getAttribute('id')==='compose'){if(chatUI.voiceBusy)return notify('语音还在读取，稍等一下。');if(!data.message.trim()&&!chatUI.attachments.length)return;const snapshot=structuredClone(state);addDraftMessage(state,data.message,chatUI.attachments,chatUI.replyTo);const ok=persist();if(!ok){state=snapshot;return;}composeDraft='';selection={start:0,end:0};chatUI.attachments=[];chatUI.replyTo=null;chatUI.tray='';render();app.querySelector('[name=message]').focus();if(ok)notify('已保存本机；模型未连接，这条消息没有发送。');}
+ if(form.getAttribute('id')==='compose'){if(chatUI.voiceBusy||chatUI.voiceRecording)return notify('请先结束录音，等待语音保存完成。');if(!data.message.trim()&&!chatUI.attachments.length)return;const snapshot=structuredClone(state);addDraftMessage(state,data.message,chatUI.attachments,chatUI.replyTo);const ok=persist();if(!ok){state=snapshot;return;}composeDraft='';selection={start:0,end:0};chatUI.attachments=[];chatUI.replyTo=null;chatUI.tray='';render();app.querySelector('[name=message]').focus();if(ok)notify('已保存本机；模型未连接，这条消息没有发送。');}
  else if(form.getAttribute('id')==='persona-form'){if(!data.name.trim())return notify('请填写 AI 名字。');state.persona={name:data.name.trim().slice(0,40),prompt:data.prompt};saveNotice('角色已保存。');}
  else if(form.getAttribute('id')==='provider-form'){if(!validEndpoint(data.baseUrl.trim()))return notify('请使用不含密钥、查询参数或账号信息的 HTTPS 地址。');state.provider={protocol:data.protocol,baseUrl:data.baseUrl.trim(),model:data.model.trim()};saveNotice('模型配置已保存，尚未连接服务。');}
  else if(form.getAttribute('id')==='plugin-form'){if(!data.name.trim()||!data.url.trim())return notify('请填写名称和服务地址。');if(!validEndpoint(data.url.trim()))return notify('请使用不含密钥、查询参数或账号信息的 HTTPS 地址。');const p={id:data.id||crypto.randomUUID(),name:data.name.trim().slice(0,80),type:data.type,url:data.url.trim()},i=state.plugins.findIndex(x=>x.id===p.id);if(i<0)state.plugins.push(p);else state.plugins[i]=p;saveNotice('配置已保存，插件运行尚未接入。');render();}
@@ -221,9 +228,9 @@ bindDrawerDismiss(app,{panel:()=>closingTray?null:app.querySelector('.chat-tray'
 
 const messageDialog=document.createElement('dialog');messageDialog.className='glass message-dialog';messageDialog.setAttribute('aria-label','消息操作');document.body.append(messageDialog);
 let press=null,messageTarget=null,suppressedVoice=null;
-function openMessageMenu(id,anchor,voice=null){const session=state.sessions.find(s=>s.id===state.active),message=session.messages.find(m=>m.id===id);if(!message||chatUI.tray||messageDialog.open)return;messageTarget={session:session.id,id,voice};if(voice)suppressedVoice={node:voice,until:performance.now()+1200};const actions=message.role==='user'?[['copy','复制'],['reply','引用'],['edit','编辑消息'],['rollback','回滚至此'],['branch','创建分支'],['delete','删除']]:[['copy','复制'],['reply','引用'],['branch','创建分支'],['delete','删除']];if(voice)actions.splice(1,0,['transcript','转文字']);messageDialog.innerHTML=`<div class="message-menu">${actions.map(([action,label])=>`<button data-message-action="${action}" class="${action==='delete'?'destructive':''}">${label}</button>`).join('')}</div>`;messageDialog.style.left=`${Math.max(12,Math.min(innerWidth-212,anchor.x))}px`;messageDialog.style.top=`${Math.max(12,Math.min(innerHeight-actions.length*48-24,anchor.y))}px`;messageDialog.showModal();messageDialog.querySelector('button').focus({preventScroll:true});}
+function openMessageMenu(id,anchor,voice=null){const session=state.sessions.find(s=>s.id===state.active),message=session.messages.find(m=>m.id===id);if(!message||chatUI.tray||messageDialog.open)return;messageTarget={session:session.id,id,voice};const actions=message.role==='user'?[['copy','复制'],['reply','引用'],['edit','编辑消息'],['rollback','回滚至此'],['branch','创建分支'],['delete','删除']]:[['copy','复制'],['reply','引用'],['branch','创建分支'],['delete','删除']];if(voice)actions.splice(1,0,['transcript','转文字']);messageDialog.innerHTML=`<div class="message-menu">${actions.map(([action,label])=>`<button data-message-action="${action}" class="${action==='delete'?'destructive':''}">${label}</button>`).join('')}</div>`;messageDialog.style.left=`${Math.max(12,Math.min(innerWidth-212,anchor.x))}px`;messageDialog.style.top=`${Math.max(12,Math.min(innerHeight-actions.length*48-24,anchor.y))}px`;messageDialog.showModal();messageDialog.querySelector('button').focus({preventScroll:true});}
 function cancelPress(){if(press)clearTimeout(press.timer);press=null;}
-app.addEventListener('pointerdown',e=>{const bubble=e.target.closest('[data-message-id]');const voice=e.target.closest('[data-live-voice],[data-voice-key]');if(!bubble||e.button!==0||e.target.closest('input,textarea,select,a')||(!voice&&e.target.closest('button')))return;cancelPress();const id=bubble.dataset.messageId,x=e.clientX,y=e.clientY;press={x,y,timer:setTimeout(()=>{press=null;openMessageMenu(id,{x,y},voice);},500)};});
+app.addEventListener('pointerdown',e=>{const bubble=e.target.closest('[data-message-id]');const voice=e.target.closest('[data-live-voice],[data-voice-key]');if(!bubble||e.button!==0||e.target.closest('input,textarea,select,a')||(!voice&&e.target.closest('button')))return;cancelPress();const id=bubble.dataset.messageId,x=e.clientX,y=e.clientY;press={x,y,timer:setTimeout(()=>{press=null;if(voice)suppressedVoice={node:voice,until:performance.now()+1200};openMessageMenu(id,{x,y},voice);},500)};});
 app.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>10)cancelPress();});
 for(const event of ['pointerup','pointercancel','scroll'])app.addEventListener(event,cancelPress,true);
 app.addEventListener('contextmenu',e=>{const bubble=e.target.closest('[data-message-id]');if(!bubble)return;e.preventDefault();cancelPress();openMessageMenu(bubble.dataset.messageId,{x:e.clientX,y:e.clientY},e.target.closest('[data-live-voice],[data-voice-key]'));});

@@ -3,6 +3,7 @@ import {emptyMoom,normalizeMoom,normalizeStoryLink} from './apps/moom/model.js';
 import {normalizeReply,normalizeVoice} from './chat-content/model.js';
 import {normalizeExpressions,stickerSource} from './expressions/model.js';
 import { emptyMusic, normalizeMusic } from './apps/music/model.js';
+import {normalizeTransferFields} from './chat-content/transfers.js';
 import { normalizeDiaryEntries, normalizeDiaryMoods, diaryMoods, acceptedHomeMood } from './apps/diary/model.js';
 import { normalizeWorldbooks } from './apps/worldbook/model.js';
 import { normalizePresets } from './apps/presets/model.js';
@@ -37,7 +38,7 @@ export function normalizeState(s) {
    ids.add(x.id);
    return { id:x.id, title:text(x.title,'新的对话',80), created:Number.isFinite(x.created)?x.created:Date.now(), pinned:x.pinned===true,branchedFrom:text(x.branchedFrom,'',100),model:text(x.model,'',200), messages:x.messages.map(m=>{
      if (typeof m?.text !== 'string') throw new Error('消息数据损坏');
-     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',storyLink:normalizeStoryLink(m.storyLink),reasoningSummary:text(m.reasoningSummary,'',30000),reasoningStatus:m.role==='assistant'&&m.reasoningStatus==='thinking'?'thinking':'',reasoningDurationMs:Number.isFinite(m.reasoningDurationMs)&&m.reasoningDurationMs>=0?Math.min(3600000,m.reasoningDurationMs):null,replyTo:normalizeReply(m.replyTo),model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments) };
+     return { id:text(m.id,crypto.randomUUID(),100), role:m.role==='assistant'?'assistant':'user', text:text(m.text), time:Number.isFinite(m.time)?m.time:Date.now(),status:'local',storyLink:normalizeStoryLink(m.storyLink),reasoningSummary:text(m.reasoningSummary,'',30000),reasoningStatus:m.role==='assistant'&&m.reasoningStatus==='thinking'?'thinking':'',reasoningDurationMs:Number.isFinite(m.reasoningDurationMs)&&m.reasoningDurationMs>=0?Math.min(3600000,m.reasoningDurationMs):null,replyTo:normalizeReply(m.replyTo),model:text(m.model,'',200),attachments:normalizeAttachments(m.attachments),...normalizeTransferFields(m) };
    }) };
  });
  const defaults = extras(), a = s.appearance || {}, h = s.home || {};
